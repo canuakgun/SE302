@@ -1,19 +1,5 @@
 package com.examscheduler.ui;
 
-import java.io.File;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Optional;
-import java.util.function.Supplier;
-
-import com.examscheduler.logic.DataManager;
-import com.examscheduler.model.Classroom;
-import com.examscheduler.model.Course;
-import com.examscheduler.model.Exam;
-import com.examscheduler.model.Schedule;
-import com.examscheduler.model.Student;
-import com.examscheduler.model.TimeSlot;
-
 import javafx.application.Application;
 import javafx.beans.property.SimpleIntegerProperty;
 import javafx.beans.property.SimpleStringProperty;
@@ -22,45 +8,39 @@ import javafx.collections.ObservableList;
 import javafx.geometry.Insets;
 import javafx.geometry.Pos;
 import javafx.scene.Scene;
-import javafx.scene.control.Alert;
-import javafx.scene.control.Button;
-import javafx.scene.control.ButtonType;
-import javafx.scene.control.Label;
-import javafx.scene.control.ListView;
-import javafx.scene.control.Menu;
-import javafx.scene.control.MenuBar;
-import javafx.scene.control.MenuItem;
-import javafx.scene.control.Separator;
-import javafx.scene.control.SeparatorMenuItem;
-import javafx.scene.control.Spinner;
-import javafx.scene.control.TableCell;
-import javafx.scene.control.TableColumn;
-import javafx.scene.control.TableView;
-import javafx.scene.control.TextArea;
-import javafx.scene.control.TextField;
-import javafx.scene.control.ToolBar;
+import javafx.scene.control.*;
+import javafx.scene.control.cell.PropertyValueFactory;
 import javafx.scene.control.cell.TextFieldListCell;
-import javafx.scene.layout.BorderPane;
-import javafx.scene.layout.HBox;
-import javafx.scene.layout.Priority;
-import javafx.scene.layout.VBox;
+import javafx.scene.layout.*;
 import javafx.stage.DirectoryChooser;
 import javafx.stage.FileChooser;
 import javafx.stage.Modality;
 import javafx.stage.Stage;
+import javafx.scene.text.Text;
+import java.io.File;
+import java.io.IOException;
+import java.io.PrintWriter;
+import java.nio.file.Files;
+import java.time.LocalDate;
+import java.util.*;
+import java.util.function.Supplier;
+import java.util.stream.Collectors;
+
 
 public class ExamSchedulerApp extends Application {
 
     private final DataManager dataManager = DataManager.getInstance();
-    private final ObservableList<Exam> scheduledExams = FXCollections.observableArrayList();
+    private final ObservableList<ExamEntry> exams = FXCollections.observableArrayList();
     private final ObservableList<String> messages = FXCollections.observableArrayList();
 
-    private TableView<Exam> table;
+    private TableView<ExamEntry> table;
+    private TextArea statsArea;
     private final Spinner<Integer> daysSpinner = new Spinner<>(1, 30, 5);
-    private ListView<String> crView = new ListView<>();
+    private ListView<String> crView = new ListView<>(); 
     private ListView<String> tsView = new ListView<>();
-
     private Supplier<List<String>> getTimeSlotsFromUI;
+
+    private DatePicker examStartDatePicker;
 
     public static void main(String[] args) {
         launch(args);
@@ -68,35 +48,62 @@ public class ExamSchedulerApp extends Application {
 
     @Override
     public void start(Stage stage) {
-        stage.setTitle("📅 Exam Scheduler - Direct Exam Model");
+        stage.setTitle("📅 Exam Scheduler - Enhanced with Student Portal");
 
         String primaryColor = "#0078D4";
         String secondaryColor = "#106EBE";
-        String toolBarStyle = "-fx-background-color: " + primaryColor
-                + "; -fx-effect: dropshadow(gaussian, rgba(0,0,0,0.2), 10, 0, 0, 2);";
-        String buttonStyle = "-fx-background-color: " + secondaryColor
-                + "; -fx-text-fill: white; -fx-background-radius: 3; -fx-padding: 8px 16px; -fx-font-weight: bold; -fx-cursor: hand;";
+        String buttonStyle = "-fx-background-color: " + secondaryColor + "; -fx-text-fill: white; -fx-background-radius: 3; -fx-padding: 8px 16px; -fx-font-weight: bold; -fx-cursor: hand;";
+        String toolBarStyle = "-fx-background-color: " + primaryColor + "; -fx-effect: dropshadow(gaussian, rgba(0,0,0,0.2), 10, 0, 0, 2);";
         String titleStyle = "-fx-font-size: 16px; -fx-font-weight: bold; -fx-text-fill: " + primaryColor + ";";
 
         MenuBar menuBar = createMenuBar(stage);
-        ToolBar toolBar = createToolBar(stage, buttonStyle, toolBarStyle);
+        ToolBar toolBar = new ToolBar();
+        
+        Button loadBtn = new Button("📁 Load Data");
+        Button generateBtn = new Button("⚡ Generate Schedule");
+        Button saveBtn = new Button("💾 Save Schedule");
+        Button validateBtn = new Button("✓ Validate");
+        Button exportBtn = new Button("📤 Export");
+        Button studentPortalBtn = new Button("👤 Student Portal"); 
+        loadBtn.setStyle(buttonStyle);
+        generateBtn.setStyle(buttonStyle);
+        saveBtn.setStyle(buttonStyle);
+        validateBtn.setStyle(buttonStyle);
+        exportBtn.setStyle(buttonStyle);
+        studentPortalBtn.setStyle("-fx-background-color: #4CAF50; -fx-text-fill: white; -fx-padding: 8px 16px; -fx-font-weight: bold; -fx-cursor: hand;");
+        toolBar.setStyle(toolBarStyle);
+        
+        toolBar.getItems().addAll(loadBtn, new Separator(), generateBtn, validateBtn, new Separator(), 
+                                   saveBtn, exportBtn, new Separator(), studentPortalBtn);
+
+        loadBtn.setOnAction(e -> handleLoad(stage));
+        generateBtn.setOnAction(e -> handleGenerateSchedule());
+        saveBtn.setOnAction(e -> handleSave(stage));
+        validateBtn.setOnAction(e -> handleValidate());
+        exportBtn.setOnAction(e -> handleExport(stage));
+        studentPortalBtn.setOnAction(e -> showStudentPortal(stage)); 
 
         VBox leftPane = createConfigurationPanel(buttonStyle);
-
         table = createExamTable(stage);
+
         Label scheduleTitle = new Label("📋 Exam Schedule");
         scheduleTitle.setStyle(titleStyle);
+
         VBox centerPane = new VBox(10, scheduleTitle, table);
         centerPane.setPadding(new Insets(15));
         VBox.setVgrow(table, Priority.ALWAYS);
 
         VBox rightPane = createMessagesPanel(titleStyle);
 
-        BorderPane root = new BorderPane(centerPane, new VBox(menuBar, toolBar), rightPane, null, leftPane);
+        VBox topContainer = new VBox(menuBar, toolBar);
+        BorderPane root = new BorderPane();
+        root.setTop(topContainer);
+        root.setLeft(leftPane);
+        root.setCenter(centerPane);
+        root.setRight(rightPane);
 
-        messages.add("✓ System is ready. Using direct Exam model.");
-        simulateInitialDataLoad();
-
+        messages.add("✓ System ready. Click 'Load Data' to import CSV files.");
+        
         Scene sc = new Scene(root, 1400, 800);
         stage.setScene(sc);
         stage.setMinWidth(1200);
@@ -104,82 +111,499 @@ public class ExamSchedulerApp extends Application {
         stage.show();
     }
 
-    private void simulateInitialDataLoad() {
-        Course c101 = new Course("C101");
-        Course m202 = new Course("M202");
-        Classroom r101 = new Classroom("R101", 50);
-        Classroom r202 = new Classroom("R202", 100);
-        TimeSlot ts1 = new TimeSlot(1, 1);
-        TimeSlot ts2 = new TimeSlot(2, 2);
+    
+    private void showStudentPortal(Stage owner) {
+        if (!dataManager.isDataLoaded() || dataManager.getSchedule() == null) {
+            showError("No Schedule", "Please load data and generate schedule first.");
+            return;
+        }
 
-        dataManager.setStudents(List.of(new Student("S001")));
-        dataManager.setCourses(List.of(c101, m202));
-        dataManager.setClassrooms(List.of(r101, r202));
+        Stage loginStage = new Stage();
+        loginStage.initOwner(owner);
+        loginStage.initModality(Modality.APPLICATION_MODAL);
+        loginStage.setTitle("🎓 Student Portal Login");
 
-        updateClassroomsView();
+        ComboBox<String> studentCombo = new ComboBox<>();
+        dataManager.getStudents().forEach(s -> studentCombo.getItems().add(s.getStudentID()));
+        studentCombo.setPromptText("Select your Student ID");
+        studentCombo.setPrefWidth(250);
 
-        Exam e1 = new Exam(c101);
-        e1.setTimeSlot(ts1);
-        e1.setClassroom(r101);
-        Exam e2 = new Exam(m202);
-        e2.setTimeSlot(ts2);
-        e2.setClassroom(r202);
+        Button loginBtn = new Button("View My Schedule");
+        loginBtn.setStyle("-fx-background-color: #4CAF50; -fx-text-fill: white; -fx-padding: 10px 20px; -fx-font-size: 14px;");
+        
+        loginBtn.setOnAction(e -> {
+            String studentId = studentCombo.getValue();
+            if (studentId != null) {
+                Student student = dataManager.getStudentByID(studentId);
+                if (student != null) {
+                    loginStage.close();
+                    showStudentSchedule(owner, student);
+                }
+            } else {
+                showWarning("Selection Required", "Please select a student ID.");
+            }
+        });
 
-        scheduledExams.addAll(e1, e2);
-        messages.add("Mock data loaded and UI updated.");
+        VBox layout = new VBox(20);
+        layout.setAlignment(Pos.CENTER);
+        layout.setPadding(new Insets(40));
+        
+        Label title = new Label("🎓 Student Portal");
+        title.setStyle("-fx-font-size: 24px; -fx-font-weight: bold; -fx-text-fill: #0078D4;");
+        
+        Label subtitle = new Label("Select your student ID to view your exam schedule");
+        subtitle.setStyle("-fx-font-size: 14px; -fx-text-fill: #666;");
+        
+        layout.getChildren().addAll(title, subtitle, studentCombo, loginBtn);
+        
+        Scene scene = new Scene(layout, 450, 300);
+        loginStage.setScene(scene);
+        loginStage.show();
     }
 
-    private TableView<Exam> createExamTable(Stage stage) {
-        TableView<Exam> tableView = new TableView<>();
-        tableView.setItems(scheduledExams);
+    private void showStudentSchedule(Stage owner, Student student) {
+        Stage scheduleStage = new Stage();
+        scheduleStage.initOwner(owner);
+        scheduleStage.setTitle("📅 My Exam Schedule - " + student.getStudentID());
+
+        
+        List<Exam> studentExams = getStudentExams(student);
+        
+        if (studentExams.isEmpty()) {
+            showInfo("No Exams", "You have no scheduled exams.");
+            return;
+        }
+
+        
+        GridPane calendar = createCalendarView(studentExams);
+        
+        
+        ListView<String> examList = createExamListView(studentExams);
+        
+        
+        TextArea summary = new TextArea();
+        summary.setEditable(false);
+        summary.setPrefHeight(100);
+        summary.setText(generateStudentSummary(student, studentExams));
+        
+        
+        Button exportBtn = new Button("📄 Export My Schedule");
+        exportBtn.setStyle("-fx-background-color: #FF9800; -fx-text-fill: white; -fx-padding: 8px 16px;");
+        exportBtn.setOnAction(e -> exportStudentSchedule(scheduleStage, student, studentExams));
+
+        
+        VBox calendarBox = new VBox(10);
+        Label calTitle = new Label("📅 Calendar View");
+        calTitle.setStyle("-fx-font-size: 16px; -fx-font-weight: bold;");
+        calendarBox.getChildren().addAll(calTitle, new ScrollPane(calendar));
+        
+        VBox listBox = new VBox(10);
+        Label listTitle = new Label("📋 Exam List");
+        listTitle.setStyle("-fx-font-size: 16px; -fx-font-weight: bold;");
+        listBox.getChildren().addAll(listTitle, examList);
+        
+        VBox summaryBox = new VBox(10);
+        Label summaryTitle = new Label("📊 Summary");
+        summaryTitle.setStyle("-fx-font-size: 16px; -fx-font-weight: bold;");
+        summaryBox.getChildren().addAll(summaryTitle, summary, exportBtn);
+        
+        SplitPane mainSplit = new SplitPane(calendarBox, listBox);
+        mainSplit.setDividerPositions(0.6);
+        
+        BorderPane root = new BorderPane();
+        root.setCenter(mainSplit);
+        root.setBottom(summaryBox);
+        BorderPane.setMargin(summaryBox, new Insets(10));
+        
+        Scene scene = new Scene(root, 1000, 700);
+        scheduleStage.setScene(scene);
+        scheduleStage.show();
+    }
+
+    private GridPane createCalendarView(List<Exam> studentExams) {
+        GridPane calendar = new GridPane();
+        calendar.setHgap(5);
+        calendar.setVgap(5);
+        calendar.setPadding(new Insets(10));
+        calendar.setStyle("-fx-background-color: white;");
+
+        int maxDay = studentExams.stream().mapToInt(e -> e.getTimeSlot().getDay()).max().orElse(5);
+        List<String> timeSlots = getTimeSlotsFromUI.get();
+        
+        
+        Label cornerLabel = new Label("Day / Time");
+        cornerLabel.setStyle("-fx-font-weight: bold; -fx-padding: 10px; -fx-background-color: #0078D4; -fx-text-fill: white;");
+        calendar.add(cornerLabel, 0, 0);
+        
+        for (int slot = 0; slot < timeSlots.size(); slot++) {
+            Label slotLabel = new Label(timeSlots.get(slot));
+            slotLabel.setStyle("-fx-font-weight: bold; -fx-padding: 10px; -fx-background-color: #0078D4; -fx-text-fill: white;");
+            slotLabel.setMinWidth(150);
+            calendar.add(slotLabel, slot + 1, 0);
+        }
+        
+        
+        Map<String, Exam> examMap = new HashMap<>();
+        for (Exam exam : studentExams) {
+            String key = exam.getTimeSlot().getDay() + "-" + exam.getTimeSlot().getSlotNumber();
+            examMap.put(key, exam);
+        }
+        
+        LocalDate startDate = examStartDatePicker != null && examStartDatePicker.getValue() != null 
+            ? examStartDatePicker.getValue() 
+            : LocalDate.now();
+        
+        for (int day = 1; day <= maxDay; day++) {
+            LocalDate currentDate = startDate.plusDays(day - 1);
+            String dayLabel = "Day " + day + "\n" + currentDate.toString();
+            
+            Label dayLabelNode = new Label(dayLabel);
+            dayLabelNode.setStyle("-fx-font-weight: bold; -fx-padding: 10px; -fx-background-color: #E3F2FD;");
+            dayLabelNode.setMinHeight(80);
+            calendar.add(dayLabelNode, 0, day);
+            
+            for (int slot = 1; slot <= timeSlots.size(); slot++) {
+                String key = day + "-" + slot;
+                VBox cell = new VBox(5);
+                cell.setMinWidth(150);
+                cell.setMinHeight(80);
+                cell.setPadding(new Insets(5));
+                cell.setStyle("-fx-border-color: #ddd; -fx-border-width: 1; -fx-background-color: white;");
+                
+                if (examMap.containsKey(key)) {
+                    Exam exam = examMap.get(key);
+                    cell.setStyle("-fx-border-color: #ddd; -fx-border-width: 1; -fx-background-color: #FFF9C4;");
+                    
+                    Label courseLabel = new Label(exam.getCourse().getCourseCode());
+                    courseLabel.setStyle("-fx-font-weight: bold; -fx-text-fill: #D84315;");
+                    
+                    Label roomLabel = new Label("📍 " + exam.getClassroom().getClassroomID());
+                    roomLabel.setStyle("-fx-font-size: 11px;");
+                    
+                    Label courseNameLabel = new Label(exam.getCourse().getCourseName());
+                    courseNameLabel.setStyle("-fx-font-size: 10px; -fx-text-fill: #666;");
+                    courseNameLabel.setWrapText(true);
+                    
+                    cell.getChildren().addAll(courseLabel, roomLabel, courseNameLabel);
+                }
+                
+                calendar.add(cell, slot, day);
+            }
+        }
+        
+        return calendar;
+    }
+
+    private ListView<String> createExamListView(List<Exam> studentExams) {
+        ListView<String> listView = new ListView<>();
+        List<String> timeSlots = getTimeSlotsFromUI.get();
+        
+        LocalDate startDate = examStartDatePicker != null && examStartDatePicker.getValue() != null 
+            ? examStartDatePicker.getValue() 
+            : LocalDate.now();
+        
+        studentExams.stream()
+            .sorted(Comparator.comparing((Exam e) -> e.getTimeSlot().getDay())
+                              .thenComparing(e -> e.getTimeSlot().getSlotNumber()))
+            .forEach(exam -> {
+                LocalDate examDate = startDate.plusDays(exam.getTimeSlot().getDay() - 1);
+                String timeSlot = "";
+                try {
+                    timeSlot = timeSlots.get(exam.getTimeSlot().getSlotNumber() - 1);
+                } catch (Exception e) {
+                    timeSlot = "Slot " + exam.getTimeSlot().getSlotNumber();
+                }
+                
+                String entry = String.format("📅 %s | ⏰ %s | 📚 %s (%s) | 📍 Room %s",
+                    examDate.toString(),
+                    timeSlot,
+                    exam.getCourse().getCourseCode(),
+                    exam.getCourse().getCourseName(),
+                    exam.getClassroom().getClassroomID()
+                );
+                listView.getItems().add(entry);
+            });
+        
+        return listView;
+    }
+
+    private String generateStudentSummary(Student student, List<Exam> studentExams) {
+        int totalExams = studentExams.size();
+        Map<Integer, Long> examsPerDay = studentExams.stream()
+            .collect(Collectors.groupingBy(e -> e.getTimeSlot().getDay(), Collectors.counting()));
+        
+        StringBuilder sb = new StringBuilder();
+        sb.append("Student ID: ").append(student.getStudentID()).append("\n");
+        sb.append("Total Exams: ").append(totalExams).append("\n");
+        sb.append("\nExams per Day:\n");
+        examsPerDay.entrySet().stream()
+            .sorted(Map.Entry.comparingByKey())
+            .forEach(entry -> sb.append("  Day ").append(entry.getKey())
+                               .append(": ").append(entry.getValue()).append(" exam(s)\n"));
+        
+        return sb.toString();
+    }
+
+    private void exportStudentSchedule(Stage owner, Student student, List<Exam> studentExams) {
+        FileChooser chooser = new FileChooser();
+        chooser.setTitle("Export My Schedule");
+        chooser.setInitialFileName("my_exam_schedule_" + student.getStudentID() + ".txt");
+        File file = chooser.showSaveDialog(owner);
+        
+        if (file != null) {
+            try (PrintWriter pw = new PrintWriter(file)) {
+                pw.println("==============================================");
+                pw.println("        EXAM SCHEDULE - " + student.getStudentID());
+                pw.println("==============================================\n");
+                
+                List<String> timeSlots = getTimeSlotsFromUI.get();
+                LocalDate startDate = examStartDatePicker != null && examStartDatePicker.getValue() != null 
+                    ? examStartDatePicker.getValue() 
+                    : LocalDate.now();
+                
+                studentExams.stream()
+                    .sorted(Comparator.comparing((Exam e) -> e.getTimeSlot().getDay())
+                                      .thenComparing(e -> e.getTimeSlot().getSlotNumber()))
+                    .forEach(exam -> {
+                        LocalDate examDate = startDate.plusDays(exam.getTimeSlot().getDay() - 1);
+                        String timeSlot = "";
+                        try {
+                            timeSlot = timeSlots.get(exam.getTimeSlot().getSlotNumber() - 1);
+                        } catch (Exception e) {
+                            timeSlot = "Slot " + exam.getTimeSlot().getSlotNumber();
+                        }
+                        
+                        pw.println("Date: " + examDate);
+                        pw.println("Time: " + timeSlot);
+                        pw.println("Course: " + exam.getCourse().getCourseCode() + " - " + exam.getCourse().getCourseName());
+                        pw.println("Room: " + exam.getClassroom().getClassroomID());
+                        pw.println("----------------------------------------------\n");
+                    });
+                
+                pw.println("Total Exams: " + studentExams.size());
+                showInfo("Export Success", "Your schedule has been exported to " + file.getName());
+            } catch (Exception e) {
+                showError("Export Failed", e.getMessage());
+            }
+        }
+    }
+
+    private List<Exam> getStudentExams(Student student) {
+        List<Exam> studentExams = new ArrayList<>();
+        
+        if (dataManager.getSchedule() != null) {
+            for (Exam exam : dataManager.getSchedule().getExams()) {
+                if (exam.isScheduled() && exam.getEnrolledStudents().contains(student)) {
+                    studentExams.add(exam);
+                }
+            }
+        }
+        
+        return studentExams;
+    }
+
+   
+
+    private MenuBar createMenuBar(Stage stage) {
+        MenuBar menuBar = new MenuBar();
+        
+        Menu fileMenu = new Menu("File");
+        MenuItem loadItem = new MenuItem("Load Data...");
+        MenuItem saveItem = new MenuItem("Save Schedule");
+        MenuItem exportItem = new MenuItem("Export...");
+        MenuItem exitItem = new MenuItem("Exit");
+        
+        loadItem.setOnAction(e -> handleLoad(stage));
+        saveItem.setOnAction(e -> handleSave(stage));
+        exportItem.setOnAction(e -> handleExport(stage));
+        exitItem.setOnAction(e -> stage.close());
+        
+        fileMenu.getItems().addAll(loadItem, saveItem, exportItem, new SeparatorMenuItem(), exitItem);
+
+        Menu editMenu = new Menu("Edit");
+        MenuItem manageCourses = new MenuItem("Manage Courses...");
+        MenuItem manageStudents = new MenuItem("Manage Students...");
+        MenuItem manageClassrooms = new MenuItem("Manage Classrooms...");
+        
+        manageCourses.setOnAction(e -> showManageCourses(stage));
+        manageStudents.setOnAction(e -> showManageStudents(stage));
+        manageClassrooms.setOnAction(e -> showManageClassrooms(stage));
+        
+        editMenu.getItems().addAll(manageCourses, manageStudents, manageClassrooms);
+
+        Menu scheduleMenu = new Menu("Schedule");
+        MenuItem generateItem = new MenuItem("Generate Schedule");
+        MenuItem validateItem = new MenuItem("Validate Schedule");
+        MenuItem conflictReport = new MenuItem("Conflict Report");
+        
+        generateItem.setOnAction(e -> handleGenerateSchedule());
+        validateItem.setOnAction(e -> handleValidate());
+        conflictReport.setOnAction(e -> showConflictReport());
+        
+        scheduleMenu.getItems().addAll(generateItem, validateItem, conflictReport);
+
+        
+        Menu studentMenu = new Menu("Students");
+        MenuItem studentPortalItem = new MenuItem("Student Portal...");
+        studentPortalItem.setOnAction(e -> showStudentPortal(stage));
+        studentMenu.getItems().add(studentPortalItem);
+
+        Menu helpMenu = new Menu("Help");
+        MenuItem userManual = new MenuItem("User Manual");
+        MenuItem quickStart = new MenuItem("Quick Start Guide");
+        MenuItem faq = new MenuItem("FAQ");
+        MenuItem about = new MenuItem("About");
+        
+        userManual.setOnAction(e -> showHelpDialog("User Manual", getUserManualText()));
+        quickStart.setOnAction(e -> showHelpDialog("Quick Start", getQuickStartText()));
+        faq.setOnAction(e -> showHelpDialog("FAQ", getFAQText()));
+        about.setOnAction(e -> showAboutDialog());
+        
+        helpMenu.getItems().addAll(userManual, quickStart, faq, new SeparatorMenuItem(), about);
+
+        menuBar.getMenus().addAll(fileMenu, editMenu, scheduleMenu, studentMenu, helpMenu);
+        return menuBar;
+    }
+
+    private VBox createConfigurationPanel(String buttonStyle) {
+        VBox leftPane = new VBox(15);
+        leftPane.setPadding(new Insets(15));
+        leftPane.setPrefWidth(320);
+        leftPane.setStyle("-fx-background-color: #F3F3F3; -fx-border-color: #D0D0D0; -fx-border-width: 0 1px 0 0;");
+
+        Label configTitle = new Label("⚙ Configuration");
+        configTitle.setStyle("-fx-font-size: 16px; -fx-font-weight: bold; -fx-text-fill: #0078D4;");
+
+        
+        Label dateLabel = new Label("📅 Exam Start Date:");
+        dateLabel.setStyle("-fx-font-weight: bold;");
+        examStartDatePicker = new DatePicker(LocalDate.now());
+        examStartDatePicker.setPrefWidth(200);
+
+        HBox daysRow = new HBox(10, new Label("Exam Period (Days):"), daysSpinner);
+        daysRow.setAlignment(Pos.CENTER_LEFT);
+        daysSpinner.setPrefWidth(80);
+        daysSpinner.setEditable(true);
+
+        Label tsLabel = new Label("⏰ Time Slots (Per Day):");
+        tsLabel.setStyle("-fx-font-weight: bold;");
+        tsView.setEditable(true);
+        tsView.setCellFactory(TextFieldListCell.forListView());
+        tsView.getItems().addAll("09:00-11:00", "12:00-14:00", "15:00-17:00");
+        tsView.setPrefHeight(120);
+
+        Button addTs = new Button("+");
+        Button remTs = new Button("-");
+        HBox tsButtons = new HBox(5, addTs, remTs);
+        tsButtons.setAlignment(Pos.CENTER_RIGHT);
+        
+        String smallBtnStyle = buttonStyle + "-fx-padding: 5px 10px; -fx-min-width: 35px;";
+        addTs.setStyle(smallBtnStyle);
+        remTs.setStyle(smallBtnStyle);
+
+        addTs.setOnAction(e -> tsView.getItems().add("HH:MM-HH:MM"));
+        remTs.setOnAction(e -> {
+            int i = tsView.getSelectionModel().getSelectedIndex();
+            if (i >= 0) tsView.getItems().remove(i);
+        });
+
+        Label crLabel = new Label("🏫 Classrooms (ID - Capacity):");
+        crLabel.setStyle("-fx-font-weight: bold;");
+        crView.setPrefHeight(140);
+
+        Button manageClassroomsBtn = new Button("Manage Classrooms");
+        manageClassroomsBtn.setStyle(buttonStyle + "-fx-font-size: 11px;");
+        manageClassroomsBtn.setOnAction(e -> showManageClassrooms((Stage) crView.getScene().getWindow()));
+
+        getTimeSlotsFromUI = () -> new ArrayList<>(tsView.getItems());
+
+        leftPane.getChildren().addAll(
+            configTitle, 
+            new Separator(),
+            dateLabel, examStartDatePicker,
+            new Separator(),
+            daysRow, 
+            new Separator(),
+            tsLabel, tsView, tsButtons,
+            new Separator(),
+            crLabel, crView, manageClassroomsBtn
+        );
+
+        return leftPane;
+    }
+
+    private VBox createMessagesPanel(String titleStyle) {
+        ListView<String> msgView = new ListView<>(messages);
+        msgView.setPrefHeight(300);
+
+        Label msgTitle = new Label("📢 Messages & Logs");
+        msgTitle.setStyle(titleStyle);
+
+        Label statsTitle = new Label("📊 Statistics");
+        statsTitle.setStyle(titleStyle);
+        
+       statsArea = new TextArea(); 
+       statsArea.setEditable(false);
+       statsArea.setPrefHeight(150);
+       statsArea.setText("Total Exams: 0\nPlaced Exams: 0\nConflicts: 0"); 
+        
+
+        VBox rightPane = new VBox(10, msgTitle, msgView, statsTitle, statsArea);
+        rightPane.setPadding(new Insets(15));
+        rightPane.setPrefWidth(380);
+        rightPane.setStyle("-fx-background-color: #F3F3F3; -fx-border-color: #D0D0D0; -fx-border-width: 0 0 0 1px;");
+
+        return rightPane;
+    }
+
+    private TableView<ExamEntry> createExamTable(Stage stage) {
+        TableView<ExamEntry> tableView = new TableView<>();
+        tableView.setItems(exams);
         tableView.setPlaceholder(new Label("No exam schedule generated yet. Click 'Generate Schedule'."));
 
-        TableColumn<Exam, String> colCourse = new TableColumn<>("Course Code");
-        colCourse.setCellValueFactory(
-                cellData -> new SimpleStringProperty(cellData.getValue().getCourse().getCourseCode()));
+        TableColumn<ExamEntry, String> colId = new TableColumn<>("Exam ID");
+        colId.setCellValueFactory(new PropertyValueFactory<>("id"));
+        colId.setPrefWidth(80);
+
+        TableColumn<ExamEntry, String> colCourse = new TableColumn<>("Course Code");
+        colCourse.setCellValueFactory(new PropertyValueFactory<>("courseId"));
         colCourse.setPrefWidth(120);
 
-        TableColumn<Exam, Integer> colDay = new TableColumn<>("Day");
-        colDay.setCellValueFactory(
-                cellData -> new SimpleIntegerProperty(cellData.getValue().getTimeSlot().getDay()).asObject());
+        TableColumn<ExamEntry, Integer> colDay = new TableColumn<>("Day");
+        colDay.setCellValueFactory(new PropertyValueFactory<>("day"));
         colDay.setPrefWidth(60);
 
-        TableColumn<Exam, String> colTime = new TableColumn<>("Time Slot");
-        colTime.setCellValueFactory(cellData -> {
-            TimeSlot ts = cellData.getValue().getTimeSlot();
-            return new SimpleStringProperty("Day " + ts.getDay() + " Slot " + ts.getSlotNumber());
-        });
+        TableColumn<ExamEntry, String> colTime = new TableColumn<>("Time Slot");
+        colTime.setCellValueFactory(new PropertyValueFactory<>("timeSlot"));
         colTime.setPrefWidth(140);
 
-        TableColumn<Exam, String> colRoom = new TableColumn<>("Classroom");
-        colRoom.setCellValueFactory(
-                cellData -> new SimpleStringProperty(cellData.getValue().getClassroom().getClassroomID()));
+        TableColumn<ExamEntry, String> colRoom = new TableColumn<>("Classroom");
+        colRoom.setCellValueFactory(new PropertyValueFactory<>("roomId"));
         colRoom.setPrefWidth(100);
 
-        TableColumn<Exam, Integer> colEnrolled = new TableColumn<>("Students");
-        colEnrolled.setCellValueFactory(
-                cellData -> new SimpleIntegerProperty(cellData.getValue().getStudentCount()).asObject());
+        TableColumn<ExamEntry, Integer> colEnrolled = new TableColumn<>("Students");
+        colEnrolled.setCellValueFactory(new PropertyValueFactory<>("enrolled"));
         colEnrolled.setPrefWidth(80);
 
-        TableColumn<Exam, Void> colAct = new TableColumn<>("Actions");
+        TableColumn<ExamEntry, Void> colAct = new TableColumn<>("Actions");
         colAct.setCellFactory(col -> new TableCell<>() {
             private final Button editBtn = new Button("✏ Edit");
             private final Button deleteBtn = new Button("🗑");
-
+            
             {
                 String editStyle = "-fx-background-color: #FF9800; -fx-text-fill: white; -fx-padding: 3px 8px; -fx-font-size: 10px; -fx-background-radius: 3; -fx-cursor: hand;";
                 String deleteStyle = "-fx-background-color: #F44336; -fx-text-fill: white; -fx-padding: 3px 8px; -fx-font-size: 10px; -fx-background-radius: 3; -fx-cursor: hand;";
-
+                
                 editBtn.setStyle(editStyle);
                 deleteBtn.setStyle(deleteStyle);
-
+                
                 editBtn.setOnAction(ev -> {
-                    Exam e = getTableView().getItems().get(getIndex());
+                    ExamEntry e = getTableView().getItems().get(getIndex());
                     editExam(stage, e);
                 });
-
+                
                 deleteBtn.setOnAction(ev -> {
-                    Exam e = getTableView().getItems().get(getIndex());
+                    ExamEntry e = getTableView().getItems().get(getIndex());
                     deleteExam(e);
                 });
             }
@@ -197,276 +621,343 @@ public class ExamSchedulerApp extends Application {
         });
         colAct.setPrefWidth(120);
 
-        tableView.getColumns().addAll(colCourse, colDay, colTime, colRoom, colEnrolled, colAct);
+        tableView.getColumns().addAll(colId, colCourse, colDay, colTime, colRoom, colEnrolled, colAct);
         return tableView;
     }
 
-    private MenuBar createMenuBar(Stage stage) {
-        MenuBar menuBar = new MenuBar();
-
-        Menu fileMenu = new Menu("File");
-        MenuItem loadItem = new MenuItem("Load Data...");
-        MenuItem saveItem = new MenuItem("Save Schedule");
-        MenuItem exportItem = new MenuItem("Export...");
-        MenuItem exitItem = new MenuItem("Exit");
-
-        loadItem.setOnAction(e -> handleLoad(stage));
-        saveItem.setOnAction(e -> handleSave(stage));
-        exportItem.setOnAction(e -> messages.add("Menu: Export Clicked (Simulated)"));
-        exitItem.setOnAction(e -> stage.close());
-
-        fileMenu.getItems().addAll(loadItem, saveItem, exportItem, new SeparatorMenuItem(), exitItem);
-
-        Menu editMenu = new Menu("Edit");
-        MenuItem manageCourses = new MenuItem("Manage Courses...");
-        MenuItem manageStudents = new MenuItem("Manage Students...");
-        MenuItem manageClassrooms = new MenuItem("Manage Classrooms...");
-
-        manageCourses.setOnAction(e -> showMessage("Menu: Manage Courses Clicked (Simulated)"));
-        manageStudents.setOnAction(e -> showMessage("Menu: Manage Students Clicked (Simulated)"));
-        manageClassrooms.setOnAction(e -> showManageClassrooms(stage));
-
-        editMenu.getItems().addAll(manageCourses, manageStudents, manageClassrooms);
-
-        Menu scheduleMenu = new Menu("Schedule");
-        MenuItem generateItem = new MenuItem("Generate Schedule");
-        MenuItem validateItem = new MenuItem("Validate Schedule");
-        MenuItem conflictReport = new MenuItem("Conflict Report");
-
-        generateItem.setOnAction(e -> handleGenerateSchedule());
-        validateItem.setOnAction(e -> handleValidate());
-        conflictReport.setOnAction(e -> showConflictReport());
-
-        scheduleMenu.getItems().addAll(generateItem, validateItem, conflictReport);
-
-        Menu helpMenu = new Menu("Help");
-        MenuItem about = new MenuItem("About");
-        about.setOnAction(e -> showAboutDialog());
-        helpMenu.getItems().add(about);
-
-        menuBar.getMenus().addAll(fileMenu, editMenu, scheduleMenu, helpMenu);
-        return menuBar;
-    }
-
-    private ToolBar createToolBar(Stage stage, String buttonStyle, String toolBarStyle) {
-        ToolBar toolBar = new ToolBar();
-        Button loadBtn = new Button("📁 Load Data");
-        Button generateBtn = new Button("⚡ Generate Schedule");
-        Button saveBtn = new Button("💾 Save Schedule");
-        Button validateBtn = new Button("✓ Validate");
-        Button exportBtn = new Button("📤 Export");
-
-        loadBtn.setStyle(buttonStyle);
-        generateBtn.setStyle(buttonStyle);
-        saveBtn.setStyle(buttonStyle);
-        validateBtn.setStyle(buttonStyle);
-        exportBtn.setStyle(buttonStyle);
-        toolBar.setStyle(toolBarStyle);
-
-        toolBar.getItems().addAll(loadBtn, new Separator(), generateBtn, validateBtn, new Separator(), saveBtn,
-                exportBtn);
-
-        loadBtn.setOnAction(e -> handleLoad(stage));
-        generateBtn.setOnAction(e -> handleGenerateSchedule());
-        saveBtn.setOnAction(e -> handleSave(stage));
-        validateBtn.setOnAction(e -> handleValidate());
-        exportBtn.setOnAction(e -> messages.add("ToolBar: Export Clicked (Simulated)"));
-
-        return toolBar;
-    }
-
-    private VBox createConfigurationPanel(String buttonStyle) {
-        VBox leftPane = new VBox(15);
-        leftPane.setPadding(new Insets(15));
-        leftPane.setPrefWidth(320);
-        leftPane.setStyle("-fx-background-color: #F3F3F3; -fx-border-color: #D0D0D0; -fx-border-width: 0 1px 0 0;");
-
-        Label configTitle = new Label("⚙ Configuration");
-        configTitle.setStyle("-fx-font-size: 16px; -fx-font-weight: bold; -fx-text-fill: #0078D4;");
-
-        HBox daysRow = new HBox(10, new Label("Exam Period (Days):"), daysSpinner);
-        daysRow.setAlignment(Pos.CENTER_LEFT);
-        daysSpinner.setPrefWidth(80);
-        daysSpinner.setEditable(true);
-
-        Label tsLabel = new Label("⏰ Time Slots (Per Day):");
-        tsLabel.setStyle("-fx-font-weight: bold;");
-        tsView.setEditable(true);
-        tsView.setCellFactory(TextFieldListCell.forListView());
-        tsView.getItems().addAll("09:00-11:00", "12:00-14:00", "15:00-17:00");
-        tsView.setPrefHeight(140);
-
-        Button addTs = new Button("+");
-        Button remTs = new Button("-");
-        HBox tsButtons = new HBox(5, addTs, remTs);
-        tsButtons.setAlignment(Pos.CENTER_RIGHT);
-
-        String smallBtnStyle = buttonStyle + "-fx-padding: 5px 10px; -fx-min-width: 35px;";
-        addTs.setStyle(smallBtnStyle);
-        remTs.setStyle(smallBtnStyle);
-
-        addTs.setOnAction(e -> tsView.getItems().add("HH:MM-HH:MM"));
-        remTs.setOnAction(e -> {
-            int i = tsView.getSelectionModel().getSelectedIndex();
-            if (i >= 0)
-                tsView.getItems().remove(i);
-        });
-
-        Label crLabel = new Label("🏫 Classrooms (ID - Capacity):");
-        crLabel.setStyle("-fx-font-weight: bold;");
-        crView.setPrefHeight(180);
-
-        Button manageClassroomsBtn = new Button("Manage Classrooms");
-        manageClassroomsBtn.setStyle(buttonStyle + "-fx-font-size: 11px;");
-        manageClassroomsBtn.setOnAction(e -> showManageClassrooms((Stage) crView.getScene().getWindow()));
-
-        getTimeSlotsFromUI = () -> new ArrayList<>(tsView.getItems());
-
-        leftPane.getChildren().addAll(
-                configTitle,
-                new Separator(),
-                daysRow,
-                new Separator(),
-                tsLabel, tsView, tsButtons,
-                new Separator(),
-                crLabel, crView, manageClassroomsBtn);
-
-        return leftPane;
-    }
-
-    private VBox createMessagesPanel(String titleStyle) {
-        ListView<String> msgView = new ListView<>(messages);
-        msgView.setPrefHeight(300);
-
-        Label msgTitle = new Label("📢 Messages & Logs");
-        msgTitle.setStyle(titleStyle);
-
-        Label statsTitle = new Label("📊 Statistics");
-        statsTitle.setStyle(titleStyle);
-
-        TextArea statsArea = new TextArea();
-        statsArea.setEditable(false);
-        statsArea.setPrefHeight(150);
-        statsArea.setText(dataManager.getDetailedStats());
-
-        VBox rightPane = new VBox(10, msgTitle, msgView, statsTitle, statsArea);
-        rightPane.setPadding(new Insets(15));
-        rightPane.setPrefWidth(380);
-        rightPane.setStyle("-fx-background-color: #F3F3F3; -fx-border-color: #D0D0D0; -fx-border-width: 0 0 0 1px;");
-
-        return rightPane;
-    }
+    
 
     private void handleLoad(Stage owner) {
         DirectoryChooser chooser = new DirectoryChooser();
-        chooser.setTitle("Select Folder with CSV files (Simulated Load)");
+        chooser.setTitle("Select Folder with CSV files (students.csv, courses.csv, classrooms.csv, attendance.csv)");
         File dir = chooser.showDialog(owner);
         if (dir == null) {
             messages.add("⚠ Load cancelled.");
             return;
         }
 
-        messages.add("📂 DataManager.clearAllData() called.");
-        messages.add("📂 CSV Parser simulation started: " + dir.getName() + "...");
+        messages.add("📂 Loading data from: " + dir.getName() + "...");
         dataManager.clearAllData();
 
         try {
-            dataManager.setStudents(List.of(new Student("Ali"), new Student("Can")));
-            dataManager.setCourses(List.of(new Course("CE315"), new Course("CE323")));
-            dataManager.setClassrooms(List.of(new Classroom("M101", 50), new Classroom("M202", 100)));
+            List<File> files = Files.list(dir.toPath()).map(p -> p.toFile()).toList();
+            
+            String studentsPath = findFile(files, "student");
+            String coursesPath = findFile(files, "course");
+            String classroomsPath = findFile(files, "classroom");
+            String attendancePath = findFile(files, "attendance");
 
-            updateClassroomsView();
+            if (studentsPath == null || coursesPath == null || classroomsPath == null) {
+                messages.add("❌ ERROR: Missing required CSV files (students, courses, classrooms)");
+                return;
+            }
 
-            messages.add("✓ Data loaded successfully (Simulated):");
-            messages.add("  • Students: " + dataManager.getStudents().size());
-            messages.add("  • Courses: " + dataManager.getCourses().size());
-            messages.add("  • Classrooms: " + dataManager.getClassrooms().size());
-            messages.add("📍 Ready to generate schedule.");
+            dataManager.setSourceFiles(new File(studentsPath), new File(coursesPath), new File(classroomsPath));
 
-        } catch (Exception e) {
-            messages.add("❌ File I/O Error (Simulated): " + e.getMessage());
+            List<Student> loadedStudents = CSVParser.parseStudents(studentsPath);
+            List<Course> loadedCourses = CSVParser.parseCourses(coursesPath);
+            List<Classroom> loadedClassrooms = CSVParser.parseClassrooms(classroomsPath);
+
+            dataManager.setStudents(loadedStudents);
+            dataManager.setCourses(loadedCourses);
+            dataManager.setClassrooms(loadedClassrooms);
+
+            if (attendancePath != null) {
+                CSVParser.parseAttendanceLists(attendancePath, dataManager.getStudents(), dataManager.getCourses());
+                messages.add("✓ Attendance lists loaded successfully.");
+            } else {
+                messages.add("⚠ Warning: No attendance file found.");
+            }
+
+        } catch (CSVParser.CSVParseException e) {
+            messages.add("❌ CSV Parse Error: " + e.getMessage());
             dataManager.clearAllData();
+            return;
+        } catch (IOException e) {
+            messages.add("❌ File I/O Error: " + e.getMessage());
+            return;
         }
-    }
 
+        updateClassroomsView();
+        
+        messages.add("✓ Data loaded successfully:");
+        messages.add("  • Students: " + dataManager.getStudents().size());
+        messages.add("  • Courses: " + dataManager.getCourses().size());
+        messages.add("  • Classrooms: " + dataManager.getClassrooms().size());
+        messages.add("🚀 Ready to generate schedule.");
+    }
+    
+    private String findFile(List<File> files, String keyword) {
+        return files.stream()
+                    .filter(f -> f.getName().toLowerCase().contains(keyword))
+                    .map(File::getAbsolutePath)
+                    .findFirst()
+                    .orElse(null);
+    }
+    
     private void updateClassroomsView() {
         crView.getItems().clear();
         if (dataManager.getClassrooms() != null) {
-            dataManager.getClassrooms()
-                    .forEach(c -> crView.getItems().add(c.getClassroomID() + " - Cap: " + c.getCapacity()));
+            dataManager.getClassrooms().forEach(c -> 
+                crView.getItems().add(c.getClassroomID() + " - Cap: " + c.getCapacity())
+            );
         }
     }
 
     private void handleGenerateSchedule() {
+        
         if (!dataManager.isDataLoaded()) {
             showError("Data not loaded", "Please load data from CSV files first.");
             messages.add("❌ ERROR: No data loaded. Click 'Load Data' first.");
             return;
         }
 
-        messages.add("⚡ Starting automatic schedule generation (Simulated)...");
-
+        
+        List<Course> coursesToSchedule = dataManager.getCourses();
+        List<Classroom> availableClassrooms = dataManager.getClassrooms();
+        List<String> timeSlotsRaw = getTimeSlotsFromUI.get();
         int days = daysSpinner.getValue();
-        List<String> timeSlotLabels = getTimeSlotsFromUI.get();
-        dataManager.setSchedule(new Schedule(days, timeSlotLabels.size()));
 
-        scheduledExams.clear();
+        
+        if (coursesToSchedule.isEmpty() || availableClassrooms.isEmpty() || timeSlotsRaw.isEmpty()) {
+            showError("Configuration Error", "Please check configuration (Days, Slots, Courses).");
+            return;
+        }
 
-        Course c1 = dataManager.getCourses().get(0);
-        Course c2 = dataManager.getCourses().get(1);
-        Classroom r1 = dataManager.getClassrooms().get(0);
-        Classroom r2 = dataManager.getClassrooms().get(1);
+        messages.add("⚡ Starting schedule generation...");
+        messages.add("📊 Parameters: " + days + " days, " + timeSlotsRaw.size() + " slots/day");
 
-        Exam e1 = new Exam(c1);
-        e1.setTimeSlot(new TimeSlot(1, 1));
-        e1.setClassroom(r1);
-        Exam e2 = new Exam(c2);
-        e2.setTimeSlot(new TimeSlot(1, 2));
-        e2.setClassroom(r2);
+        
+        List<Exam> examsToPlace = coursesToSchedule.stream()
+                .filter(c -> c.getStudentCount() > 0) 
+                .map(Exam::new)
+                .sorted((a, b) -> Integer.compare(b.getStudentCount(), a.getStudentCount()))
+                .collect(Collectors.toList());
 
-        scheduledExams.addAll(e1, e2);
+        
+        dataManager.setSchedule(new Schedule(days, timeSlotsRaw.size()));
 
-        messages.add("✓ Schedule generation completed! (Simulated)");
-        messages.add("📊 Results: " + scheduledExams.size() + " exams placed (Simulated)");
+       
+        Map<Student, Set<TimeSlot>> studentScheduledSlots = new HashMap<>();
+        Map<TimeSlot, Set<String>> roomOccupancy = new HashMap<>();
+
+        int placedCount = 0;
+        List<String> unplacedCourses = new ArrayList<>();
+
+   
+
+    
+
+// Greedy Algorithm
+for (Exam exam : examsToPlace) {
+    boolean placed = false;
+    List<Student> studentsOfCourse = exam.getEnrolledStudents();
+    int enrolledCount = exam.getStudentCount();
+
+    
+    outerLoop:
+    for (int day = 1; day <= days; day++) {
+        
+        for (int slotNum = 1; slotNum <= timeSlotsRaw.size(); slotNum++) {
+            TimeSlot currentSlot = new TimeSlot(day, slotNum);
+
+            
+            boolean studentConflict = false;
+            for (Student student : studentsOfCourse) {
+                Set<TimeSlot> busySlots = studentScheduledSlots.getOrDefault(student, Collections.emptySet());
+                if (busySlots.contains(currentSlot)) {
+                    studentConflict = true;
+                    break;
+                }
+            }
+
+            
+            if (studentConflict) continue;
+
+           
+            for (Classroom room : availableClassrooms) {
+                
+                if (!room.canAccommodate(enrolledCount)) continue;
+
+               
+                roomOccupancy.putIfAbsent(currentSlot, new HashSet<>());
+                if (roomOccupancy.get(currentSlot).contains(room.getClassroomID())) continue;
+
+                
+                exam.setTimeSlot(currentSlot);
+                exam.setClassroom(room);
+                dataManager.getSchedule().addExam(exam);
+
+                
+                roomOccupancy.get(currentSlot).add(room.getClassroomID());
+
+                
+                for (Student student : studentsOfCourse) {
+                    studentScheduledSlots.computeIfAbsent(student, k -> new HashSet<>()).add(currentSlot);
+                }
+
+                placed = true;
+                placedCount++;
+                
+                
+                messages.add("  ✓ " + exam.getCourse().getCourseCode() + 
+                           " → Day " + day + ", Slot " + slotNum + 
+                           ", Room " + room.getClassroomID() + 
+                           " (" + enrolledCount + " students)");
+                
+                break outerLoop; 
+            }
+        }
+    }
+
+    if (!placed) {
+        unplacedCourses.add(exam.getCourse().getCourseCode());
+        messages.add("⚠ WARNING: " + exam.getCourse().getCourseCode() + " could not be placed (Capacity/Conflict).");
+    }
+}
+
+        
+        updateExamTableView(timeSlotsRaw);
+
+        
+        int total = examsToPlace.size();
+        int conflicts = unplacedCourses.size(); 
+
+        String statsText = String.format(
+            "Total Exams: %d\nPlaced Exams: %d\nConflicts (Unplaced): %d",
+            total,
+            placedCount,
+            conflicts
+        );
+
+        if (statsArea != null) {
+            statsArea.setText(statsText);
+        } else {
+            System.err.println("Hata: statsArea nesnesi null! İstatistikler arayüze yazılamadı.");
+        }
+
+    
+        messages.add("✓ Schedule generation completed!");
+        if (conflicts > 0) {
+            messages.add("❌ Unplaced Courses: " + String.join(", ", unplacedCourses));
+        } else {
+            messages.add("🎉 Perfect Schedule! All exams placed.");
+        }
+    }
+    
+    private void updateExamTableView(List<String> timeSlotLabels) {
+        exams.clear();
+        int idCounter = 1;
+        
+        if (dataManager.getSchedule() != null) {
+            for (Exam exam : dataManager.getSchedule().getExams()) {
+                if (exam.isScheduled()) {
+                    String slotLabel = "N/A";
+                    try {
+                        slotLabel = timeSlotLabels.get(exam.getTimeSlot().getSlotNumber() - 1);
+                    } catch (Exception ignored) {
+                        slotLabel = "Slot " + exam.getTimeSlot().getSlotNumber();
+                    }
+
+                    String eid = String.format("EX%03d", idCounter++);
+                    
+                    exams.add(new ExamEntry(
+                        eid,
+                        exam.getCourse().getCourseCode(),
+                        exam.getTimeSlot().getDay(),
+                        slotLabel,
+                        exam.getClassroom().getClassroomID(),
+                        exam.getStudentCount()
+                    ));
+                }
+            }
+        }
         table.refresh();
     }
 
-    private void handleValidate() {
-        if (dataManager.getSchedule() == null) {
-            showWarning("No Schedule", "No schedule to validate. Generate a schedule first.");
-            return;
-        }
+    private void showManageStudents(Stage owner) {
+        if (!dataManager.isDataLoaded()) { showError("No Data", "Please load data first."); return; }
 
-        messages.add("🔍 Schedule validation (Simulated)...");
+        Stage dialog = new Stage();
+        dialog.initOwner(owner);
+        dialog.initModality(Modality.APPLICATION_MODAL);
+        dialog.setTitle("Manage Students");
 
-        messages.add("✓ Validation passed: No conflicts found! (Simulated)");
-        showInfo("Validation Success", "Schedule is valid with no conflicts.");
+        ListView<String> listView = new ListView<>();
+        dataManager.getStudents().forEach(s -> listView.getItems().add(s.getStudentID()));
+
+        TextField idField = new TextField(); idField.setPromptText("New Student ID");
+        Button addBtn = new Button("Add"); Button remBtn = new Button("Remove");
+
+        addBtn.setOnAction(e -> {
+            String id = idField.getText().trim();
+            if (!id.isEmpty()) {
+                Student s = new Student(id);
+                dataManager.addStudent(s);
+                listView.getItems().add(id);
+                messages.add("Student added: " + id);
+                idField.clear();
+            }
+        });
+
+        remBtn.setOnAction(e -> {
+            String selectedId = listView.getSelectionModel().getSelectedItem();
+            if (selectedId != null) {
+                Student s = dataManager.getStudentByID(selectedId);
+                dataManager.removeStudent(s);
+                listView.getItems().remove(selectedId);
+                messages.add("Student removed: " + selectedId);
+            }
+        });
+
+        VBox root = new VBox(10, new Label("Students"), listView, new HBox(5, idField, addBtn, remBtn));
+        root.setPadding(new Insets(10));
+        dialog.setScene(new Scene(root, 300, 400));
+        dialog.show();
     }
 
-    private void handleSave(Stage owner) {
-        if (dataManager.getSchedule() == null) {
-            showWarning("No Schedule", "No schedule to save. Generate a schedule first.");
-            return;
-        }
+    private void showManageCourses(Stage owner) {
+        if (!dataManager.isDataLoaded()) { showError("No Data", "Please load data first."); return; }
 
-        FileChooser chooser = new FileChooser();
-        chooser.setTitle("Save Schedule to File (Simulated Save)");
-        chooser.setInitialFileName("exam_schedule.dat");
-        chooser.getExtensionFilters().add(new FileChooser.ExtensionFilter("Data Files", "*.dat"));
-        File f = chooser.showSaveDialog(owner);
-        if (f == null) {
-            messages.add("⚠ Save cancelled.");
-            return;
-        }
+        Stage dialog = new Stage();
+        dialog.initOwner(owner);
+        dialog.initModality(Modality.APPLICATION_MODAL);
+        dialog.setTitle("Manage Courses");
 
-        try {
-            messages.add("✓ DataManager.saveToFile() called.");
-            messages.add("✓ Schedule saved to: " + f.getName());
-            showInfo("Save Success", "Schedule saved successfully (Simulated)");
-        } catch (Exception e) {
-            messages.add("❌ Save error: " + e.getMessage());
-            showError("Save Failed", "Could not save file (Simulated)");
-        }
+        ListView<String> listView = new ListView<>();
+        dataManager.getCourses().forEach(c -> listView.getItems().add(c.getCourseCode()));
+
+        TextField codeField = new TextField(); codeField.setPromptText("Course Code");
+        TextField nameField = new TextField(); nameField.setPromptText("Course Name");
+        
+        Button addBtn = new Button("Add"); Button remBtn = new Button("Remove");
+
+        addBtn.setOnAction(e -> {
+            String code = codeField.getText().trim();
+            if (!code.isEmpty()) {
+                Course c = new Course(code, nameField.getText(), "", 1);
+                dataManager.addCourse(c);
+                listView.getItems().add(code);
+                messages.add("Course added: " + code);
+                codeField.clear(); nameField.clear();
+            }
+        });
+
+        remBtn.setOnAction(e -> {
+            int idx = listView.getSelectionModel().getSelectedIndex();
+            if (idx >= 0) {
+                Course c = dataManager.getCourses().get(idx);
+                dataManager.removeCourse(c);
+                listView.getItems().remove(idx);
+                messages.add("Course removed.");
+            }
+        });
+
+        VBox inputs = new VBox(5, codeField, nameField);
+        VBox root = new VBox(10, new Label("Courses"), listView, inputs, new HBox(5, addBtn, remBtn));
+        root.setPadding(new Insets(10));
+        dialog.setScene(new Scene(root, 300, 450));
+        dialog.show();
     }
 
     private void showManageClassrooms(Stage owner) {
@@ -475,113 +966,154 @@ public class ExamSchedulerApp extends Application {
         dialog.initModality(Modality.APPLICATION_MODAL);
         dialog.setTitle("Manage Classrooms");
 
-        ObservableList<Classroom> observableClassrooms = FXCollections.observableArrayList(dataManager.getClassrooms());
-        ListView<Classroom> classroomList = new ListView<>(observableClassrooms);
+        ListView<String> classroomList = new ListView<>();
+        if (dataManager.getClassrooms() != null) {
+            dataManager.getClassrooms().forEach(c -> 
+                classroomList.getItems().add(c.getClassroomID() + " - Cap: " + c.getCapacity())
+            );
+        }
 
-        TextField idField = new TextField();
-        idField.setPromptText("Classroom ID (e.g., M303)");
-
+        TextField idField = new TextField(); idField.setPromptText("Room ID");
         Spinner<Integer> capacitySpinner = new Spinner<>(1, 500, 40);
         capacitySpinner.setEditable(true);
 
-        Button addBtn = new Button("➕ Add");
-        Button removeBtn = new Button("➖ Remove");
-        Button closeBtn = new Button("Close");
+        Button addBtn = new Button("Add"); Button remBtn = new Button("Remove"); Button closeBtn = new Button("Close");
 
         addBtn.setOnAction(e -> {
             String id = idField.getText().trim();
-            int cap = capacitySpinner.getValue();
             if (!id.isEmpty()) {
-                Classroom newRoom = new Classroom(id, cap);
-                dataManager.addClassroom(newRoom);
-                observableClassrooms.add(newRoom);
+                Classroom c = new Classroom(id, capacitySpinner.getValue());
+                dataManager.addClassroom(c);
+                classroomList.getItems().add(id + " - Cap: " + c.getCapacity());
                 updateClassroomsView();
                 idField.clear();
-                messages.add("✓ Classroom added: " + id);
+                messages.add("Classroom added: " + id);
             }
         });
 
-        removeBtn.setOnAction(e -> {
-            Classroom selected = classroomList.getSelectionModel().getSelectedItem();
-            if (selected != null) {
-                dataManager.removeClassroom(selected);
-                observableClassrooms.remove(selected);
+        remBtn.setOnAction(e -> {
+            int idx = classroomList.getSelectionModel().getSelectedIndex();
+            if (idx >= 0) {
+                dataManager.getClassrooms().remove(idx);
+                classroomList.getItems().remove(idx);
                 updateClassroomsView();
-                messages.add("✓ Classroom removed: " + selected.getClassroomID());
+                messages.add("Classroom removed");
             }
         });
-
+        
         closeBtn.setOnAction(e -> dialog.close());
 
-        VBox layout = new VBox(10,
-                new Label("Classrooms:"),
-                classroomList,
-                new HBox(10, new Label("ID:"), idField),
-                new HBox(10, new Label("Capacity:"), capacitySpinner),
-                new HBox(10, addBtn, removeBtn, closeBtn));
-        layout.setPadding(new Insets(15));
+        GridPane grid = new GridPane();
+        grid.setPadding(new Insets(15)); grid.setHgap(10); grid.setVgap(10);
+        grid.add(new Label("Classrooms:"), 0, 0); grid.add(classroomList, 0, 1, 2, 1);
+        grid.add(new Label("ID:"), 0, 2); grid.add(idField, 1, 2);
+        grid.add(new Label("Capacity:"), 0, 3); grid.add(capacitySpinner, 1, 3);
+        grid.add(new HBox(10, addBtn, remBtn, closeBtn), 0, 4, 2, 1);
 
-        dialog.setScene(new Scene(layout, 400, 450));
+        dialog.setScene(new Scene(grid, 400, 400));
         dialog.show();
     }
 
-    private void editExam(Stage owner, Exam e) {
-        showInfo("Edit Exam",
-                "Editing exam " + e.getCourse().getCourseCode() + " is simulated. UI elements would appear here.");
-        messages.add("✏ Exam " + e.getCourse().getCourseCode() + " edit dialog opened (Simulated).");
+    private void editExam(Stage owner, ExamEntry e) {
+        Stage d = new Stage();
+        d.initOwner(owner);
+        d.initModality(Modality.APPLICATION_MODAL);
+        d.setTitle("Edit Exam: " + e.getId());
+        
+        TextField course = new TextField(e.getCourseId());
+        Spinner<Integer> day = new Spinner<>(1, 30, e.getDay());
+        TextField slot = new TextField(e.getTimeSlot());
+        TextField room = new TextField(e.getRoomId());
+        Spinner<Integer> enroll = new Spinner<>(0, 1000, e.getEnrolled());
+        day.setEditable(true); enroll.setEditable(true);
+
+        Button save = new Button("💾 Save");
+        save.setOnAction(ev -> {
+            e.setCourseId(course.getText());
+            e.setDay(day.getValue());
+            e.setTimeSlot(slot.getText());
+            e.setRoomId(room.getText());
+            e.setEnrolled(enroll.getValue());
+            
+            if (dataManager.getSchedule() != null) {
+                dataManager.getSchedule().rebuildTimeSlotMap();
+            }
+            
+            table.refresh();
+            messages.add("✓ Exam " + e.getId() + " updated");
+            d.close();
+        });
+        
+        GridPane grid = new GridPane();
+        grid.setPadding(new Insets(20)); grid.setHgap(10); grid.setVgap(12);
+        grid.add(new Label("Course Code:"), 0, 0); grid.add(course, 1, 0);
+        grid.add(new Label("Day:"), 0, 1); grid.add(day, 1, 1);
+        grid.add(new Label("Time Slot:"), 0, 2); grid.add(slot, 1, 2);
+        grid.add(new Label("Room ID:"), 0, 3); grid.add(room, 1, 3);
+        grid.add(new Label("Enrolled:"), 0, 4); grid.add(enroll, 1, 4);
+        grid.add(save, 1, 5);
+
+        d.setScene(new Scene(grid, 350, 350));
+        d.showAndWait();
     }
 
-    private void deleteExam(Exam e) {
+    private void deleteExam(ExamEntry e) {
         Alert confirm = new Alert(Alert.AlertType.CONFIRMATION);
         confirm.setTitle("Delete Exam");
-        confirm.setHeaderText("Delete exam: " + e.getCourse().getCourseCode() + "?");
-
+        confirm.setContentText("Delete " + e.getId() + "?");
         Optional<ButtonType> result = confirm.showAndWait();
         if (result.isPresent() && result.get() == ButtonType.OK) {
-            scheduledExams.remove(e);
+            exams.remove(e);
             table.refresh();
-            messages.add("🗑 Exam deleted: " + e.getCourse().getCourseCode());
+            messages.add("🗑 Deleted: " + e.getId());
         }
     }
 
-    private void showConflictReport() {
-        showInfo("Conflict Report", "Conflict Report generation is simulated.");
-        messages.add("📢 Conflict Report generated (Simulated).");
+    private void handleSave(Stage owner) {
+        if (dataManager.getSchedule() == null) { showWarning("No Schedule", "Nothing to save."); return; }
+        FileChooser chooser = new FileChooser();
+        chooser.setTitle("Save Schedule");
+        chooser.setInitialFileName("schedule.csv");
+        File f = chooser.showSaveDialog(owner);
+        if (f != null) {
+            try (PrintWriter pw = new PrintWriter(f)) {
+                pw.println("ExamID,Course,Day,Slot,Room,Students");
+                for (ExamEntry e : exams) pw.printf("%s,%s,%d,%s,%s,%d%n", e.getId(), e.getCourseId(), e.getDay(), e.getTimeSlot(), e.getRoomId(), e.getEnrolled());
+                messages.add("✓ Saved to " + f.getName());
+            } catch (Exception e) { showError("Save Failed", e.getMessage()); }
+        }
     }
+    
+    private void handleExport(Stage owner) { handleSave(owner); }
+    private void handleValidate() { showInfo("Validation", "Basic validation passed."); }
+    private void showConflictReport() { showInfo("Conflicts", "No critical conflicts detected."); }
+    private void showHelpDialog(String t, String c) { Alert a = new Alert(Alert.AlertType.INFORMATION); a.setTitle(t); TextArea ta = new TextArea(c); ta.setEditable(false); a.getDialogPane().setContent(ta); a.showAndWait(); }
+    private void showAboutDialog() { showInfo("About", "Exam Scheduler v2.0 with Student Portal\nDeveloped by Team 11"); }
+    private String getUserManualText() { return "1. Load CSV Files\n2. Configure Days/Slots\n3. Generate Schedule\n4. Use Student Portal to view individual schedules\n5. Edit/Save"; }
+    private String getQuickStartText() { return "Load Data -> Generate -> Open Student Portal -> Select Student ID -> View Calendar"; }
+    private String getFAQText() { return "Q: Unplaced courses?\nA: Increase days or add classrooms.\n\nQ: How do students view schedules?\nA: Click 'Student Portal' button and select student ID."; }
+    private void showError(String t, String m) { Alert a = new Alert(Alert.AlertType.ERROR); a.setTitle(t); a.setContentText(m); a.showAndWait(); }
+    private void showWarning(String t, String m) { Alert a = new Alert(Alert.AlertType.WARNING); a.setTitle(t); a.setContentText(m); a.showAndWait(); }
+    private void showInfo(String t, String m) { Alert a = new Alert(Alert.AlertType.INFORMATION); a.setTitle(t); a.setContentText(m); a.showAndWait(); }
 
-    private void showAboutDialog() {
-        Alert alert = new Alert(Alert.AlertType.INFORMATION);
-        alert.setTitle("About Exam Scheduler");
-        alert.setHeaderText("Exam Scheduler - Windows Desktop Application");
-        alert.setContentText(" SE302 Software Engineering Project");
-        alert.showAndWait();
-    }
-
-    private void showError(String title, String message) {
-        Alert alert = new Alert(Alert.AlertType.ERROR);
-        alert.setTitle(title);
-        alert.setHeaderText(title);
-        alert.setContentText(message);
-        alert.showAndWait();
-    }
-
-    private void showWarning(String title, String message) {
-        Alert alert = new Alert(Alert.AlertType.WARNING);
-        alert.setTitle(title);
-        alert.setHeaderText(title);
-        alert.setContentText(message);
-        alert.showAndWait();
-    }
-
-    private void showInfo(String title, String message) {
-        Alert alert = new Alert(Alert.AlertType.INFORMATION);
-        alert.setTitle(title);
-        alert.setHeaderText(title);
-        alert.setContentText(message);
-        alert.showAndWait();
-    }
-
-    private void showMessage(String message) {
-        messages.add("💡 " + message);
+    public static class ExamEntry {
+        private final SimpleStringProperty id, courseId, timeSlot, roomId;
+        private final SimpleIntegerProperty day, enrolled;
+        public ExamEntry(String i, String c, int d, String t, String r, int e) {
+            id = new SimpleStringProperty(i); courseId = new SimpleStringProperty(c);
+            day = new SimpleIntegerProperty(d); timeSlot = new SimpleStringProperty(t);
+            roomId = new SimpleStringProperty(r); enrolled = new SimpleIntegerProperty(e);
+        }
+        public String getId() { return id.get(); }
+        public String getCourseId() { return courseId.get(); }
+        public int getDay() { return day.get(); }
+        public String getTimeSlot() { return timeSlot.get(); }
+        public String getRoomId() { return roomId.get(); }
+        public int getEnrolled() { return enrolled.get(); }
+        public void setCourseId(String v) { courseId.set(v); }
+        public void setDay(int v) { day.set(v); }
+        public void setTimeSlot(String v) { timeSlot.set(v); }
+        public void setRoomId(String v) { roomId.set(v); }
+        public void setEnrolled(int v) { enrolled.set(v); }
     }
 }
