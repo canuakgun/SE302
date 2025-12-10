@@ -1,5 +1,31 @@
 package com.examscheduler.ui;
 
+import java.io.File;
+import java.io.IOException;
+import java.io.PrintWriter;
+import java.nio.file.Files;
+import java.time.LocalDate;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.Comparator;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Optional;
+import java.util.Set;
+import java.util.function.Supplier;
+import java.util.stream.Collectors;
+
+import com.examscheduler.logic.CSVParser;
+import com.examscheduler.logic.DataManager;
+import com.examscheduler.model.Classroom;
+import com.examscheduler.model.Course;
+import com.examscheduler.model.Exam;
+import com.examscheduler.model.Schedule;
+import com.examscheduler.model.Student;
+import com.examscheduler.model.TimeSlot;
+
 import javafx.application.Application;
 import javafx.beans.property.SimpleIntegerProperty;
 import javafx.beans.property.SimpleStringProperty;
@@ -8,23 +34,38 @@ import javafx.collections.ObservableList;
 import javafx.geometry.Insets;
 import javafx.geometry.Pos;
 import javafx.scene.Scene;
-import javafx.scene.control.*;
+import javafx.scene.control.Alert;
+import javafx.scene.control.Button;
+import javafx.scene.control.ButtonType;
+import javafx.scene.control.ComboBox;
+import javafx.scene.control.DatePicker;
+import javafx.scene.control.Label;
+import javafx.scene.control.ListView;
+import javafx.scene.control.Menu;
+import javafx.scene.control.MenuBar;
+import javafx.scene.control.MenuItem;
+import javafx.scene.control.ScrollPane;
+import javafx.scene.control.Separator;
+import javafx.scene.control.SeparatorMenuItem;
+import javafx.scene.control.Spinner;
+import javafx.scene.control.SplitPane;
+import javafx.scene.control.TableCell;
+import javafx.scene.control.TableColumn;
+import javafx.scene.control.TableView;
+import javafx.scene.control.TextArea;
+import javafx.scene.control.TextField;
+import javafx.scene.control.ToolBar;
 import javafx.scene.control.cell.PropertyValueFactory;
 import javafx.scene.control.cell.TextFieldListCell;
-import javafx.scene.layout.*;
+import javafx.scene.layout.BorderPane;
+import javafx.scene.layout.GridPane;
+import javafx.scene.layout.HBox;
+import javafx.scene.layout.Priority;
+import javafx.scene.layout.VBox;
 import javafx.stage.DirectoryChooser;
 import javafx.stage.FileChooser;
 import javafx.stage.Modality;
 import javafx.stage.Stage;
-import javafx.scene.text.Text;
-import java.io.File;
-import java.io.IOException;
-import java.io.PrintWriter;
-import java.nio.file.Files;
-import java.time.LocalDate;
-import java.util.*;
-import java.util.function.Supplier;
-import java.util.stream.Collectors;
 
 
 public class ExamSchedulerApp extends Application {
@@ -640,7 +681,9 @@ public class ExamSchedulerApp extends Application {
         dataManager.clearAllData();
 
         try {
-            List<File> files = Files.list(dir.toPath()).map(p -> p.toFile()).toList();
+            List<File> files = Files.list(dir.toPath())
+                        .map(p -> p.toFile())
+                        .collect(java.util.stream.Collectors.toList());
             
             String studentsPath = findFile(files, "student");
             String coursesPath = findFile(files, "course");
