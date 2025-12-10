@@ -1,21 +1,33 @@
 package com.examscheduler.model;
 
+import java.io.Serializable;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
+import java.util.stream.Collectors;
 
-public class Schedule {
+
+public class Schedule implements Serializable {
+    private static final long serialVersionUID = 1L;
+    
     private final int examPeriodDays;
     private final int slotsPerDay;
+    
+    
     private List<Exam> exams;
+    
+    
+    private Map<TimeSlot, List<Exam>> timeSlotMap;
 
     public Schedule(int examPeriodDays, int slotsPerDay) {
+        if (examPeriodDays <= 0) throw new IllegalArgumentException("Days must be positive");
+        if (slotsPerDay <= 0) throw new IllegalArgumentException("Slots must be positive");
+        
         this.examPeriodDays = examPeriodDays;
         this.slotsPerDay = slotsPerDay;
         this.exams = new ArrayList<>();
-    }
-
-    public List<Exam> getExams() {
-        return exams;
+        this.timeSlotMap = new HashMap<>();
     }
 
     public int getExamPeriodDays() {
@@ -26,77 +38,59 @@ public class Schedule {
         return slotsPerDay;
     }
 
+    public List<Exam> getExams() {
+        return new ArrayList<>(exams); 
+    }
+
+    
     public void addExam(Exam exam) {
         if (exam != null) {
             this.exams.add(exam);
+            if (exam.isScheduled()) {
+                timeSlotMap.computeIfAbsent(exam.getTimeSlot(), k -> new ArrayList<>()).add(exam);
+            }
         }
     }
-
+    
     public boolean removeExam(Exam exam) {
-        return this.exams.remove(exam);
+        if (exam != null && exams.remove(exam)) {
+            if (exam.isScheduled() && timeSlotMap.containsKey(exam.getTimeSlot())) {
+                timeSlotMap.get(exam.getTimeSlot()).remove(exam);
+            }
+            return true;
+        }
+        return false;
     }
 
-    public Exam getExamForCourse(Course course) {
-        if (course == null) return null;
-        
+   
+    public List<Exam> getScheduledExams() {
+        return exams.stream()
+                .filter(Exam::isScheduled)
+                .collect(Collectors.toList());
+    }
+
+    
+    public List<Exam> getExamsAtTimeSlot(TimeSlot timeSlot) {
+        return timeSlotMap.getOrDefault(timeSlot, new ArrayList<>());
+    }
+
+    
+    public void rebuildTimeSlotMap() {
+        timeSlotMap.clear();
         for (Exam exam : exams) {
-            if (exam.getCourse() != null && exam.getCourse().equals(course)) {
-                return exam;
+            if (exam.isScheduled()) {
+                timeSlotMap.computeIfAbsent(exam.getTimeSlot(), k -> new ArrayList<>()).add(exam);
             }
         }
-        return null;
     }
 
-    public List<Exam> getExamsForDay(int day) {
-        List<Exam> result = new ArrayList<>();
-        for (Exam exam : exams) {
-            // Sınavın bir saati atanmış mı? Ve günü tutuyor mu?
-            if (exam.getTimeSlot() != null && exam.getTimeSlot().getDay() == day) {
-                result.add(exam);
-            }
-        }
-        return result;
-    }
-
-    public List<Exam> getExamsForTimeSlot(TimeSlot timeSlot) {
-        List<Exam> result = new ArrayList<>();
-        if (timeSlot == null) return result;
-
-        for (Exam exam : exams) {
-            // Slotlar eşit mi?
-            if (timeSlot.equals(exam.getTimeSlot())) {
-                result.add(exam);
-            }
-        }
-        return result;
-    }
-
-    public List<Exam> getExamsForClassroom(Classroom classroom) {
-        List<Exam> result = new ArrayList<>();
-        if (classroom == null) return result;
-
-        for (Exam exam : exams) {
-            // Sınıflar eşit mi?
-            if (classroom.equals(exam.getClassroom())) {
-                result.add(exam);
-            }
-        }
-        return result;
-    }
-
-    public List<String> validateConstraints() {
-        // TODO: Logic Layer - This will be detailed with the ConstraintValidator.
-        // For now, we return an empty list as if there was no error.
-        return new ArrayList<>(); 
-    }
     @Override
     public String toString() {
         return "Schedule{" +
                 "days=" + examPeriodDays +
-                ", slotsPerDay=" + slotsPerDay +
+                ", slots=" + slotsPerDay +
                 ", totalExams=" + exams.size() +
+                ", scheduled=" + getScheduledExams().size() +
                 '}';
     }
-
-    
 }
