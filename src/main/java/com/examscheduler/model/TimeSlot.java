@@ -3,11 +3,20 @@ package com.examscheduler.model;
 import java.io.Serializable;
 import java.util.Objects;
 
+
 public class TimeSlot implements Comparable<TimeSlot>, Serializable {
+    private static final long serialVersionUID = 1L;
+    
     private int day;
     private int slotNumber;
 
     public TimeSlot(int day, int slotNumber) {
+        if (day <= 0) {
+            throw new IllegalArgumentException("Day must be positive");
+        }
+        if (slotNumber <= 0) {
+            throw new IllegalArgumentException("Slot number must be positive");
+        }
         this.day = day;
         this.slotNumber = slotNumber;
     }
@@ -16,10 +25,27 @@ public class TimeSlot implements Comparable<TimeSlot>, Serializable {
         return day;
     }
 
+    public void setDay(int day) {
+        if (day > 0) {
+            this.day = day;
+        }
+    }
+
     public int getSlotNumber() {
         return slotNumber;
     }
 
+    public void setSlotNumber(int slotNumber) {
+        if (slotNumber > 0) {
+            this.slotNumber = slotNumber;
+        }
+    }
+
+    /**
+     * User Requirement 5: Check if two time slots are consecutive
+     * @param other Another time slot
+     * @return true if slots are back-to-back on the same day
+     */
     public boolean isConsecutive(TimeSlot other) {
         if (other == null) return false;
         if (!isSameDay(other)) return false;
@@ -33,6 +59,9 @@ public class TimeSlot implements Comparable<TimeSlot>, Serializable {
 
     @Override
     public int compareTo(TimeSlot other) {
+        if (other == null) {
+            throw new NullPointerException("Cannot compare to null TimeSlot");
+        }
         if (this.day != other.day) {
             return Integer.compare(this.day, other.day);
         }
@@ -56,7 +85,11 @@ public class TimeSlot implements Comparable<TimeSlot>, Serializable {
     public String toString() {
         return "TimeSlot{" +
                 "day=" + day +
-                ", slotNumber=" + slotNumber +
+                ", slot=" + slotNumber +
                 '}';
+    }
+
+    public String toDisplayString() {
+        return "Day " + day + ", Slot " + slotNumber;
     }
 }
