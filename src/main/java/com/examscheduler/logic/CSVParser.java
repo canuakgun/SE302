@@ -21,8 +21,13 @@ import com.examscheduler.model.Student;
 public class CSVParser {
 
     public static class CSVParseException extends Exception {
-        public CSVParseException(String message) { super(message); }
-        public CSVParseException(String message, Throwable cause) { super(message, cause); }
+        public CSVParseException(String message) {
+            super(message);
+        }
+
+        public CSVParseException(String message, Throwable cause) {
+            super(message, cause);
+        }
     }
 
     // ==================== OKUMA METOTLARI ====================
@@ -33,7 +38,8 @@ public class CSVParser {
             String line;
             reader.readLine(); // Header atla
             while ((line = reader.readLine()) != null) {
-                if (!line.trim().isEmpty()) students.add(new Student(line.trim()));
+                if (!line.trim().isEmpty())
+                    students.add(new Student(line.trim()));
             }
         } catch (IOException e) {
             throw new CSVParseException("Error reading students file", e);
@@ -48,7 +54,8 @@ public class CSVParser {
             reader.readLine(); // Header atla
             while ((line = reader.readLine()) != null) {
                 line = line.trim();
-                if (line.isEmpty()) continue;
+                if (line.isEmpty())
+                    continue;
                 String[] parts = line.split(",");
                 if (parts.length >= 3) {
                     courses.add(new Course(parts[0].trim(), parts[1].trim(), parts[2].trim(), 1));
@@ -69,12 +76,14 @@ public class CSVParser {
             reader.readLine(); // Header atla
             while ((line = reader.readLine()) != null) {
                 line = line.trim();
-                if (line.isEmpty()) continue;
+                if (line.isEmpty())
+                    continue;
                 String[] parts = line.split(";");
                 if (parts.length == 2) {
                     try {
                         classrooms.add(new Classroom(parts[0].trim(), Integer.parseInt(parts[1].trim())));
-                    } catch (NumberFormatException ignored) {}
+                    } catch (NumberFormatException ignored) {
+                    }
                 }
             }
         } catch (Exception e) {
@@ -82,43 +91,66 @@ public class CSVParser {
         }
         return classrooms;
     }
-    
+
     /**
      * DÜZELTİLMİŞ METOT: Çok satırlı formatı destekler.
      * Satır 1: CourseCode
      * Satır 2: [Std1, Std2, ...]
      */
-    public static void parseAttendanceLists(String filePath, List<Student> students, List<Course> courses) throws CSVParseException {
+    public static void parseAttendanceLists(String filePath, List<Student> students, List<Course> courses)
+            throws CSVParseException {
         try (BufferedReader reader = new BufferedReader(new FileReader(filePath))) {
-            String line;
-            reader.readLine(); // Header varsa atla, yoksa ilk satırı oku
-            
-            while ((line = reader.readLine()) != null) {
+            String line = reader.readLine();
+
+            // Check if first line is a valid Course Code or Header
+            if (line != null) {
+                boolean isHeader = true;
+                String trimmed = line.trim();
+                for (Course c : courses) {
+                    if (c.getCourseCode().equalsIgnoreCase(trimmed)) {
+                        isHeader = false;
+                        break;
+                    }
+                }
+
+                if (isHeader) {
+                    // It's a header, skip it and read next line
+                    line = reader.readLine();
+                }
+            }
+
+            while (line != null) {
                 line = line.trim();
-                if (line.isEmpty()) continue;
+                if (line.isEmpty()) {
+                    line = reader.readLine();
+                    continue;
+                }
 
                 // 1. Satır: Ders Kodu
                 String courseCode = line;
                 Course targetCourse = null;
                 for (Course c : courses) {
                     if (c.getCourseCode().equalsIgnoreCase(courseCode)) {
-                        targetCourse = c; break;
+                        targetCourse = c;
+                        break;
                     }
                 }
 
                 // 2. Satır: Öğrenci Listesi
-                line = reader.readLine();
-                if (line == null) break; // Dosya sonu hatası önlemi
-                
+                String studentListLine = reader.readLine();
+                if (studentListLine == null)
+                    break; // Dosya sonu hatası önlemi
+
                 if (targetCourse != null) {
                     // Köşeli parantezleri temizle: [Std1, Std2] -> Std1, Std2
-                    String cleanLine = line.trim().replace("[", "").replace("]", "").replace("'", "");
+                    String cleanLine = studentListLine.trim().replace("[", "").replace("]", "").replace("'", "");
                     if (!cleanLine.isEmpty()) {
                         String[] studentIDs = cleanLine.split(",");
-                        
+
                         for (String stdId : studentIDs) {
                             String id = stdId.trim();
-                            if (id.isEmpty()) continue;
+                            if (id.isEmpty())
+                                continue;
 
                             // Öğrenciyi bul ve derse ekle
                             for (Student s : students) {
@@ -133,16 +165,20 @@ public class CSVParser {
                         }
                     }
                 }
+
+                // Read next course line for next iteration
+                line = reader.readLine();
             }
         } catch (IOException e) {
             throw new CSVParseException("Error parsing attendance", e);
         }
     }
-    
-    // ==================== SCHEDULE PARSING (EXPORT EDİLMİŞ OLAN CSV DOSYASI) ====================
+
+    // ==================== SCHEDULE PARSING (EXPORT EDİLMİŞ OLAN CSV DOSYASI)
+    // ====================
     public static List<Exam> parseSchedule(File file, DataManager dm, List<String> timeSlotLabels) throws IOException {
         List<Exam> loadedExams = new ArrayList<>();
-        
+
         try (BufferedReader reader = new BufferedReader(new FileReader(file))) {
             String line;
             // Header kontrolü (İlk satırda başlık varsa atla)
@@ -153,18 +189,20 @@ public class CSVParser {
             }
 
             while ((line = reader.readLine()) != null) {
-                if (line.trim().isEmpty()) continue;
+                if (line.trim().isEmpty())
+                    continue;
 
                 // Format: ExamID, CourseCode, Day, SlotString, RoomID, Students
                 String[] parts = line.split(",");
-                if (parts.length < 5) continue;
+                if (parts.length < 5)
+                    continue;
 
                 try {
                     String courseCode = parts[1].trim();
                     int day = Integer.parseInt(parts[2].trim());
                     String timeSlotStr = parts[3].trim();
                     String roomId = parts[4].trim();
-                    
+
                     // DÜZELTME: Öğrenci sayısını oku (Varsa)
                     int importedStudentCount = -1;
                     if (parts.length >= 6) {
@@ -181,7 +219,7 @@ public class CSVParser {
 
                     if (course != null && room != null) {
                         // ... (TimeSlot bulma kodu AYNI kalsın) ...
-                        int slotIndex = 1; 
+                        int slotIndex = 1;
                         for (int i = 0; i < timeSlotLabels.size(); i++) {
                             if (timeSlotLabels.get(i).equalsIgnoreCase(timeSlotStr)) {
                                 slotIndex = i + 1;
@@ -191,7 +229,8 @@ public class CSVParser {
                         if (slotIndex == 1 && timeSlotStr.toLowerCase().startsWith("slot ")) {
                             try {
                                 slotIndex = Integer.parseInt(timeSlotStr.substring(5).trim());
-                            } catch (Exception ignored) {}
+                            } catch (Exception ignored) {
+                            }
                         }
                         // ... (TimeSlot bulma kodu sonu) ...
 
@@ -199,12 +238,12 @@ public class CSVParser {
                         Exam exam = new Exam(course);
                         exam.setTimeSlot(new com.examscheduler.model.TimeSlot(day, slotIndex));
                         exam.setClassroom(room);
-                        
+
                         // DÜZELTME: Okunan sayıyı Exam nesnesine ata
                         if (importedStudentCount != -1) {
                             exam.setStudentCount(importedStudentCount);
                         }
-                        
+
                         loadedExams.add(exam);
                     }
                 } catch (Exception e) {
@@ -218,7 +257,8 @@ public class CSVParser {
     // ==================== YAZMA / GÜNCELLEME METOTLARI ====================
 
     public static void updateStudentFile(File file, List<Student> students) {
-        if (file == null) return;
+        if (file == null)
+            return;
         try (BufferedWriter writer = new BufferedWriter(new FileWriter(file))) {
             writer.write("StudentID");
             writer.newLine();
@@ -232,7 +272,8 @@ public class CSVParser {
     }
 
     public static void updateCourseFile(File file, List<Course> courses) {
-        if (file == null) return;
+        if (file == null)
+            return;
         try (BufferedWriter writer = new BufferedWriter(new FileWriter(file))) {
             writer.write("CourseCode,CourseName,Instructor");
             writer.newLine();
@@ -247,7 +288,8 @@ public class CSVParser {
     }
 
     public static void updateClassroomFile(File file, List<Classroom> classrooms) {
-        if (file == null) return;
+        if (file == null)
+            return;
         try (BufferedWriter writer = new BufferedWriter(new FileWriter(file))) {
             writer.write("ClassroomID;Capacity");
             writer.newLine();
