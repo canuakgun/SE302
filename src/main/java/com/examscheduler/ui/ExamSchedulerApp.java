@@ -1,5 +1,23 @@
 package com.examscheduler.ui;
 
+import java.io.File;
+import java.io.IOException;
+import java.io.PrintWriter;
+import java.nio.file.Files;
+import java.time.LocalDate;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.Comparator;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Optional;
+import java.util.Random;
+import java.util.Set;
+import java.util.function.Supplier;
+import java.util.stream.Collectors;
+
 import com.examscheduler.logic.CSVParser;
 import com.examscheduler.logic.DataManager;
 import com.examscheduler.model.Classroom;
@@ -17,22 +35,38 @@ import javafx.collections.ObservableList;
 import javafx.geometry.Insets;
 import javafx.geometry.Pos;
 import javafx.scene.Scene;
-import javafx.scene.control.*;
+import javafx.scene.control.Alert;
+import javafx.scene.control.Button;
+import javafx.scene.control.ButtonType;
+import javafx.scene.control.ComboBox;
+import javafx.scene.control.DatePicker;
+import javafx.scene.control.Label;
+import javafx.scene.control.ListView;
+import javafx.scene.control.Menu;
+import javafx.scene.control.MenuBar;
+import javafx.scene.control.MenuItem;
+import javafx.scene.control.ScrollPane;
+import javafx.scene.control.Separator;
+import javafx.scene.control.SeparatorMenuItem;
+import javafx.scene.control.Spinner;
+import javafx.scene.control.SplitPane;
+import javafx.scene.control.TableCell;
+import javafx.scene.control.TableColumn;
+import javafx.scene.control.TableView;
+import javafx.scene.control.TextArea;
+import javafx.scene.control.TextField;
+import javafx.scene.control.ToolBar;
 import javafx.scene.control.cell.PropertyValueFactory;
 import javafx.scene.control.cell.TextFieldListCell;
-import javafx.scene.layout.*;
+import javafx.scene.layout.BorderPane;
+import javafx.scene.layout.GridPane;
+import javafx.scene.layout.HBox;
+import javafx.scene.layout.Priority;
+import javafx.scene.layout.VBox;
 import javafx.stage.DirectoryChooser;
 import javafx.stage.FileChooser;
 import javafx.stage.Modality;
 import javafx.stage.Stage;
-import java.io.File;
-import java.io.IOException;
-import java.io.PrintWriter;
-import java.nio.file.Files;
-import java.time.LocalDate;
-import java.util.*;
-import java.util.function.Supplier;
-import java.util.stream.Collectors;
 
 public class ExamSchedulerApp extends Application {
 
@@ -73,25 +107,28 @@ public class ExamSchedulerApp extends Application {
         Button generateBtn = new Button("⚡ Generate Schedule");
         Button saveBtn = new Button("💾 Save Schedule");
         Button validateBtn = new Button("✓ Validate");
-        Button exportBtn = new Button("📤 Export");
+        Button exportBtn = new Button("📤 Export Schedule");
+        Button importScheduleBtn = new Button("📥 Import Schedule");
         Button studentPortalBtn = new Button("👤 Student Portal");
         loadBtn.setStyle(buttonStyle);
         generateBtn.setStyle(buttonStyle);
         saveBtn.setStyle(buttonStyle);
         validateBtn.setStyle(buttonStyle);
         exportBtn.setStyle(buttonStyle);
+        importScheduleBtn.setStyle(buttonStyle);
         studentPortalBtn.setStyle(
                 "-fx-background-color: #4CAF50; -fx-text-fill: white; -fx-padding: 8px 16px; -fx-font-weight: bold; -fx-cursor: hand;");
         toolBar.setStyle(toolBarStyle);
 
         toolBar.getItems().addAll(loadBtn, new Separator(), generateBtn, validateBtn, new Separator(),
-                saveBtn, exportBtn, new Separator(), studentPortalBtn);
+                saveBtn, exportBtn, importScheduleBtn, new Separator(), studentPortalBtn);
 
         loadBtn.setOnAction(e -> handleLoad(stage));
         generateBtn.setOnAction(e -> handleGenerateSchedule());
         saveBtn.setOnAction(e -> handleSave(stage));
         validateBtn.setOnAction(e -> handleValidate());
         exportBtn.setOnAction(e -> handleExport(stage));
+        importScheduleBtn.setOnAction(e -> handleImportSchedule(stage));
         studentPortalBtn.setOnAction(e -> showStudentPortal(stage));
 
         VBox leftPane = createConfigurationPanel(buttonStyle);
@@ -490,7 +527,7 @@ public class ExamSchedulerApp extends Application {
         tsLabel.setStyle("-fx-font-weight: bold;");
         tsView.setEditable(true);
         tsView.setCellFactory(TextFieldListCell.forListView());
-        tsView.getItems().addAll("09:00-11:00", "12:00-14:00", "15:00-17:00");
+        tsView.getItems().addAll("09:00-11:00", "11:00-13:00", "13:00-15:00", "15:00-17:00", "17:00-19:00");
         tsView.setPrefHeight(120);
 
         Button addTs = new Button("+");
@@ -638,7 +675,7 @@ public class ExamSchedulerApp extends Application {
         dataManager.clearAllData();
 
         try {
-            List<File> files = Files.list(dir.toPath()).map(p -> p.toFile()).toList();
+            List<File> files = Files.list(dir.toPath()).map(p -> p.toFile()).collect(Collectors.toList());
 
             String studentsPath = findFile(files, "student");
             String coursesPath = findFile(files, "course");
@@ -683,6 +720,55 @@ public class ExamSchedulerApp extends Application {
         messages.add("  • Courses: " + dataManager.getCourses().size());
         messages.add("  • Classrooms: " + dataManager.getClassrooms().size());
         messages.add("🚀 Ready to generate schedule.");
+    }
+
+    private void handleImportSchedule(Stage owner) {
+        // 1. Temel veriler (Dersler, Sınıflar) yüklü mü kontrol et
+        if (!dataManager.isDataLoaded()) {
+            showError("Data Required", "Please load base data (Students, Courses, Classrooms) first using 'Load Data'.");
+            return;
+        }
+
+        FileChooser fileChooser = new FileChooser();
+        fileChooser.setTitle("Import Schedule CSV");
+        fileChooser.getExtensionFilters().add(new FileChooser.ExtensionFilter("CSV Files", "*.csv"));
+        File file = fileChooser.showOpenDialog(owner);
+
+        if (file == null) return;
+
+        try {
+            // 2. CSVParser ile dosyayı okut ve Exam listesini al (TEK SATIR!)
+            List<String> currentSlots = getTimeSlotsFromUI.get();
+            List<Exam> loadedExams = CSVParser.parseSchedule(file, dataManager, currentSlots);
+
+            if (loadedExams.isEmpty()) {
+                showWarning("Import Failed", "No valid exams found in file or matching courses not found.");
+                return;
+            }
+
+            // 3. Yeni Schedule nesnesini oluştur
+            int days = daysSpinner.getValue();
+            Schedule newSchedule = new Schedule(days, currentSlots.size());
+            
+            // Okunan sınavları takvime ekle
+            for (Exam exam : loadedExams) {
+                newSchedule.addExam(exam);
+            }
+
+            // 4. Sistemi güncelle
+            dataManager.setSchedule(newSchedule);
+            updateExamTableView(currentSlots);
+            
+            // İstatistikleri yazdır
+            if (statsArea != null) {
+                statsArea.setText("Imported Exams: " + loadedExams.size() + "\nStatus: Loaded from file");
+            }
+            messages.add("✅ Imported schedule from " + file.getName());
+            messages.add("📊 Successfully loaded " + loadedExams.size() + " exams.");
+
+        } catch (IOException e) {
+            showError("Import Failed", "Could not read file: " + e.getMessage());
+        }
     }
 
     private String findFile(List<File> files, String keyword) {
@@ -1575,7 +1661,7 @@ public class ExamSchedulerApp extends Application {
                 "• Exam Period (Days): 1-30 days\n" +
                 "• Time Slots Per Day: Default 3 slots\n\n" +
                 "TIME SLOT MANAGEMENT:\n" +
-                "• Default: 09:00-11:00, 12:00-14:00, 15:00-17:00\n" +
+                "• Default: 09:00-11:00, 11:00-13:00, 13:00-15:00, 15:00-17:00, 17:00-19:00\n" +
                 "• Add new slots: Click '+' button\n" +
                 "• Remove slots: Select and click '-' button\n" +
                 "• Edit slots: Double-click to modify\n\n" +
@@ -1962,8 +2048,10 @@ public class ExamSchedulerApp extends Application {
                 "3. ⏰ Time Slots\n" +
                 "   • Keep defaults or modify:\n" +
                 "     09:00-11:00\n" +
-                "     12:00-14:00  \n" +
-                "     15:00-17:00\n\n" +
+                "     11:00-13:00  \n" +
+                "     13:00-15:00\n" +
+                "     15:00-17:00\n" +
+                "     17:00-19:00\n\n" +
                 "┌─────────────────────────────────────────┐\n" +
                 "│      GENERATE SCHEDULE                  │\n" +
                 "└─────────────────────────────────────────┘\n\n" +
