@@ -1439,7 +1439,7 @@ public class ExamSchedulerApp extends Application {
         return new ArrayList<>(unplacedCourses);
     }
 
-    // --- UPDATED HELP TEXTS WITH BETTER FORMATTING ---
+    // --- UPDATED HELP TEXTS WITHOUT TEXT BLOCKS ---
 
     private void showHelpDialog(String title, String content) {
         Stage dialog = new Stage();
@@ -1470,770 +1470,610 @@ public class ExamSchedulerApp extends Application {
     }
 
     private void showAboutDialog() {
-        String aboutText = """
-                ╔══════════════════════════════════════════╗
-                ║           EXAM SCHEDULER v2.0            ║
-                ║        with Student Portal Feature       ║
-                ╚══════════════════════════════════════════╝
-
-                📅 APPLICATION OVERVIEW
-                • Intelligent Exam Scheduling System
-                • Student Portal for Individual Schedules
-                • Conflict Detection & Resolution
-                • Multi-format Export Capabilities
-
-                👥 DEVELOPMENT TEAM 11
-                • Project Lead: [Your Name]
-                • Backend Developer: [Name]
-                • Frontend Developer: [Name]
-                • QA Tester: [Name]
-
-                🔧 TECHNOLOGIES USED
-                • Java 17
-                • JavaFX for GUI
-                • Greedy Algorithm for Scheduling
-                • CSV Data Management
-
-                📞 CONTACT INFORMATION
-                • Email: support@examscheduler.edu
-                • Website: www.examscheduler.edu
-                • Documentation: docs.examscheduler.edu
-
-                📄 LICENSE
-                • Educational Use License
-                • Version: 2.0.0
-                • Release Date: """ + LocalDate.now().getYear() + """
-
-                ⭐ FEATURES
-                ✓ Load CSV Data Files
-                ✓ Generate Optimal Schedules
-                ✓ Student Conflict Prevention
-                ✓ Room Capacity Management
-                ✓ Instructor Scheduling
-                ✓ Student Portal Access
-                ✓ Export Multiple Formats
-                ✓ Detailed Validation Reports
-
-                🚀 Thank you for using Exam Scheduler!
-                """;
+        String aboutText = "╔══════════════════════════════════════════╗\n" +
+                "║           EXAM SCHEDULER v2.0            ║\n" +
+                "║        with Student Portal Feature       ║\n" +
+                "╚══════════════════════════════════════════╝\n\n" +
+                "📅 APPLICATION OVERVIEW\n" +
+                "• Intelligent Exam Scheduling System\n" +
+                "• Student Portal for Individual Schedules\n" +
+                "• Conflict Detection & Resolution\n" +
+                "• Multi-format Export Capabilities\n\n" +
+                "👥 DEVELOPMENT TEAM 11\n" +
+                "• Project Lead: [Your Name]\n" +
+                "• Backend Developer: [Name]\n" +
+                "• Frontend Developer: [Name]\n" +
+                "• QA Tester: [Name]\n\n" +
+                "🔧 TECHNOLOGIES USED\n" +
+                "• Java 17\n" +
+                "• JavaFX for GUI\n" +
+                "• Greedy Algorithm for Scheduling\n" +
+                "• CSV Data Management\n\n" +
+                "📞 CONTACT INFORMATION\n" +
+                "• Email: support@examscheduler.edu\n" +
+                "• Website: www.examscheduler.edu\n" +
+                "• Documentation: docs.examscheduler.edu\n\n" +
+                "📄 LICENSE\n" +
+                "• Educational Use License\n" +
+                "• Version: 2.0.0\n" +
+                "• Release Date: " + LocalDate.now().getYear() + "\n\n" +
+                "⭐ FEATURES\n" +
+                "✓ Load CSV Data Files\n" +
+                "✓ Generate Optimal Schedules\n" +
+                "✓ Student Conflict Prevention\n" +
+                "✓ Room Capacity Management\n" +
+                "✓ Instructor Scheduling\n" +
+                "✓ Student Portal Access\n" +
+                "✓ Export Multiple Formats\n" +
+                "✓ Detailed Validation Reports\n\n" +
+                "🚀 Thank you for using Exam Scheduler!";
 
         showHelpDialog("ℹ About Exam Scheduler", aboutText);
     }
 
     private String getUserManualText() {
-        return """
-                📚 EXAM SCHEDULER - USER MANUAL v2.0
-                =====================================
-
-                TABLE OF CONTENTS
-                1. Getting Started
-                2. Data Management
-                3. Schedule Configuration
-                4. Generating Schedules
-                5. Student Portal
-                6. Validation & Reports
-                7. Export Options
-                8. Advanced Features
-
-                --------------------------
-                1. GETTING STARTED
-                --------------------------
-
-                SYSTEM REQUIREMENTS:
-                • Java 11 or higher
-                • Minimum 2GB RAM
-                • CSV files in proper format
-
-                INITIAL SETUP:
-                1. Launch the application
-                2. Prepare your CSV files:
-                   - students.csv: StudentID,Name
-                   - courses.csv: CourseCode,CourseName,Instructor,MaxCapacity
-                   - classrooms.csv: ClassroomID,Capacity
-                   - attendance.csv: CourseCode,StudentID (optional)
-                3. Click 'Load Data' and select folder containing CSV files
-
-                INTERFACE OVERVIEW:
-                ┌─────────────────────────────────────────────┐
-                │ Left Panel: Configuration Settings          │
-                │ Center Panel: Exam Schedule Table           │
-                │ Right Panel: Messages & Statistics          │
-                │ Top: Menu Bar & Toolbar                     │
-                └─────────────────────────────────────────────┘
-
-                --------------------------
-                2. DATA MANAGEMENT
-                --------------------------
-
-                LOADING DATA:
-                • Use 'File → Load Data...' or 📁 button
-                • Select folder containing all CSV files
-                • System validates file structure automatically
-
-                REQUIRED FILES:
-                • students.csv: Must contain StudentID column
-                • courses.csv: Must contain CourseCode and CourseName
-                • classrooms.csv: Must contain ClassroomID and Capacity
-
-                OPTIONAL FILES:
-                • attendance.csv: Links students to courses
-                • If missing, you can assign manually later
-
-                MANAGING DATA:
-                • Edit → Manage Students: Add/remove students
-                • Edit → Manage Courses: Add/remove courses
-                • Edit → Manage Classrooms: Add/remove classrooms
-
-                DATA VALIDATION:
-                ✓ File format checking
-                ✓ Duplicate detection
-                ✓ Capacity validation
-
-                --------------------------
-                3. SCHEDULE CONFIGURATION
-                --------------------------
-
-                EXAM PERIOD SETTINGS:
-                • Exam Start Date: Select calendar date
-                • Exam Period (Days): 1-30 days
-                • Time Slots Per Day: Default 3 slots
-
-                TIME SLOT MANAGEMENT:
-                • Default: 09:00-11:00, 12:00-14:00, 15:00-17:00
-                • Add new slots: Click '+' button
-                • Remove slots: Select and click '-' button
-                • Edit slots: Double-click to modify
-
-                CLASSROOM SETTINGS:
-                • View all available classrooms
-                • See capacity for each room
-                • Manage via 'Manage Classrooms' button
-
-                --------------------------
-                4. GENERATING SCHEDULES
-                --------------------------
-
-                GENERATION PROCESS:
-                1. Ensure data is loaded (✓ check messages)
-                2. Configure exam period and slots
-                3. Click '⚡ Generate Schedule' button
-
-                ALGORITHM FEATURES:
-                • Greedy algorithm with randomization
-                • Student conflict prevention
-                • Room capacity optimization
-                • Instructor scheduling
-                • Consecutive exam avoidance
-
-                GENERATION STEPS:
-                1. Sort courses by enrollment (largest first)
-                2. For each course, find suitable time slot
-                3. Check all constraints:
-                   - Student availability
-                   - Room capacity
-                   - Instructor schedule
-                   - No consecutive exams
-                4. Assign or mark as unplaced
-
-                POST-GENERATION:
-                • View schedule in central table
-                • Check statistics in right panel
-                • Review messages for warnings
-
-                --------------------------
-                5. STUDENT PORTAL
-                --------------------------
-
-                ACCESSING PORTAL:
-                • Click '👤 Student Portal' button
-                • Or use 'Students → Student Portal...'
-
-                FEATURES:
-                • Calendar View: Visual schedule by day/slot
-                • List View: Detailed exam list
-                • Summary: Total exams and distribution
-                • Export: Save personal schedule
-
-                CALENDAR FEATURES:
-                • Color-coded exam blocks
-                • Course codes and room numbers
-                • Date-based navigation
-
-                EXPORT OPTIONS:
-                • Text file with all exam details
-                • Includes dates, times, rooms
-                • Suitable for printing
-
-                --------------------------
-                6. VALIDATION & REPORTS
-                --------------------------
-
-                VALIDATION TYPES:
-                • Quick Validation: Click '✓ Validate' button
-                • Detailed Report: 'Schedule → Conflict Report'
-
-                CHECKED CONSTRAINTS:
-                1. Student Conflicts (Critical)
-                2. Room Double-booking (Critical)
-                3. Instructor Conflicts (Critical)
-                4. Consecutive Exams (Warning)
-                5. Unplaced Courses (Critical)
-
-                CONFLICT REPORT CONTENTS:
-                • Summary statistics
-                • List of unplaced courses
-                • Detailed conflict descriptions
-                • Recommendations for fixes
-
-                RESOLVING CONFLICTS:
-                • Increase exam days
-                • Add more classrooms
-                • Adjust time slots
-                • Reduce course enrollments
-
-                --------------------------
-                7. EXPORT OPTIONS
-                --------------------------
-
-                AVAILABLE FORMATS:
-                • CSV: Comma-separated values
-                • JSON: JavaScript Object Notation
-                • Print Report: Formatted document
-
-                WHAT'S EXPORTED:
-                • Full schedule with all details
-                • Student-specific schedules
-                • Conflict reports
-                • Statistical summaries
-
-                EXPORT LOCATIONS:
-                • Choose folder on your computer
-                • Default naming with timestamps
-                • Overwrite protection
-
-                --------------------------
-                8. ADVANCED FEATURES
-                --------------------------
-
-                MANUAL EDITING:
-                • Edit individual exams: Click ✏ button
-                • Delete exams: Click 🗑 button
-                • Real-time validation updates
-
-                CUSTOM CONSTRAINTS:
-                • Adjust consecutive exam policy
-                • Set instructor preferences
-                • Define room preferences
-
-                STATISTICAL ANALYSIS:
-                • Placement rate calculation
-                • Resource utilization metrics
-                • Conflict frequency tracking
-
-                TROUBLESHOOTING:
-
-                COMMON ISSUES:
-                Issue: "No data loaded"
-                Fix: Check CSV file formats and reload
-
-                Issue: "All exams unplaced"
-                Fix: Increase days, add rooms, or reduce slots
-
-                Issue: "Student conflicts"
-                Fix: Increase exam period length
-
-                SUPPORT:
-                • Check FAQ section
-                • Use Quick Start Guide
-                • Contact: support@examscheduler.edu
-
-                VERSION: 2.0
-                LAST UPDATED: """ + LocalDate.now().getYear() + "-" +
+        return "📚 EXAM SCHEDULER - USER MANUAL v2.0\n" +
+                "======================================\n\n" +
+                "TABLE OF CONTENTS\n" +
+                "1. Getting Started\n" +
+                "2. Data Management\n" +
+                "3. Schedule Configuration\n" +
+                "4. Generating Schedules\n" +
+                "5. Student Portal\n" +
+                "6. Validation & Reports\n" +
+                "7. Export Options\n" +
+                "8. Advanced Features\n\n" +
+                "--------------------------\n" +
+                "1. GETTING STARTED\n" +
+                "--------------------------\n\n" +
+                "SYSTEM REQUIREMENTS:\n" +
+                "• Java 11 or higher\n" +
+                "• Minimum 2GB RAM\n" +
+                "• CSV files in proper format\n\n" +
+                "INITIAL SETUP:\n" +
+                "1. Launch the application\n" +
+                "2. Prepare your CSV files:\n" +
+                "   - students.csv: StudentID,Name\n" +
+                "   - courses.csv: CourseCode,CourseName,Instructor,MaxCapacity\n" +
+                "   - classrooms.csv: ClassroomID,Capacity\n" +
+                "   - attendance.csv: CourseCode,StudentID (optional)\n" +
+                "3. Click 'Load Data' and select folder containing CSV files\n\n" +
+                "INTERFACE OVERVIEW:\n" +
+                "┌─────────────────────────────────────────────┐\n" +
+                "│ Left Panel: Configuration Settings          │\n" +
+                "│ Center Panel: Exam Schedule Table           │\n" +
+                "│ Right Panel: Messages & Statistics          │\n" +
+                "│ Top: Menu Bar & Toolbar                     │\n" +
+                "└─────────────────────────────────────────────┘\n\n" +
+                "--------------------------\n" +
+                "2. DATA MANAGEMENT\n" +
+                "--------------------------\n\n" +
+                "LOADING DATA:\n" +
+                "• Use 'File → Load Data...' or 📁 button\n" +
+                "• Select folder containing all CSV files\n" +
+                "• System validates file structure automatically\n\n" +
+                "REQUIRED FILES:\n" +
+                "• students.csv: Must contain StudentID column\n" +
+                "• courses.csv: Must contain CourseCode and CourseName\n" +
+                "• classrooms.csv: Must contain ClassroomID and Capacity\n\n" +
+                "OPTIONAL FILES:\n" +
+                "• attendance.csv: Links students to courses\n" +
+                "• If missing, you can assign manually later\n\n" +
+                "MANAGING DATA:\n" +
+                "• Edit → Manage Students: Add/remove students\n" +
+                "• Edit → Manage Courses: Add/remove courses\n" +
+                "• Edit → Manage Classrooms: Add/remove classrooms\n\n" +
+                "DATA VALIDATION:\n" +
+                "✓ File format checking\n" +
+                "✓ Duplicate detection\n" +
+                "✓ Capacity validation\n\n" +
+                "--------------------------\n" +
+                "3. SCHEDULE CONFIGURATION\n" +
+                "--------------------------\n\n" +
+                "EXAM PERIOD SETTINGS:\n" +
+                "• Exam Start Date: Select calendar date\n" +
+                "• Exam Period (Days): 1-30 days\n" +
+                "• Time Slots Per Day: Default 3 slots\n\n" +
+                "TIME SLOT MANAGEMENT:\n" +
+                "• Default: 09:00-11:00, 12:00-14:00, 15:00-17:00\n" +
+                "• Add new slots: Click '+' button\n" +
+                "• Remove slots: Select and click '-' button\n" +
+                "• Edit slots: Double-click to modify\n\n" +
+                "CLASSROOM SETTINGS:\n" +
+                "• View all available classrooms\n" +
+                "• See capacity for each room\n" +
+                "• Manage via 'Manage Classrooms' button\n\n" +
+                "--------------------------\n" +
+                "4. GENERATING SCHEDULES\n" +
+                "--------------------------\n\n" +
+                "GENERATION PROCESS:\n" +
+                "1. Ensure data is loaded (✓ check messages)\n" +
+                "2. Configure exam period and slots\n" +
+                "3. Click '⚡ Generate Schedule' button\n\n" +
+                "ALGORITHM FEATURES:\n" +
+                "• Greedy algorithm with randomization\n" +
+                "• Student conflict prevention\n" +
+                "• Room capacity optimization\n" +
+                "• Instructor scheduling\n" +
+                "• Consecutive exam avoidance\n\n" +
+                "GENERATION STEPS:\n" +
+                "1. Sort courses by enrollment (largest first)\n" +
+                "2. For each course, find suitable time slot\n" +
+                "3. Check all constraints:\n" +
+                "   - Student availability\n" +
+                "   - Room capacity\n" +
+                "   - Instructor schedule\n" +
+                "   - No consecutive exams\n" +
+                "4. Assign or mark as unplaced\n\n" +
+                "POST-GENERATION:\n" +
+                "• View schedule in central table\n" +
+                "• Check statistics in right panel\n" +
+                "• Review messages for warnings\n\n" +
+                "--------------------------\n" +
+                "5. STUDENT PORTAL\n" +
+                "--------------------------\n\n" +
+                "ACCESSING PORTAL:\n" +
+                "• Click '👤 Student Portal' button\n" +
+                "• Or use 'Students → Student Portal...'\n\n" +
+                "FEATURES:\n" +
+                "• Calendar View: Visual schedule by day/slot\n" +
+                "• List View: Detailed exam list\n" +
+                "• Summary: Total exams and distribution\n" +
+                "• Export: Save personal schedule\n\n" +
+                "CALENDAR FEATURES:\n" +
+                "• Color-coded exam blocks\n" +
+                "• Course codes and room numbers\n" +
+                "• Date-based navigation\n\n" +
+                "EXPORT OPTIONS:\n" +
+                "• Text file with all exam details\n" +
+                "• Includes dates, times, rooms\n" +
+                "• Suitable for printing\n\n" +
+                "--------------------------\n" +
+                "6. VALIDATION & REPORTS\n" +
+                "--------------------------\n\n" +
+                "VALIDATION TYPES:\n" +
+                "• Quick Validation: Click '✓ Validate' button\n" +
+                "• Detailed Report: 'Schedule → Conflict Report'\n\n" +
+                "CHECKED CONSTRAINTS:\n" +
+                "1. Student Conflicts (Critical)\n" +
+                "2. Room Double-booking (Critical)\n" +
+                "3. Instructor Conflicts (Critical)\n" +
+                "4. Consecutive Exams (Warning)\n" +
+                "5. Unplaced Courses (Critical)\n\n" +
+                "CONFLICT REPORT CONTENTS:\n" +
+                "• Summary statistics\n" +
+                "• List of unplaced courses\n" +
+                "• Detailed conflict descriptions\n" +
+                "• Recommendations for fixes\n\n" +
+                "RESOLVING CONFLICTS:\n" +
+                "• Increase exam days\n" +
+                "• Add more classrooms\n" +
+                "• Adjust time slots\n" +
+                "• Reduce course enrollments\n\n" +
+                "--------------------------\n" +
+                "7. EXPORT OPTIONS\n" +
+                "--------------------------\n\n" +
+                "AVAILABLE FORMATS:\n" +
+                "• CSV: Comma-separated values\n" +
+                "• JSON: JavaScript Object Notation\n" +
+                "• Print Report: Formatted document\n\n" +
+                "WHAT'S EXPORTED:\n" +
+                "• Full schedule with all details\n" +
+                "• Student-specific schedules\n" +
+                "• Conflict reports\n" +
+                "• Statistical summaries\n\n" +
+                "EXPORT LOCATIONS:\n" +
+                "• Choose folder on your computer\n" +
+                "• Default naming with timestamps\n" +
+                "• Overwrite protection\n\n" +
+                "--------------------------\n" +
+                "8. ADVANCED FEATURES\n" +
+                "--------------------------\n\n" +
+                "MANUAL EDITING:\n" +
+                "• Edit individual exams: Click ✏ button\n" +
+                "• Delete exams: Click 🗑 button\n" +
+                "• Real-time validation updates\n\n" +
+                "CUSTOM CONSTRAINTS:\n" +
+                "• Adjust consecutive exam policy\n" +
+                "• Set instructor preferences\n" +
+                "• Define room preferences\n\n" +
+                "STATISTICAL ANALYSIS:\n" +
+                "• Placement rate calculation\n" +
+                "• Resource utilization metrics\n" +
+                "• Conflict frequency tracking\n\n" +
+                "TROUBLESHOOTING:\n\n" +
+                "COMMON ISSUES:\n" +
+                "Issue: \"No data loaded\"\n" +
+                "Fix: Check CSV file formats and reload\n\n" +
+                "Issue: \"All exams unplaced\"\n" +
+                "Fix: Increase days, add rooms, or reduce slots\n\n" +
+                "Issue: \"Student conflicts\"\n" +
+                "Fix: Increase exam period length\n\n" +
+                "SUPPORT:\n" +
+                "• Check FAQ section\n" +
+                "• Use Quick Start Guide\n" +
+                "• Contact: support@examscheduler.edu\n\n" +
+                "VERSION: 2.0\n" +
+                "LAST UPDATED: " + LocalDate.now().getYear() + "-" +
                 String.format("%02d", LocalDate.now().getMonthValue()) + "-" +
                 String.format("%02d", LocalDate.now().getDayOfMonth());
     }
 
     private String getFAQText() {
-        return """
-                ❓ FREQUENTLY ASKED QUESTIONS (FAQ)
-                ===================================
-
-                📊 GENERAL QUESTIONS
-                --------------------
-
-                Q1: What is the purpose of this application?
-                A1: Exam Scheduler is designed to automatically generate optimal
-                    exam schedules for educational institutions, considering
-                    multiple constraints like room capacity, student availability,
-                    and instructor schedules.
-
-                Q2: Is there a limit to the number of students or courses?
-                A2: Theoretically no, but performance is optimized for:
-                    • Up to 10,000 students
-                    • Up to 500 courses
-                    • Up to 100 classrooms
-
-                Q3: Can I use this for different types of scheduling?
-                A3: Yes! While designed for exams, it can be adapted for:
-                    • Class scheduling
-                    • Meeting room booking
-                    • Event planning
-
-                📁 DATA MANAGEMENT
-                ------------------
-
-                Q4: What CSV format should I use?
-                A4: Required CSV formats:
-
-                students.csv:
-                StudentID,Name,Email
-                S001,John Doe,john@edu.edu
-                S002,Jane Smith,jane@edu.edu
-
-                courses.csv:
-                CourseCode,CourseName,Instructor,MaxCapacity
-                CS101,Intro to CS,Dr. Smith,100
-                MATH201,Calculus I,Dr. Johnson,80
-
-                classrooms.csv:
-                ClassroomID,Capacity
-                A101,50
-                B202,100
-
-                Q5: What if I don't have an attendance.csv file?
-                A5: You can:
-                    1. Create one manually
-                    2. Use 'Manage Courses' to assign students later
-                    3. The system will work but scheduling may be less optimal
-
-                Q6: Can I import data from Excel?
-                A6: Yes! Save your Excel files as:
-                    • File → Save As
-                    • Choose "CSV (Comma delimited) (*.csv)"
-                    • Use UTF-8 encoding for best results
-
-                ⚙ CONFIGURATION
-                ---------------
-
-                Q7: How many time slots can I add per day?
-                A7: Technically unlimited, but practical limits:
-                    • Recommended: 3-6 slots
-                    • Maximum tested: 10 slots
-                    • Each slot should be at least 2 hours
-
-                Q8: What's the best exam period length?
-                A8: Depends on your constraints:
-                    • Small institutions: 3-5 days
-                    • Medium: 5-10 days
-                    • Large: 10-20 days
-                    • Rule: More days = fewer conflicts
-
-                Q9: Can I schedule exams on weekends?
-                A9: Yes! The system treats all days equally. Just count
-                    weekend days in your total exam period.
-
-                ⚡ SCHEDULE GENERATION
-                ----------------------
-
-                Q10: Why are some courses not placed?
-                A10: Common reasons:
-                     1. Not enough exam days
-                     2. Classroom capacity too small
-                     3. Time slot conflicts with student schedules
-                     4. Instructor unavailable
-
-                     Solutions:
-                     • Increase exam period
-                     • Add larger classrooms
-                     • Adjust time slots
-                     • Review student enrollment
-
-                Q11: How does the algorithm prioritize courses?
-                A11: By default:
-                     1. Courses with most students first
-                     2. Courses with specialized room requirements
-                     3. Instructor availability
-                     4. Time preferences
-
-                Q12: Can I manually override the schedule?
-                A12: Yes! After generation:
-                     • Click ✏ to edit any exam
-                     • Change day, time, or room
-                     • System will warn about conflicts
-
-                👤 STUDENT PORTAL
-                -----------------
-
-                Q13: How do students access their schedules?
-                A13: Two methods:
-                     1. Through administrator (your) interface
-                     2. Export schedules and distribute
-                     3. Future: Web portal integration
-
-                Q14: Can students see only their own exams?
-                A14: Yes! The student portal filters by:
-                     • Selected student ID
-                     • Only shows their enrolled courses
-                     • Private and secure
-
-                Q15: What if a student has consecutive exams?
-                A15: The system shows warnings for:
-                     • Same-day consecutive exams
-                     • Recommendations for rescheduling
-                     • Manual adjustment options
-
-                ✓ VALIDATION & CONFLICTS
-                -------------------------
-
-                Q16: What's considered a "critical" conflict?
-                A16: Critical conflicts prevent scheduling:
-                     • Student double-booked in same slot
-                     • Room double-booked
-                     • Instructor teaching two courses simultaneously
-                     • Course cannot be placed at all
-
-                Q17: What's considered a "warning"?
-                A17: Warnings don't prevent scheduling but are suboptimal:
-                     • Students with consecutive exams
-                     • Underutilized classrooms
-                     • Long gaps between student exams
-
-                Q18: How do I fix validation errors?
-                A18: Step-by-step approach:
-                     1. Check Conflict Report for details
-                     2. Increase exam days if many conflicts
-                     3. Add classrooms if capacity issues
-                     4. Adjust time slots if consecutive exam warnings
-
-                📤 EXPORT & SHARING
-                --------------------
-
-                Q19: What export formats are available?
-                A19: Currently:
-                     • CSV: For spreadsheet programs
-                     • JSON: For web applications
-                     • TXT: For printing and sharing
-                     Future: PDF, Excel, iCalendar
-
-                Q20: Can I export for specific students only?
-                A20: Yes! Two methods:
-                     1. Use Student Portal → Export My Schedule
-                     2. Filter main schedule and export
-
-                Q21: Is there batch export capability?
-                A21: Not yet, but you can:
-                     • Export full schedule
-                     • Export individual student schedules
-                     • Combine using external tools
-
-                🔧 TROUBLESHOOTING
-                -------------------
-
-                Q22: Application crashes on startup
-                A22: Try:
-                     1. Update Java to latest version
-                     2. Check system memory (min 2GB)
-                     3. Run as administrator
-                     4. Reinstall application
-
-                Q23: CSV files not loading properly
-                A23: Common issues:
-                     • Wrong file encoding (use UTF-8)
-                     • Missing required columns
-                     • Special characters in headers
-                     • Empty rows at end of file
-
-                Q24: Schedule generation takes too long
-                A24: Optimization tips:
-                     • Reduce number of courses
-                     • Limit exam period to necessary days
-                     • Close other applications
-                     • Upgrade computer RAM
-
-                Q25: Can't see all columns in table
-                A25: Solutions:
-                     • Scroll horizontally
-                     • Maximize window
-                     • Hide unnecessary columns
-                     • Export to see all data
-
-                📞 SUPPORT & RESOURCES
-                -----------------------
-
-                Q26: Where can I get more help?
-                A26: Available resources:
-                     • This FAQ section
-                     • User Manual (Help menu)
-                     • Quick Start Guide
-                     • Email: support@examscheduler.edu
-
-                Q27: Are there video tutorials?
-                A27: Yes! Check our YouTube channel:
-                     • Basic setup: youtu.be/exam-scheduler-setup
-                     • Advanced features: youtu.be/exam-scheduler-advanced
-
-                Q28: Can I request new features?
-                A28: Absolutely! Send feature requests to:
-                     • Email: features@examscheduler.edu
-                     • Include: Use case, benefits, priority
-
-                Q29: Is there a mobile app?
-                A29: Currently desktop only, but:
-                     • Student schedules can be exported to mobile
-                     • Web version planned for next release
-                     • Mobile app in development
-
-                Q30: How do I report bugs?
-                A30: Please include:
-                     1. Application version
-                     2. Steps to reproduce
-                     3. Error message screenshot
-                     4. System information
-                     Send to: bugs@examscheduler.edu
-
-                LAST UPDATED: """ + LocalDate.now().toString() + """
-
-                Need more help? Contact: help@examscheduler.edu
-                """;
+        return "❓ FREQUENTLY ASKED QUESTIONS (FAQ)\n" +
+                "===================================\n\n" +
+                "📊 GENERAL QUESTIONS\n" +
+                "--------------------\n\n" +
+                "Q1: What is the purpose of this application?\n" +
+                "A1: Exam Scheduler is designed to automatically generate optimal \n" +
+                "    exam schedules for educational institutions, considering \n" +
+                "    multiple constraints like room capacity, student availability, \n" +
+                "    and instructor schedules.\n\n" +
+                "Q2: Is there a limit to the number of students or courses?\n" +
+                "A2: Theoretically no, but performance is optimized for:\n" +
+                "    • Up to 10,000 students\n" +
+                "    • Up to 500 courses\n" +
+                "    • Up to 100 classrooms\n\n" +
+                "Q3: Can I use this for different types of scheduling?\n" +
+                "A3: Yes! While designed for exams, it can be adapted for:\n" +
+                "    • Class scheduling\n" +
+                "    • Meeting room booking\n" +
+                "    • Event planning\n\n" +
+                "📁 DATA MANAGEMENT\n" +
+                "------------------\n\n" +
+                "Q4: What CSV format should I use?\n" +
+                "A4: Required CSV formats:\n\n" +
+                "students.csv:\n" +
+                "StudentID,Name,Email\n" +
+                "S001,John Doe,john@edu.edu\n" +
+                "S002,Jane Smith,jane@edu.edu\n\n" +
+                "courses.csv:\n" +
+                "CourseCode,CourseName,Instructor,MaxCapacity\n" +
+                "CS101,Intro to CS,Dr. Smith,100\n" +
+                "MATH201,Calculus I,Dr. Johnson,80\n\n" +
+                "classrooms.csv:\n" +
+                "ClassroomID,Capacity\n" +
+                "A101,50\n" +
+                "B202,100\n\n" +
+                "Q5: What if I don't have an attendance.csv file?\n" +
+                "A5: You can:\n" +
+                "    1. Create one manually\n" +
+                "    2. Use 'Manage Courses' to assign students later\n" +
+                "    3. The system will work but scheduling may be less optimal\n\n" +
+                "Q6: Can I import data from Excel?\n" +
+                "A6: Yes! Save your Excel files as:\n" +
+                "    • File → Save As\n" +
+                "    • Choose \"CSV (Comma delimited) (*.csv)\"\n" +
+                "    • Use UTF-8 encoding for best results\n\n" +
+                "⚙ CONFIGURATION\n" +
+                "---------------\n\n" +
+                "Q7: How many time slots can I add per day?\n" +
+                "A7: Technically unlimited, but practical limits:\n" +
+                "    • Recommended: 3-6 slots\n" +
+                "    • Maximum tested: 10 slots\n" +
+                "    • Each slot should be at least 2 hours\n\n" +
+                "Q8: What's the best exam period length?\n" +
+                "A8: Depends on your constraints:\n" +
+                "    • Small institutions: 3-5 days\n" +
+                "    • Medium: 5-10 days  \n" +
+                "    • Large: 10-20 days\n" +
+                "    • Rule: More days = fewer conflicts\n\n" +
+                "Q9: Can I schedule exams on weekends?\n" +
+                "A9: Yes! The system treats all days equally. Just count \n" +
+                "    weekend days in your total exam period.\n\n" +
+                "⚡ SCHEDULE GENERATION\n" +
+                "---------------------\n\n" +
+                "Q10: Why are some courses not placed?\n" +
+                "A10: Common reasons:\n" +
+                "     1. Not enough exam days\n" +
+                "     2. Classroom capacity too small\n" +
+                "     3. Time slot conflicts with student schedules\n" +
+                "     4. Instructor unavailable\n" +
+                "     \n" +
+                "     Solutions:\n" +
+                "     • Increase exam period\n" +
+                "     • Add larger classrooms\n" +
+                "     • Adjust time slots\n" +
+                "     • Review student enrollment\n\n" +
+                "Q11: How does the algorithm prioritize courses?\n" +
+                "A11: By default:\n" +
+                "     1. Courses with most students first\n" +
+                "     2. Courses with specialized room requirements\n" +
+                "     3. Instructor availability\n" +
+                "     4. Time preferences\n\n" +
+                "Q12: Can I manually override the schedule?\n" +
+                "A12: Yes! After generation:\n" +
+                "     • Click ✏ to edit any exam\n" +
+                "     • Change day, time, or room\n" +
+                "     • System will warn about conflicts\n\n" +
+                "👤 STUDENT PORTAL\n" +
+                "-----------------\n\n" +
+                "Q13: How do students access their schedules?\n" +
+                "A13: Two methods:\n" +
+                "     1. Through administrator (your) interface\n" +
+                "     2. Export schedules and distribute\n" +
+                "     3. Future: Web portal integration\n\n" +
+                "Q14: Can students see only their own exams?\n" +
+                "A14: Yes! The student portal filters by:\n" +
+                "     • Selected student ID\n" +
+                "     • Only shows their enrolled courses\n" +
+                "     • Private and secure\n\n" +
+                "Q15: What if a student has consecutive exams?\n" +
+                "A15: The system shows warnings for:\n" +
+                "     • Same-day consecutive exams\n" +
+                "     • Recommendations for rescheduling\n" +
+                "     • Manual adjustment options\n\n" +
+                "✓ VALIDATION & CONFLICTS\n" +
+                "-------------------------\n\n" +
+                "Q16: What's considered a \"critical\" conflict?\n" +
+                "A16: Critical conflicts prevent scheduling:\n" +
+                "     • Student double-booked in same slot\n" +
+                "     • Room double-booked\n" +
+                "     • Instructor teaching two courses simultaneously\n" +
+                "     • Course cannot be placed at all\n\n" +
+                "Q17: What's considered a \"warning\"?\n" +
+                "A17: Warnings don't prevent scheduling but are suboptimal:\n" +
+                "     • Students with consecutive exams\n" +
+                "     • Underutilized classrooms\n" +
+                "     • Long gaps between student exams\n\n" +
+                "Q18: How do I fix validation errors?\n" +
+                "A18: Step-by-step approach:\n" +
+                "     1. Check Conflict Report for details\n" +
+                "     2. Increase exam days if many conflicts\n" +
+                "     3. Add classrooms if capacity issues\n" +
+                "     4. Adjust time slots if consecutive exam warnings\n\n" +
+                "📤 EXPORT & SHARING\n" +
+                "-------------------\n\n" +
+                "Q19: What export formats are available?\n" +
+                "A19: Currently:\n" +
+                "     • CSV: For spreadsheet programs\n" +
+                "     • JSON: For web applications\n" +
+                "     • TXT: For printing and sharing\n" +
+                "     Future: PDF, Excel, iCalendar\n\n" +
+                "Q20: Can I export for specific students only?\n" +
+                "A20: Yes! Two methods:\n" +
+                "     1. Use Student Portal → Export My Schedule\n" +
+                "     2. Filter main schedule and export\n\n" +
+                "Q21: Is there batch export capability?\n" +
+                "A21: Not yet, but you can:\n" +
+                "     • Export full schedule\n" +
+                "     • Export individual student schedules\n" +
+                "     • Combine using external tools\n\n" +
+                "🔧 TROUBLESHOOTING\n" +
+                "-------------------\n\n" +
+                "Q22: Application crashes on startup\n" +
+                "A22: Try:\n" +
+                "     1. Update Java to latest version\n" +
+                "     2. Check system memory (min 2GB)\n" +
+                "     3. Run as administrator\n" +
+                "     4. Reinstall application\n\n" +
+                "Q23: CSV files not loading properly\n" +
+                "A23: Common issues:\n" +
+                "     • Wrong file encoding (use UTF-8)\n" +
+                "     • Missing required columns\n" +
+                "     • Special characters in headers\n" +
+                "     • Empty rows at end of file\n\n" +
+                "Q24: Schedule generation takes too long\n" +
+                "A24: Optimization tips:\n" +
+                "     • Reduce number of courses\n" +
+                "     • Limit exam period to necessary days\n" +
+                "     • Close other applications\n" +
+                "     • Upgrade computer RAM\n\n" +
+                "Q25: Can't see all columns in table\n" +
+                "A25: Solutions:\n" +
+                "     • Scroll horizontally\n" +
+                "     • Maximize window\n" +
+                "     • Hide unnecessary columns\n" +
+                "     • Export to see all data\n\n" +
+                "📞 SUPPORT & RESOURCES\n" +
+                "----------------------\n\n" +
+                "Q26: Where can I get more help?\n" +
+                "A26: Available resources:\n" +
+                "     • This FAQ section\n" +
+                "     • User Manual (Help menu)\n" +
+                "     • Quick Start Guide\n" +
+                "     • Email: support@examscheduler.edu\n\n" +
+                "Q27: Are there video tutorials?\n" +
+                "A27: Yes! Check our YouTube channel:\n" +
+                "     • Basic setup: youtu.be/exam-scheduler-setup\n" +
+                "     • Advanced features: youtu.be/exam-scheduler-advanced\n\n" +
+                "Q28: Can I request new features?\n" +
+                "A28: Absolutely! Send feature requests to:\n" +
+                "     • Email: features@examscheduler.edu\n" +
+                "     • Include: Use case, benefits, priority\n\n" +
+                "Q29: Is there a mobile app?\n" +
+                "A29: Currently desktop only, but:\n" +
+                "     • Student schedules can be exported to mobile\n" +
+                "     • Web version planned for next release\n" +
+                "     • Mobile app in development\n\n" +
+                "Q30: How do I report bugs?\n" +
+                "A30: Please include:\n" +
+                "     1. Application version\n" +
+                "     2. Steps to reproduce\n" +
+                "     3. Error message screenshot\n" +
+                "     4. System information\n" +
+                "     Send to: bugs@examscheduler.edu\n\n" +
+                "LAST UPDATED: " + LocalDate.now().toString() + "\n\n" +
+                "Need more help? Contact: help@examscheduler.edu";
     }
 
     private String getQuickStartText() {
-        return """
-                🚀 QUICK START GUIDE - EXAM SCHEDULER
-                =====================================
-
-                ⏱️ 5-MINUTE SETUP GUIDE
-
-                Follow these steps to create your first exam schedule in minutes!
-
-                ┌─────────────────────────────────────────┐
-                │          GETTING STARTED                │
-                └─────────────────────────────────────────┘
-
-                STEP 1: PREPARE YOUR DATA
-                --------------------------
-
-                Create these CSV files in a folder:
-
-                1. students.csv
-                   -------------
-                   StudentID,Name
-                   S001,John Doe
-                   S002,Jane Smith
-                   S003,Bob Johnson
-
-                2. courses.csv
-                   -------------
-                   CourseCode,CourseName,Instructor,Capacity
-                   CS101,Computer Science,Dr. Adams,50
-                   MATH201,Calculus,Dr. Brown,40
-
-                3. classrooms.csv
-                   ----------------
-                   ClassroomID,Capacity
-                   A101,60
-                   B202,50
-
-                4. attendance.csv (optional)
-                   --------------------------
-                   CourseCode,StudentID
-                   CS101,S001
-                   CS101,S002
-                   MATH201,S003
-
-                ┌─────────────────────────────────────────┐
-                │         LOAD YOUR DATA                  │
-                └─────────────────────────────────────────┘
-
-                STEP 2: IMPORT FILES
-                ---------------------
-
-                1. Launch Exam Scheduler
-
-                2. Click the 📁 LOAD DATA button
-
-                3. Select the folder containing your CSV files
-
-                4. Wait for confirmation messages:
-                   ✓ Data loaded successfully
-                   ✓ Students: [number]
-                   ✓ Courses: [number]
-                   ✓ Classrooms: [number]
-
-                ┌─────────────────────────────────────────┐
-                │        CONFIGURE SETTINGS               │
-                └─────────────────────────────────────────┘
-
-                STEP 3: SET UP EXAM PERIOD
-                ---------------------------
-
-                In the LEFT PANEL (Configuration):
-
-                1. 📅 Exam Start Date
-                   • Click calendar icon
-                   • Select first exam day
-
-                2. Exam Period (Days)
-                   • Use spinner or type: 5 (recommended)
-
-                3. ⏰ Time Slots
-                   • Keep defaults or modify:
-                     09:00-11:00
-                     12:00-14:00
-                     15:00-17:00
-
-                ┌─────────────────────────────────────────┐
-                │      GENERATE SCHEDULE                  │
-                └─────────────────────────────────────────┘
-
-                STEP 4: CREATE SCHEDULE
-                ------------------------
-
-                1. Click ⚡ GENERATE SCHEDULE button
-
-                2. Watch progress in Messages panel:
-                   • Starting schedule generation...
-                   • Parameters: 5 days, 3 slots/day
-                   • Course assignments appear
-
-                3. Check Statistics:
-                   • Total Exams: [number]
-                   • Placed Exams: [number]
-                   • Unplaced Exams: [number]
-
-                ┌─────────────────────────────────────────┐
-                │       VALIDATE & REVIEW                 │
-                └─────────────────────────────────────────┘
-
-                STEP 5: CHECK FOR ISSUES
-                -------------------------
-
-                1. Click ✓ VALIDATE button
-
-                2. Review results:
-                   • Green: No critical issues
-                   • Red: Conflicts found
-
-                3. View detailed report:
-                   • Schedule → Conflict Report
-
-                ┌─────────────────────────────────────────┐
-                │      STUDENT SCHEDULES                  │
-                └─────────────────────────────────────────┘
-
-                STEP 6: SHARE WITH STUDENTS
-                ----------------------------
-
-                1. Click 👤 STUDENT PORTAL button
-
-                2. Select a student ID from dropdown
-
-                3. View their personal schedule:
-                   • Calendar view (visual)
-                   • List view (detailed)
-                   • Summary statistics
-
-                4. Export their schedule:
-                   • Click 📄 Export My Schedule
-                   • Save as text file
-                   • Share with student
-
-                ┌─────────────────────────────────────────┐
-                │        SAVE & EXPORT                    │
-                └─────────────────────────────────────────┘
-
-                STEP 7: FINALIZE SCHEDULE
-                --------------------------
-
-                1. Save full schedule:
-                   • Click 💾 SAVE SCHEDULE
-                   • Choose location
-                   • Name: spring_exams_2024.csv
-
-                2. Export options:
-                   • CSV: For spreadsheets
-                   • JSON: For web apps
-                   • Print: For distribution
-
-                ⭐ PRO TIPS FOR BEGINNERS
-                -------------------------
-
-                TIP 1: START SMALL
-                • Test with 50 students, 5 courses first
-                • Understand the workflow
-                • Then scale up
-
-                TIP 2: CHECK CAPACITIES
-                • Ensure classrooms fit course enrollments
-                • Add buffer (e.g., 60-capacity room for 50 students)
-
-                TIP 3: USE DEFAULT SLOTS
-                • 3 slots/day works for most cases
-                • 2-hour slots allow for 30min breaks
-
-                TIP 4: VALIDATE EARLY
-                • Check after each major change
-                • Fix conflicts as they appear
-
-                TIP 5: EXPORT OFTEN
-                • Save versions as you work
-                • Name files with dates
-
-                🚨 COMMON PITFALLS TO AVOID
-                ----------------------------
-
-                PITFALL 1: Missing data
-                • Ensure all CSV files are in same folder
-                • Check column headers exactly
-
-                PITFALL 2: Too few exam days
-                • Start with more days than you think
-                • Reduce after successful generation
-
-                PITFALL 3: Room capacity issues
-                • Match largest course to largest room
-                • Consider splitting large courses
-
-                PITFALL 4: Ignoring warnings
-                • Address consecutive exam warnings
-                • Consider student fatigue
-
-                🎯 NEXT STEPS
-                -------------
-
-                AFTER MASTERING BASICS:
-
-                1. ADVANCED FEATURES:
-                   • Manual schedule editing
-                   • Custom constraints
-                   • Room preferences
-
-                2. DATA OPTIMIZATION:
-                   • Analyze placement rates
-                   • Optimize room utilization
-                   • Balance student schedules
-
-                3. AUTOMATION:
-                   • Batch processing
-                   • Regular schedule updates
-                   • Integration with school systems
-
-                📞 NEED HELP?
-                -------------
-
-                Quick support options:
-
-                • Check FAQ section (Help → FAQ)
-                • Read full User Manual (Help → User Manual)
-                • Email: quickstart@examscheduler.edu
-
-                Remember: The first schedule might have issues.
-                Adjust settings and try again!
-
-                Happy Scheduling! 🎓
-
-                Version: 2.0 | Quick Start Guide
-                """;
+        return "🚀 QUICK START GUIDE - EXAM SCHEDULER\n" +
+                "=====================================\n\n" +
+                "⏱️ 5-MINUTE SETUP GUIDE\n\n" +
+                "Follow these steps to create your first exam schedule in minutes!\n\n" +
+                "┌─────────────────────────────────────────┐\n" +
+                "│          GETTING STARTED                │\n" +
+                "└─────────────────────────────────────────┘\n\n" +
+                "STEP 1: PREPARE YOUR DATA\n" +
+                "--------------------------\n\n" +
+                "Create these CSV files in a folder:\n\n" +
+                "1. students.csv\n" +
+                "   -------------\n" +
+                "   StudentID,Name\n" +
+                "   S001,John Doe\n" +
+                "   S002,Jane Smith\n" +
+                "   S003,Bob Johnson\n" +
+                "   \n" +
+                "2. courses.csv\n" +
+                "   -------------\n" +
+                "   CourseCode,CourseName,Instructor,Capacity\n" +
+                "   CS101,Computer Science,Dr. Adams,50\n" +
+                "   MATH201,Calculus,Dr. Brown,40\n" +
+                "   \n" +
+                "3. classrooms.csv\n" +
+                "   ----------------\n" +
+                "   ClassroomID,Capacity\n" +
+                "   A101,60\n" +
+                "   B202,50\n" +
+                "   \n" +
+                "4. attendance.csv (optional)\n" +
+                "   --------------------------\n" +
+                "   CourseCode,StudentID\n" +
+                "   CS101,S001\n" +
+                "   CS101,S002\n" +
+                "   MATH201,S003\n\n" +
+                "┌─────────────────────────────────────────┐\n" +
+                "│         LOAD YOUR DATA                  │\n" +
+                "└─────────────────────────────────────────┘\n\n" +
+                "STEP 2: IMPORT FILES\n" +
+                "---------------------\n\n" +
+                "1. Launch Exam Scheduler\n\n" +
+                "2. Click the 📁 LOAD DATA button\n\n" +
+                "3. Select the folder containing your CSV files\n\n" +
+                "4. Wait for confirmation messages:\n" +
+                "   ✓ Data loaded successfully\n" +
+                "   ✓ Students: [number]\n" +
+                "   ✓ Courses: [number]\n" +
+                "   ✓ Classrooms: [number]\n\n" +
+                "┌─────────────────────────────────────────┐\n" +
+                "│        CONFIGURE SETTINGS               │\n" +
+                "└─────────────────────────────────────────┘\n\n" +
+                "STEP 3: SET UP EXAM PERIOD\n" +
+                "---------------------------\n\n" +
+                "In the LEFT PANEL (Configuration):\n\n" +
+                "1. 📅 Exam Start Date\n" +
+                "   • Click calendar icon\n" +
+                "   • Select first exam day\n" +
+                "   \n" +
+                "2. Exam Period (Days)\n" +
+                "   • Use spinner or type: 5 (recommended)\n" +
+                "   \n" +
+                "3. ⏰ Time Slots\n" +
+                "   • Keep defaults or modify:\n" +
+                "     09:00-11:00\n" +
+                "     12:00-14:00  \n" +
+                "     15:00-17:00\n\n" +
+                "┌─────────────────────────────────────────┐\n" +
+                "│      GENERATE SCHEDULE                  │\n" +
+                "└─────────────────────────────────────────┘\n\n" +
+                "STEP 4: CREATE SCHEDULE\n" +
+                "-----------------------\n\n" +
+                "1. Click ⚡ GENERATE SCHEDULE button\n\n" +
+                "2. Watch progress in Messages panel:\n" +
+                "   • Starting schedule generation...\n" +
+                "   • Parameters: 5 days, 3 slots/day\n" +
+                "   • Course assignments appear\n\n" +
+                "3. Check Statistics:\n" +
+                "   • Total Exams: [number]\n" +
+                "   • Placed Exams: [number]\n" +
+                "   • Unplaced Exams: [number]\n\n" +
+                "┌─────────────────────────────────────────┐\n" +
+                "│       VALIDATE & REVIEW                 │\n" +
+                "└─────────────────────────────────────────┘\n\n" +
+                "STEP 5: CHECK FOR ISSUES\n" +
+                "-------------------------\n\n" +
+                "1. Click ✓ VALIDATE button\n\n" +
+                "2. Review results:\n" +
+                "   • Green: No critical issues\n" +
+                "   • Red: Conflicts found\n\n" +
+                "3. View detailed report:\n" +
+                "   • Schedule → Conflict Report\n\n" +
+                "┌─────────────────────────────────────────┐\n" +
+                "│      STUDENT SCHEDULES                  │\n" +
+                "└─────────────────────────────────────────┘\n\n" +
+                "STEP 6: SHARE WITH STUDENTS\n" +
+                "----------------------------\n\n" +
+                "1. Click 👤 STUDENT PORTAL button\n\n" +
+                "2. Select a student ID from dropdown\n\n" +
+                "3. View their personal schedule:\n" +
+                "   • Calendar view (visual)\n" +
+                "   • List view (detailed)\n" +
+                "   • Summary statistics\n\n" +
+                "4. Export their schedule:\n" +
+                "   • Click 📄 Export My Schedule\n" +
+                "   • Save as text file\n" +
+                "   • Share with student\n\n" +
+                "┌─────────────────────────────────────────┐\n" +
+                "│        SAVE & EXPORT                    │\n" +
+                "└─────────────────────────────────────────┘\n\n" +
+                "STEP 7: FINALIZE SCHEDULE\n" +
+                "--------------------------\n\n" +
+                "1. Save full schedule:\n" +
+                "   • Click 💾 SAVE SCHEDULE\n" +
+                "   • Choose location\n" +
+                "   • Name: spring_exams_2024.csv\n\n" +
+                "2. Export options:\n" +
+                "   • CSV: For spreadsheets\n" +
+                "   • JSON: For web apps\n" +
+                "   • Print: For distribution\n\n" +
+                "⭐ PRO TIPS FOR BEGINNERS\n" +
+                "-------------------------\n\n" +
+                "TIP 1: START SMALL\n" +
+                "• Test with 50 students, 5 courses first\n" +
+                "• Understand the workflow\n" +
+                "• Then scale up\n\n" +
+                "TIP 2: CHECK CAPACITIES\n" +
+                "• Ensure classrooms fit course enrollments\n" +
+                "• Add buffer (e.g., 60-capacity room for 50 students)\n\n" +
+                "TIP 3: USE DEFAULT SLOTS\n" +
+                "• 3 slots/day works for most cases\n" +
+                "• 2-hour slots allow for 30min breaks\n\n" +
+                "TIP 4: VALIDATE EARLY\n" +
+                "• Check after each major change\n" +
+                "• Fix conflicts as they appear\n\n" +
+                "TIP 5: EXPORT OFTEN\n" +
+                "• Save versions as you work\n" +
+                "• Name files with dates\n\n" +
+                "🚨 COMMON PITFALLS TO AVOID\n" +
+                "----------------------------\n\n" +
+                "PITFALL 1: Missing data\n" +
+                "• Ensure all CSV files are in same folder\n" +
+                "• Check column headers exactly\n\n" +
+                "PITFALL 2: Too few exam days\n" +
+                "• Start with more days than you think\n" +
+                "• Reduce after successful generation\n\n" +
+                "PITFALL 3: Room capacity issues\n" +
+                "• Match largest course to largest room\n" +
+                "• Consider splitting large courses\n\n" +
+                "PITFALL 4: Ignoring warnings\n" +
+                "• Address consecutive exam warnings\n" +
+                "• Consider student fatigue\n\n" +
+                "🎯 NEXT STEPS\n" +
+                "-------------\n\n" +
+                "AFTER MASTERING BASICS:\n\n" +
+                "1. ADVANCED FEATURES:\n" +
+                "   • Manual schedule editing\n" +
+                "   • Custom constraints\n" +
+                "   • Room preferences\n\n" +
+                "2. DATA OPTIMIZATION:\n" +
+                "   • Analyze placement rates\n" +
+                "   • Optimize room utilization\n" +
+                "   • Balance student schedules\n\n" +
+                "3. AUTOMATION:\n" +
+                "   • Batch processing\n" +
+                "   • Regular schedule updates\n" +
+                "   • Integration with school systems\n\n" +
+                "📞 NEED HELP?\n" +
+                "-------------\n\n" +
+                "Quick support options:\n\n" +
+                "• Check FAQ section (Help → FAQ)\n" +
+                "• Read full User Manual (Help → User Manual)\n" +
+                "• Email: quickstart@examscheduler.edu\n\n" +
+                "Remember: The first schedule might have issues.\n" +
+                "Adjust settings and try again!\n\n" +
+                "Happy Scheduling! 🎓\n\n" +
+                "Version: 2.0 | Quick Start Guide";
     }
 
     private void showError(String title, String message) {
