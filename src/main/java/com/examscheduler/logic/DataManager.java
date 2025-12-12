@@ -6,32 +6,41 @@ import java.util.List;
 import java.util.Objects;
 import java.io.Serializable;
 
+ import java.io.*;
+import java.util.ArrayList;
+import java.util.List;
+
 /**
  * DataManager - Singleton Pattern
- * Uygulama genelinde merkezi veri erişimi sağlar
- * Tüm Student, Course, Classroom ve Schedule verilerini saklar
+ * Veri yönetimi ve otomatik dosya güncelleme merkezi.
+ * CSVParser ile senkronize çalışır.
  */
-public class DataManager implements Serializable {
+public class DataManager {
     private static DataManager instance;
-
+    
+    // Hafızadaki Veri Listeleri
     private List<Student> students;
     private List<Course> courses;
     private List<Classroom> classrooms;
+    
+    // Oluşturulan Sınav Takvimi
     private Schedule schedule;
 
-    // Private constructor for Singleton pattern
+    // Kaynak Dosya Referansları (Otomatik güncelleme için gereklidir)
+    private File studentFile;
+    private File courseFile;
+    private File classroomFile;
+    
+    // Versiyon kontrolü
+    private static final int DATA_VERSION = 1;
+    
     private DataManager() {
         this.students = new ArrayList<>();
         this.courses = new ArrayList<>();
         this.classrooms = new ArrayList<>();
         this.schedule = null;
     }
-
-    /**
-     * Singleton instance getter
-     * 
-     * @return DataManager'ın tek instance'ı
-     */
+    
     public static DataManager getInstance() {
         if (instance == null) {
             synchronized (DataManager.class) {
@@ -42,171 +51,139 @@ public class DataManager implements Serializable {
         }
         return instance;
     }
-
-    // ==================== SETTERS ====================
-
-    public void setStudents(List<Student> students) {
-        this.students = students != null ? students : new ArrayList<>();
-    }
-
-    public void setCourses(List<Course> courses) {
-        this.courses = courses != null ? courses : new ArrayList<>();
-    }
-
-    public void setClassrooms(List<Classroom> classrooms) {
-        this.classrooms = classrooms != null ? classrooms : new ArrayList<>();
-    }
-
-    public void setSchedule(Schedule schedule) {
-        this.schedule = schedule;
-    }
-
-    public boolean addClassroom(Classroom classroom) {
-        if (classroom != null && !this.classrooms.contains(classroom)) {
-            return this.classrooms.add(classroom); // true döner
-        }
-        return false;
-    }
-
-    public void removeClassroom(Classroom classroom) {
-        if (this.classrooms != null) {
-            this.classrooms.remove(classroom);
-        }
-    }
-
-    public String getDetailedStats() {
-        StringBuilder sb = new StringBuilder();
-        sb.append("Students: ").append(students != null ? students.size() : 0).append("\n");
-        sb.append("Courses: ").append(courses != null ? courses.size() : 0).append("\n");
-        sb.append("Classrooms: ").append(classrooms != null ? classrooms.size() : 0).append("\n");
-        sb.append("Total Enrollments: ").append(getTotalEnrollments()).append("\n");
-        sb.append("Average Class Size: ").append(String.format("%.1f", getAverageClassSize())).append("\n");
-        sb.append("Total Classroom Capacity: ").append(getTotalClassroomCapacity()).append("\n");
-        sb.append("Schedule: ").append(schedule != null ? "Loaded" : "Not Loaded").append("\n");
-        return sb.toString();
-    }
-
-    private int getTotalEnrollments() {
-        if (courses == null)
-            return 0;
-        return courses.stream()
-                .filter(Objects::nonNull)
-                .mapToInt(Course::getStudentCount)
-                .sum();
-    }
-
-    private double getAverageClassSize() {
-        if (courses == null || courses.isEmpty())
-            return 0.0;
-        return (double) getTotalEnrollments() / courses.size();
-    }
-
-    private int getTotalClassroomCapacity() {
-        if (classrooms == null)
-            return 0;
-        return classrooms.stream()
-                .filter(Objects::nonNull)
-                .mapToInt(Classroom::getCapacity)
-                .sum();
-    }
-
-    // ==================== GETTERS ====================
-
-    public List<Student> getStudents() {
-        return students;
-    }
-
-    public List<Course> getCourses() {
-        return courses;
-    }
-
-    public List<Classroom> getClassrooms() {
-        return classrooms;
-    }
-
-    public Schedule getSchedule() {
-        return schedule;
-    }
-
+    
     /**
-     * ID'ye göre öğrenci bulur
-     * 
-     * @param studentID Öğrenci ID'si
-     * @return Student nesnesi veya null
+     * Yükleme işlemi sırasında (handleLoad) kaynak dosyaların yollarını kaydeder.
+     * Bu sayede ekleme/silme işlemlerinde doğru dosyaya yazılabilir.
      */
-    public Student getStudentByID(String studentID) {
-        if (students == null)
-            return null;
+    public void setSourceFiles(File std, File crs, File room) {
+        this.studentFile = std;
+        this.courseFile = crs;
+        this.classroomFile = room;
+    }
 
-        for (Student student : students) {
-            if (student.getStudentID().equals(studentID)) {
-                return student;
+    // ==================== ÖĞRENCİ YÖNETİMİ (OTOMATİK CSV KAYDI) ====================
+    
+    public void addStudent(Student s) {
+        if (!students.contains(s)) {
+            students.add(s);
+            // Listeyi güncelledikten sonra dosyaya yansıt
+            if (studentFile != null) CSVParser.updateStudentFile(studentFile, students);
+        }
+    }
+    
+    public void removeStudent(Student s) {
+        if (students.remove(s)) {
+            // Listeden sildikten sonra dosyaya yansıt
+            if (studentFile != null) CSVParser.updateStudentFile(studentFile, students);
+            
+            // Öğrenci silindiğinde, derslerden de kaydını silmemiz gerekir (Opsiyonel ama iyi olur)
+            for (Course c : courses) {
+                c.getEnrolledStudents().remove(s);
             }
         }
-        return null;
     }
 
-    /**
-     * Koda göre ders bulur
-     * 
-     * @param courseCode Ders kodu
-     * @return Course nesnesi veya null
-     */
-    public Course getCourseByCode(String courseCode) {
-        if (courses == null)
-            return null;
-
-        for (Course course : courses) {
-            if (course.getCourseCode().equals(courseCode)) {
-                return course;
+    // ==================== DERS YÖNETİMİ (OTOMATİK CSV KAYDI) ====================
+    
+    public void addCourse(Course c) {
+        if (!courses.contains(c)) {
+            courses.add(c);
+            if (courseFile != null) CSVParser.updateCourseFile(courseFile, courses);
+        }
+    }
+    
+    public void removeCourse(Course c) {
+        if (courses.remove(c)) {
+            if (courseFile != null) CSVParser.updateCourseFile(courseFile, courses);
+            
+            // Ders silindiğinde öğrencilerin listesinden de sil
+            for (Student s : students) {
+                s.getCourses().remove(c);
             }
         }
-        return null;
     }
 
-    /**
-     * ID'ye göre sınıf bulur
-     * 
-     * @param classroomID Sınıf ID'si
-     * @return Classroom nesnesi veya null
-     */
-    public Classroom getClassroomByID(String classroomID) {
-        if (classrooms == null)
-            return null;
-
-        for (Classroom classroom : classrooms) {
-            if (classroom.getClassroomID().equals(classroomID)) {
-                return classroom;
-            }
+    // ==================== SINIF YÖNETİMİ (OTOMATİK CSV KAYDI) ====================
+    
+    public void addClassroom(Classroom c) {
+        if (!classrooms.contains(c)) {
+            classrooms.add(c);
+            if (classroomFile != null) CSVParser.updateClassroomFile(classroomFile, classrooms);
         }
-        return null;
     }
 
-    // Tüm gerekli verilerin yüklenip yüklenmediğini kontrol eder
-    // @return true ise tüm veriler yüklü
+    public void removeClassroom(Classroom c) {
+        if (classrooms.remove(c)) {
+            if (classroomFile != null) CSVParser.updateClassroomFile(classroomFile, classrooms);
+        }
+    }
+    
+    // ==================== GETTER / SETTER METOTLARI ====================
+    
+    public void setStudents(List<Student> students) { this.students = students != null ? students : new ArrayList<>(); }
+    public void setCourses(List<Course> courses) { this.courses = courses != null ? courses : new ArrayList<>(); }
+    public void setClassrooms(List<Classroom> classrooms) { this.classrooms = classrooms != null ? classrooms : new ArrayList<>(); }
+    public void setSchedule(Schedule schedule) { this.schedule = schedule; }
+    
+    public List<Student> getStudents() { return students; }
+    public List<Course> getCourses() { return courses; }
+    public List<Classroom> getClassrooms() { return classrooms; }
+    public Schedule getSchedule() { return schedule; }
+    
+    // ==================== YARDIMCI METOTLAR ====================
 
     public boolean isDataLoaded() {
         return students != null && !students.isEmpty() &&
-                courses != null && !courses.isEmpty() &&
-                classrooms != null && !classrooms.isEmpty();
+               courses != null && !courses.isEmpty() &&
+               classrooms != null && !classrooms.isEmpty();
     }
-
-    // Tüm verileri temizler (yeni proje için)
-
+    
     public void clearAllData() {
-        this.students = new ArrayList<>();
-        this.courses = new ArrayList<>();
-        this.classrooms = new ArrayList<>();
+        if (students != null) students.clear();
+        if (courses != null) courses.clear();
+        if (classrooms != null) classrooms.clear();
         this.schedule = null;
+        // Dosya referanslarını sıfırlama, belki kullanıcı aynı klasöre tekrar yükleme yapar
     }
-
-    @Override
-    public String toString() {
-        return "DataManager{" +
-                "students=" + (students != null ? students.size() : 0) +
-                ", courses=" + (courses != null ? courses.size() : 0) +
-                ", classrooms=" + (classrooms != null ? classrooms.size() : 0) +
-                ", schedule=" + (schedule != null ? "Loaded" : "Not Loaded") +
-                '}';
+    
+    public Classroom getClassroomByID(String id) {
+        if (classrooms == null) return null;
+        return classrooms.stream().filter(c -> c.getClassroomID().equals(id)).findFirst().orElse(null);
+    }
+    
+    public Student getStudentByID(String id) {
+        if (students == null) return null;
+        return students.stream().filter(s -> s.getStudentID().equals(id)).findFirst().orElse(null);
+    }
+    
+    public Course getCourseByCode(String code) {
+        if (courses == null) return null;
+        return courses.stream().filter(c -> c.getCourseCode().equals(code)).findFirst().orElse(null);
+    }
+    
+    // ==================== PERSISTENCE (Tüm Durumu Kaydetme - Opsiyonel) ====================
+    // Bu metotlar, CSV dışındaki "proje dosyası" (.dat) mantığı içindir.
+    
+    public void saveToFile(File file) throws IOException {
+        try (ObjectOutputStream oos = new ObjectOutputStream(new FileOutputStream(file))) {
+            oos.writeInt(DATA_VERSION);
+            oos.writeObject(students);
+            oos.writeObject(courses);
+            oos.writeObject(classrooms);
+            oos.writeObject(schedule);
+        }
+    }
+    
+    public void loadFromFile(File file) throws IOException, ClassNotFoundException {
+        try (ObjectInputStream ois = new ObjectInputStream(new FileInputStream(file))) {
+            int version = ois.readInt();
+            if (version != DATA_VERSION) throw new IOException("Incompatible data version");
+            
+            this.students = (List<Student>) ois.readObject();
+            this.courses = (List<Course>) ois.readObject();
+            this.classrooms = (List<Classroom>) ois.readObject();
+            this.schedule = (Schedule) ois.readObject();
+        }
     }
 }
