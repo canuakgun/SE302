@@ -1,12 +1,18 @@
 package com.examscheduler.logic;
 
-import com.examscheduler.model.Student;
-import com.examscheduler.model.Course;
-import com.examscheduler.model.Classroom;
-
-import java.io.*;
+import java.io.BufferedReader;
+import java.io.BufferedWriter;
+import java.io.File;
+import java.io.FileReader;
+import java.io.FileWriter;
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
+
+import com.examscheduler.model.Classroom;
+import com.examscheduler.model.Course;
+import com.examscheduler.model.Exam;
+import com.examscheduler.model.Student;
 
 /**
  * CSVParser - CSV dosyalarını okur VE günceller.
@@ -131,6 +137,82 @@ public class CSVParser {
         } catch (IOException e) {
             throw new CSVParseException("Error parsing attendance", e);
         }
+    }
+    
+    // ==================== SCHEDULE PARSING (EXPORT EDİLMİŞ OLAN CSV DOSYASI) ====================
+    public static List<Exam> parseSchedule(File file, DataManager dm, List<String> timeSlotLabels) throws IOException {
+        List<Exam> loadedExams = new ArrayList<>();
+        
+        try (BufferedReader reader = new BufferedReader(new FileReader(file))) {
+            String line;
+            // Header kontrolü (İlk satırda başlık varsa atla)
+            reader.mark(1000);
+            String firstLine = reader.readLine();
+            if (firstLine != null && !firstLine.toLowerCase().startsWith("examid")) {
+                reader.reset(); // Başlık yoksa başa dön
+            }
+
+            while ((line = reader.readLine()) != null) {
+                if (line.trim().isEmpty()) continue;
+
+                // Format: ExamID, CourseCode, Day, SlotString, RoomID, Students
+                String[] parts = line.split(",");
+                if (parts.length < 5) continue;
+
+                try {
+                    String courseCode = parts[1].trim();
+                    int day = Integer.parseInt(parts[2].trim());
+                    String timeSlotStr = parts[3].trim();
+                    String roomId = parts[4].trim();
+                    
+                    // DÜZELTME: Öğrenci sayısını oku (Varsa)
+                    int importedStudentCount = -1;
+                    if (parts.length >= 6) {
+                        try {
+                            importedStudentCount = Integer.parseInt(parts[5].trim());
+                        } catch (NumberFormatException e) {
+                            // Sayı bozuksa yoksay, varsayılanı kullanır
+                        }
+                    }
+
+                    // Nesneleri DataManager'dan bul
+                    Course course = dm.getCourseByCode(courseCode);
+                    Classroom room = dm.getClassroomByID(roomId);
+
+                    if (course != null && room != null) {
+                        // ... (TimeSlot bulma kodu AYNI kalsın) ...
+                        int slotIndex = 1; 
+                        for (int i = 0; i < timeSlotLabels.size(); i++) {
+                            if (timeSlotLabels.get(i).equalsIgnoreCase(timeSlotStr)) {
+                                slotIndex = i + 1;
+                                break;
+                            }
+                        }
+                        if (slotIndex == 1 && timeSlotStr.toLowerCase().startsWith("slot ")) {
+                            try {
+                                slotIndex = Integer.parseInt(timeSlotStr.substring(5).trim());
+                            } catch (Exception ignored) {}
+                        }
+                        // ... (TimeSlot bulma kodu sonu) ...
+
+                        // Exam nesnesini oluştur
+                        Exam exam = new Exam(course);
+                        exam.setTimeSlot(new com.examscheduler.model.TimeSlot(day, slotIndex));
+                        exam.setClassroom(room);
+                        
+                        // DÜZELTME: Okunan sayıyı Exam nesnesine ata
+                        if (importedStudentCount != -1) {
+                            exam.setStudentCount(importedStudentCount);
+                        }
+                        
+                        loadedExams.add(exam);
+                    }
+                } catch (Exception e) {
+                    System.err.println("Skipping invalid line: " + line + " (" + e.getMessage() + ")");
+                }
+            }
+        }
+        return loadedExams;
     }
 
     // ==================== YAZMA / GÜNCELLEME METOTLARI ====================

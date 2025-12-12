@@ -7,6 +7,7 @@ public class Exam implements Serializable {
     private Course course;
     private TimeSlot timeSlot;
     private Classroom classroom;
+    private Integer customStudentCount = null;
 
     public Exam(Course course) {
         this.course = course;
@@ -37,7 +38,14 @@ public class Exam implements Serializable {
     }
 
     public int getStudentCount() {
+        if (customStudentCount != null) {
+            return customStudentCount;
+        }
         return course.getStudentCount();
+    }
+
+    public void setStudentCount(int count) {
+        this.customStudentCount = count;
     }
 
     public boolean isScheduled() {
