@@ -2005,17 +2005,18 @@ private static class ImportResult {
 
     private void handleGenerateSchedule() {
 
+        // 1. Veri Yüklü mü Kontrolü
         if (!dataManager.isDataLoaded()) {
             showError("Data not loaded", "Please load data from CSV files first.");
             messages.add("❌ ERROR: No data loaded. Click 'Load Data' first.");
             return;
         }
 
+        // 2. Parametreleri Hazırla
         List<Course> coursesToSchedule = dataManager.getCourses();
         List<Classroom> availableClassrooms = new ArrayList<>(dataManager.getClassrooms());
-
         List<String> timeSlotsRaw = getTimeSlotsFromUI.get();
-        int days = daysSpinner.getValue();
+        Integer days = daysSpinner.getValue();
 
         if (coursesToSchedule.isEmpty() || availableClassrooms.isEmpty() || timeSlotsRaw.isEmpty()) {
             showError("Configuration Error", "Please check configuration (Days, Slots, Courses).");
@@ -2025,157 +2026,205 @@ private static class ImportResult {
         messages.add("⚡ Starting schedule generation...");
         messages.add("📊 Parameters: " + days + " days, " + timeSlotsRaw.size() + " slots/day");
 
-        List<Exam> examsToPlace = coursesToSchedule.stream()
+        // 3. Ham Sınav Listesini Oluştur
+        List<Exam> initialExams = coursesToSchedule.stream()
                 .filter(c -> c.getStudentCount() > 0)
                 .map(Exam::new)
-                .sorted((a, b) -> Integer.compare(b.getStudentCount(), a.getStudentCount()))
                 .collect(Collectors.toList());
+
+        // --- ADIM 1: BÜYÜK SINAVLARI DENGELİ PARÇALA (BALANCED SPLIT) ---
+        
+        int maxRoomCapacity = availableClassrooms.stream()
+                .mapToInt(Classroom::getCapacity)
+                .max().orElse(0);
+
+        if (maxRoomCapacity == 0) {
+            showError("Room Error", "No classrooms with valid capacity found.");
+            return;
+        }
+
+        List<Exam> examsToPlace = new ArrayList<>();
+
+        for (Exam exam : initialExams) {
+            int totalStudents = exam.getEnrolledStudents().size();
+
+            // Eğer öğrenci sayısı en büyük sınıftan fazlaysa BÖL
+            if (totalStudents > maxRoomCapacity) {
+                List<Student> allStudents = exam.getEnrolledStudents();
+                int parts = (int) Math.ceil((double) totalStudents / maxRoomCapacity);
+                int baseSize = totalStudents / parts;
+                int remainder = totalStudents % parts;
+                
+                messages.add("ℹ Locking large exam: " + exam.getCourse().getCourseCode() + 
+                           " (" + totalStudents + " students) into " + parts + " rooms simultaneously.");
+
+                int currentStartIndex = 0;
+                for (int i = 0; i < parts; i++) {
+                    int currentPartSize = baseSize + (i < remainder ? 1 : 0);
+                    int end = currentStartIndex + currentPartSize;
+                    
+                    List<Student> subList = allStudents.subList(currentStartIndex, end);
+                    Exam examPart = new Exam(exam.getCourse());
+                    examPart.setAssignedStudents(subList);
+                    examsToPlace.add(examPart);
+                    
+                    currentStartIndex = end;
+                }
+            } else {
+                examsToPlace.add(exam); 
+            }
+        }
+        
+        // Sıralama: En kalabalık grupları önce yerleştir
+        examsToPlace.sort((a, b) -> Integer.compare(b.getStudentCount(), a.getStudentCount()));
+
+        // -----------------------------------------------------------
 
         dataManager.setSchedule(new Schedule(days, timeSlotsRaw.size()));
 
+        // Takip Map'leri
         Map<Student, Set<TimeSlot>> studentScheduledSlots = new HashMap<>();
         Map<TimeSlot, Set<String>> roomOccupancy = new HashMap<>();
-        Map<TimeSlot, Set<String>> instructorOccupancy = new HashMap<>();
+        Map<TimeSlot, Map<String, String>> instructorOccupancy = new HashMap<>();
+        
+        // DERS İÇİN KİLİTLENMİŞ ZAMAN (Aynı dersin parçaları aynı saate gelsin diye)
+        Map<String, TimeSlot> courseLockedSlots = new HashMap<>();
 
         int placedCount = 0;
         unplacedCourses.clear();
 
-        // Greedy Algorithm - Randomized Room Selection with Additional Constraints
+        // --- ADIM 2: YERLEŞTİRME ALGORİTMASI ---
         for (Exam exam : examsToPlace) {
             boolean placed = false;
             List<Student> studentsOfCourse = exam.getEnrolledStudents();
             int enrolledCount = exam.getStudentCount();
             String instructor = exam.getCourse().getInstructor();
+            String courseCode = exam.getCourse().getCourseCode();
 
-            // Randomize classroom search order for each new exam
+            // Eğer bu dersin bir parçası daha önce yerleştiyse, ZORUNLU olarak o saati al
+            TimeSlot forcedSlot = courseLockedSlots.get(courseCode);
+
+            // Sınıfları karıştır
             Collections.shuffle(availableClassrooms, new Random());
 
-            outerLoop: for (int day = 1; day <= days; day++) {
+            // DÖNGÜ AYARLARI
+            int startDay = (forcedSlot != null) ? forcedSlot.getDay() : 1;
+            int endDay = (forcedSlot != null) ? forcedSlot.getDay() : days;
+            
+            outerLoop: for (int day = startDay; day <= endDay; day++) {
+                
+                // DÜZELTME: Lambda içinde kullanmak için 'final' kopya oluşturuyoruz
+                final int currentDay = day; 
+                
+                int startSlot = (forcedSlot != null) ? forcedSlot.getSlotNumber() : 1;
+                int endSlot = (forcedSlot != null) ? forcedSlot.getSlotNumber() : timeSlotsRaw.size();
 
-                final int currentDay = day;
-
-                for (int slotNum = 1; slotNum <= timeSlotsRaw.size(); slotNum++) {
+                for (int slotNum = startSlot; slotNum <= endSlot; slotNum++) {
                     TimeSlot currentSlot = new TimeSlot(day, slotNum);
 
-                    // 1. CONSTRAINT: STUDENT CONFLICT
+                    // 1. ÖĞRENCİ ÇAKIŞMASI KONTROLÜ
                     boolean studentConflict = false;
-
                     for (Student student : studentsOfCourse) {
                         Set<TimeSlot> busySlots = studentScheduledSlots.getOrDefault(student, Collections.emptySet());
-
-                        // A. Does the student have another exam at the same time? (Kritik Çakışma)
+                        
                         if (busySlots.contains(currentSlot)) {
                             studentConflict = true;
                             break;
                         }
-
-                        // --- YENİ KISITLAMA: GÜNLÜK MAKSİMUM 2 SINAV (User Req 6) ---
-                        // Öğrencinin o gün (currentDay) kaç tane sınavı olduğunu sayıyoruz.
-                        long examsOnDay = busySlots.stream()
-                                .filter(ts -> ts.getDay() == currentDay)
-                                .count();
-
+                        
+                        // Günlük limit kontrolü (BURASI DÜZELTİLDİ: 'day' yerine 'currentDay' kullanıldı)
+                        long examsOnDay = busySlots.stream().filter(ts -> ts.getDay() == currentDay).count();
                         if (examsOnDay >= 2) {
-                            // Eğer öğrencinin o gün zaten 2 sınavı varsa, 3. sınav verilemez.
                             studentConflict = true;
                             break;
                         }
-                        // ------------------------------------------------------------
-                    }
-                    if (studentConflict)
-                        continue;
-
-                    // B. Consecutive Exam Constraint (Ardışık Sınav - Kesin Engel olarak kaldı)
-                    if (slotNum > 1) {
-                        TimeSlot previousSlot = new TimeSlot(day, slotNum - 1);
-                        for (Student student : studentsOfCourse) {
-                            Set<TimeSlot> busySlots = studentScheduledSlots.getOrDefault(student,
-                                    Collections.emptySet());
+                        
+                        // Ardışık sınav kontrolü
+                        if (slotNum > 1) {
+                            TimeSlot previousSlot = new TimeSlot(day, slotNum - 1);
                             if (busySlots.contains(previousSlot)) {
                                 studentConflict = true;
-                                // messages.add("  ⚠ WARNING: " + exam.getCourse().getCourseCode() + " conflict (Consecutive)");
                                 break;
                             }
                         }
                     }
+                    if (studentConflict) continue;
 
-                    if (studentConflict)
-                        continue;
-
-                    // 2. CONSTRAINT: INSTRUCTOR CONFLICT
+                    // 2. EĞİTMEN KONTROLÜ (Aynı dersin parçaları için izin ver)
                     if (instructor != null && !instructor.isEmpty()) {
-                        instructorOccupancy.putIfAbsent(currentSlot, new HashSet<>());
-                        if (instructorOccupancy.get(currentSlot).contains(instructor)) {
-                            // messages.add("  ⚠ WARNING: " + exam.getCourse().getCourseCode() + " conflict (Instructor)");
-                            continue;
+                        Map<String, String> slotInstructors = instructorOccupancy.getOrDefault(currentSlot, new HashMap<>());
+                        if (slotInstructors.containsKey(instructor)) {
+                            String existingCourse = slotInstructors.get(instructor);
+                            if (!existingCourse.equals(courseCode)) {
+                                continue; // Farklı ders ise çakışma var
+                            }
                         }
                     }
 
-                    // 3. CONSTRAINT: CLASSROOM ASSIGNMENT AND ROOM CONFLICT
+                    // 3. ODA SEÇİMİ
                     for (Classroom room : availableClassrooms) {
+                        if (!room.canAccommodate(enrolledCount)) continue;
 
-                        // Capacity check
-                        if (!room.canAccommodate(enrolledCount))
-                            continue;
-
-                        // Room occupancy check
                         roomOccupancy.putIfAbsent(currentSlot, new HashSet<>());
-                        if (roomOccupancy.get(currentSlot).contains(room.getClassroomID()))
-                            continue;
+                        if (roomOccupancy.get(currentSlot).contains(room.getClassroomID())) continue;
 
-                        // --- ASSIGNMENT ---
+                        // --- YERLEŞTİR ---
                         exam.setTimeSlot(currentSlot);
                         exam.setClassroom(room);
                         dataManager.getSchedule().addExam(exam);
 
-                        // Record Room and Instructor occupancy
+                        // Kayıtları güncelle
                         roomOccupancy.get(currentSlot).add(room.getClassroomID());
+                        
                         if (instructor != null && !instructor.isEmpty()) {
-                            instructorOccupancy.get(currentSlot).add(instructor);
+                            instructorOccupancy.computeIfAbsent(currentSlot, k -> new HashMap<>())
+                                               .put(instructor, courseCode);
                         }
 
-                        // Update student schedule
                         for (Student student : studentsOfCourse) {
                             studentScheduledSlots.computeIfAbsent(student, k -> new HashSet<>()).add(currentSlot);
+                        }
+                        
+                        // BU DERSİN SAATİNİ KİLİTLE
+                        if (!courseLockedSlots.containsKey(courseCode)) {
+                            courseLockedSlots.put(courseCode, currentSlot);
                         }
 
                         placed = true;
                         placedCount++;
-
-                        messages.add("  ✓ " + exam.getCourse().getCourseCode() +
+                        
+                        String suffix = (forcedSlot != null || examsToPlace.stream().filter(e -> e.getCourse().getCourseCode().equals(courseCode)).count() > 1) 
+                                        ? " [Part]" : "";
+                        
+                        messages.add("  ✓ " + courseCode + suffix +
                                 " → Day " + day + ", Slot " + slotNum +
                                 ", Room " + room.getClassroomID() +
                                 " (" + enrolledCount + " students)");
 
-                        break outerLoop; // Successful assignment made, move to the next exam
+                        break outerLoop;
                     }
                 }
             }
 
             if (!placed) {
-                unplacedCourses.add(exam.getCourse().getCourseCode());
-                messages.add("❌ FAILED: " + exam.getCourse().getCourseCode()
-                        + " could not be placed (All constraints failed).");
+                if (!unplacedCourses.contains(courseCode)) {
+                    unplacedCourses.add(courseCode);
+                }
+                messages.add("❌ FAILED: " + courseCode + " could not be placed.");
             }
         }
 
+        // 4. Sonuçlar
         updateExamTableView(timeSlotsRaw);
 
         int total = examsToPlace.size();
         int unplacedCount = unplacedCourses.size();
 
         String statsText = String.format(
-                "Total Exams: %d\nPlaced Exams: %d\nUnplaced Exams: %d\nConflicts: %d",
-                total,
-                placedCount,
-                unplacedCount,
-                unplacedCount);
+                "Total Exam Sessions: %d\nPlaced: %d\nUnplaced Courses: %d",
+                total, placedCount, unplacedCount);
 
-        if (statsArea != null) {
-            statsArea.setText(statsText);
-        } else {
-            System.err.println("Error: statsArea object is null!");
-        }
+        if (statsArea != null) statsArea.setText(statsText);
 
         messages.add("✓ Schedule generation completed!");
         if (unplacedCount > 0) {
