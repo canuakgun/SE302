@@ -1,6 +1,7 @@
 package com.examscheduler.model;
 
 import java.io.Serializable;
+import java.util.ArrayList;
 import java.util.List;
 
 public class Exam implements Serializable {
@@ -8,6 +9,7 @@ public class Exam implements Serializable {
     private TimeSlot timeSlot;
     private Classroom classroom;
     private Integer customStudentCount = null;
+    private List<Student> assignedStudents = null;
 
     public Exam(Course course) {
         this.course = course;
@@ -34,13 +36,18 @@ public class Exam implements Serializable {
     }
 
     public List<Student> getEnrolledStudents() {
+        // Eğer özel bir alt küme atandıysa onu döndür (Bölünmüş sınav)
+        if (assignedStudents != null) {
+            return assignedStudents;
+        }
+        // Yoksa dersin ana listesini döndür (Normal sınav)
         return course.getEnrolledStudents();
     }
 
     public int getStudentCount() {
-        if (customStudentCount != null) {
-            return customStudentCount;
-        }
+        // Özel sayı varsa onu, yoksa liste boyutunu döndür
+        if (customStudentCount != null) return customStudentCount;
+        if (assignedStudents != null) return assignedStudents.size();
         return course.getStudentCount();
     }
 
@@ -50,6 +57,11 @@ public class Exam implements Serializable {
 
     public boolean isScheduled() {
         return timeSlot != null && classroom != null;
+    }
+
+    public void setAssignedStudents(List<Student> students) {
+        this.assignedStudents = new ArrayList<>(students);
+        this.customStudentCount = students.size(); // Sayıyı da sabitle
     }
 
     @Override
