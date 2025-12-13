@@ -835,23 +835,41 @@ public class ExamSchedulerApp extends Application {
             Collections.shuffle(availableClassrooms, new Random());
 
             outerLoop: for (int day = 1; day <= days; day++) {
+
+                final int currentDay = day;
+
                 for (int slotNum = 1; slotNum <= timeSlotsRaw.size(); slotNum++) {
                     TimeSlot currentSlot = new TimeSlot(day, slotNum);
 
                     // 1. CONSTRAINT: STUDENT CONFLICT
                     boolean studentConflict = false;
-                    // A. Does the student have another exam at the same time?
+
                     for (Student student : studentsOfCourse) {
                         Set<TimeSlot> busySlots = studentScheduledSlots.getOrDefault(student, Collections.emptySet());
+
+                        // A. Does the student have another exam at the same time? (Kritik Çakışma)
                         if (busySlots.contains(currentSlot)) {
                             studentConflict = true;
                             break;
                         }
+
+                        // --- YENİ KISITLAMA: GÜNLÜK MAKSİMUM 2 SINAV (User Req 6) ---
+                        // Öğrencinin o gün (currentDay) kaç tane sınavı olduğunu sayıyoruz.
+                        long examsOnDay = busySlots.stream()
+                                .filter(ts -> ts.getDay() == currentDay)
+                                .count();
+
+                        if (examsOnDay >= 2) {
+                            // Eğer öğrencinin o gün zaten 2 sınavı varsa, 3. sınav verilemez.
+                            studentConflict = true;
+                            break;
+                        }
+                        // ------------------------------------------------------------
                     }
                     if (studentConflict)
                         continue;
 
-                    // B. Consecutive Exam Constraint
+                    // B. Consecutive Exam Constraint (Ardışık Sınav - Kesin Engel olarak kaldı)
                     if (slotNum > 1) {
                         TimeSlot previousSlot = new TimeSlot(day, slotNum - 1);
                         for (Student student : studentsOfCourse) {
@@ -859,8 +877,7 @@ public class ExamSchedulerApp extends Application {
                                     Collections.emptySet());
                             if (busySlots.contains(previousSlot)) {
                                 studentConflict = true;
-                                messages.add("  ⚠ WARNING: " + exam.getCourse().getCourseCode() +
-                                        " conflict (Consecutive) for student");
+                                // messages.add("  ⚠ WARNING: " + exam.getCourse().getCourseCode() + " conflict (Consecutive)");
                                 break;
                             }
                         }
@@ -873,8 +890,7 @@ public class ExamSchedulerApp extends Application {
                     if (instructor != null && !instructor.isEmpty()) {
                         instructorOccupancy.putIfAbsent(currentSlot, new HashSet<>());
                         if (instructorOccupancy.get(currentSlot).contains(instructor)) {
-                            messages.add("  ⚠ WARNING: " + exam.getCourse().getCourseCode() +
-                                    " conflict (Instructor) for " + instructor);
+                            // messages.add("  ⚠ WARNING: " + exam.getCourse().getCourseCode() + " conflict (Instructor)");
                             continue;
                         }
                     }
