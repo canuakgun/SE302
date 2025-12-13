@@ -2048,7 +2048,7 @@ private static class ImportResult {
 
             outerLoop: for (int day = 1; day <= days; day++) {
 
-                final int currentDay = day; // <-- DÜZELTME: Lambda ifadesi için etkin olarak 'final' değişken
+                final int currentDay = day;
 
                 for (int slotNum = 1; slotNum <= timeSlotsRaw.size(); slotNum++) {
                     TimeSlot currentSlot = new TimeSlot(day, slotNum);
