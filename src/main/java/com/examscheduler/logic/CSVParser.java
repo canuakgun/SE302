@@ -301,4 +301,27 @@ public class CSVParser {
             System.err.println("Error updating classroom file: " + e.getMessage());
         }
     }
+
+    public static void updateAttendanceFile(File file, List<Course> courses) {
+        if (file == null) return;
+        
+        try (BufferedWriter writer = new BufferedWriter(new FileWriter(file))) {
+            for (Course course : courses) {
+                writer.write(course.getCourseCode());
+                writer.newLine();
+                
+                List<String> studentIds = new ArrayList<>();
+                for (Student s : course.getEnrolledStudents()) {
+                    studentIds.add("'" + s.getStudentID() + "'"); // Tek tırnak ekle
+                }
+                
+                writer.write("[" + String.join(", ", studentIds) + "]");
+                writer.newLine();
+                // Bloklar arası boşluk (Okunabilirlik için)
+                writer.newLine();
+            }
+        } catch (IOException e) {
+            System.err.println("Error updating attendance file: " + e.getMessage());
+        }
+    }
 }

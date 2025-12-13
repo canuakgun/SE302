@@ -50,14 +50,19 @@ public class Course implements Serializable {
         return enrolledStudents.size();
     }
 
-    public void addStudent(Student student) {
+    public boolean addStudent(Student student) {
         if (student != null && !enrolledStudents.contains(student)) {
-            enrolledStudents.add(student);
+            enrolledStudents.add(student); // Doğrudan gerçek listeye ekler
+            return true; // Eklendi
         }
+        return false; // Zaten vardı veya null
     }
 
-    public void removeStudent(Student student) {
-        enrolledStudents.remove(student);
+    public boolean removeStudent(Student student) {
+        if (student == null) return false;
+        
+        // Doğrudan ID eşleşmesi yaparak sil
+        return enrolledStudents.removeIf(s -> s.getStudentID().equals(student.getStudentID()));
     }
 
     public boolean hasStudent(Student student) {

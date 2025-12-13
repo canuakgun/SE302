@@ -472,12 +472,14 @@ public class ExamSchedulerApp extends Application {
         MenuItem manageCourses = new MenuItem("Manage Courses...");
         MenuItem manageStudents = new MenuItem("Manage Students...");
         MenuItem manageClassrooms = new MenuItem("Manage Classrooms...");
+        MenuItem manageAttendance = new MenuItem("Manage Attendance...");
 
         manageCourses.setOnAction(e -> showManageCourses(stage));
         manageStudents.setOnAction(e -> showManageStudents(stage));
         manageClassrooms.setOnAction(e -> showManageClassrooms(stage));
+        manageAttendance.setOnAction(e -> showManageAttendance(stage));
 
-        editMenu.getItems().addAll(manageCourses, manageStudents, manageClassrooms);
+        editMenu.getItems().addAll(manageCourses, manageStudents, manageClassrooms, manageAttendance);
 
         Menu scheduleMenu = new Menu("Schedule");
         MenuItem generateItem = new MenuItem("Generate Schedule");
@@ -933,7 +935,8 @@ private void loadFromFolder(Stage owner) {
                 dataManager.setSourceFiles(
                     new File(studentsPath),
                     new File(coursesPath),
-                    new File(classroomsPath)
+                    new File(classroomsPath),
+                    attendancePath != null ? new File(attendancePath) : null
                 );
 
                 updateMessage("Finalizing...");
@@ -1168,7 +1171,8 @@ private void loadFilesWithPaths(Stage owner, String studentsPath, String courses
         dataManager.setSourceFiles(
             new File(studentsPath),
             new File(coursesPath),
-            new File(classroomsPath)
+            new File(classroomsPath),
+            attendancePath != null ? new File(attendancePath) : null
         );
 
         updateClassroomsView();
@@ -1235,7 +1239,7 @@ private void loadFromBackup(Stage owner) {
             CSVParser.parseAttendanceLists(attendanceFile.getAbsolutePath(), students, courses);
         }
 
-        dataManager.setSourceFiles(studentsFile, coursesFile, classroomsFile);
+        dataManager.setSourceFiles(studentsFile, coursesFile, classroomsFile, attendanceFile.exists() ? attendanceFile : null);
         updateClassroomsView();
 
         
@@ -2365,6 +2369,181 @@ private static class ImportResult {
         grid.add(new HBox(10, addBtn, remBtn, closeBtn), 0, 4, 2, 1);
 
         dialog.setScene(new Scene(grid, 400, 400));
+        dialog.show();
+    }
+
+    private void showManageAttendance(Stage owner) {
+        if (!dataManager.isDataLoaded()) {
+            showError("No Data", "Please load data first.");
+            return;
+        }
+
+        Stage dialog = new Stage();
+        dialog.initOwner(owner);
+        dialog.initModality(Modality.APPLICATION_MODAL);
+        dialog.setTitle("Manage Attendance");
+
+        Label courseLabel = new Label("Select Course:");
+        ComboBox<Course> courseCombo = new ComboBox<>();
+        courseCombo.setItems(FXCollections.observableArrayList(dataManager.getCourses()));
+        courseCombo.setPrefWidth(300);
+
+        // Converter: Dersteki güncel öğrenci sayısını gösterir
+        courseCombo.setConverter(new javafx.util.StringConverter<Course>() {
+            @Override
+            public String toString(Course c) {
+                if (c == null) return "";
+                return c.getCourseCode() + " (" + c.getEnrolledStudents().size() + " students)";
+            }
+            @Override public Course fromString(String string) { return null; }
+        });
+
+        ListView<Student> availableList = new ListView<>();
+        ListView<Student> enrolledList = new ListView<>();
+        
+        Label lblAvail = new Label("Available Students");
+        Label lblEnroll = new Label("Enrolled Students");
+        lblAvail.setStyle("-fx-font-weight: bold;");
+        lblEnroll.setStyle("-fx-font-weight: bold;");
+
+        // Cell Factory: Sadece ID göster
+        availableList.setCellFactory(param -> new javafx.scene.control.ListCell<>() {
+            @Override protected void updateItem(Student item, boolean empty) {
+                super.updateItem(item, empty);
+                setText(empty || item == null ? null : item.getStudentID());
+            }
+        });
+        enrolledList.setCellFactory(availableList.getCellFactory());
+
+        Button btnAdd = new Button("Add ->");
+        Button btnRemove = new Button("<- Remove");
+        btnAdd.setDisable(true);
+        btnRemove.setDisable(true);
+
+        VBox btnBox = new VBox(10, btnAdd, btnRemove);
+        btnBox.setAlignment(Pos.CENTER);
+
+        // --- MANTIK KISMI ---
+
+        // Ders Seçilince Listeleri Doldur
+        courseCombo.setOnAction(e -> {
+            Course selectedCourse = courseCombo.getValue();
+            if (selectedCourse != null) {
+                List<Student> enrolled = selectedCourse.getEnrolledStudents();
+                List<Student> available = new ArrayList<>(dataManager.getStudents());
+                available.removeAll(enrolled); // Kayıtlıları çıkar
+
+                enrolledList.setItems(FXCollections.observableArrayList(enrolled));
+                availableList.setItems(FXCollections.observableArrayList(available));
+
+                lblEnroll.setText("Enrolled Students (" + enrolled.size() + ")");
+                lblAvail.setText("Available Students (" + available.size() + ")");
+                
+                btnAdd.setDisable(false);
+                btnRemove.setDisable(false);
+            }
+        });
+
+        // EKLEME İŞLEMİ
+        btnAdd.setOnAction(e -> {
+            Student s = availableList.getSelectionModel().getSelectedItem();
+            Course c = courseCombo.getValue();
+            
+            if (s == null) {
+                new Alert(Alert.AlertType.WARNING, "Please select a student to add.").show();
+                return;
+            }
+
+            if (c != null) {
+                try {
+                    // Backend'e ekle
+                    dataManager.enrollStudentToCourse(c, s); 
+                    
+                    // LİSTELERİ SIFIRDAN YÜKLE (En Garanti Yol)
+                    List<Student> freshEnrolled = c.getEnrolledStudents(); 
+                    List<Student> freshAvailable = new ArrayList<>(dataManager.getStudents());
+                    freshAvailable.removeAll(freshEnrolled); // Farkını al
+
+                    // UI Listelerini Güncelle
+                    enrolledList.setItems(FXCollections.observableArrayList(freshEnrolled));
+                    availableList.setItems(FXCollections.observableArrayList(freshAvailable));
+                    
+                    // Başlıkları Güncelle
+                    lblEnroll.setText("Enrolled Students (" + freshEnrolled.size() + ")");
+                    lblAvail.setText("Available Students (" + freshAvailable.size() + ")");
+                    
+                    // ComboBox yazısını güncelle (Sayı artsın diye)
+                    int currentIndex = courseCombo.getSelectionModel().getSelectedIndex();
+                    ObservableList<Course> items = courseCombo.getItems();
+                    courseCombo.setItems(null); 
+                    courseCombo.setItems(items);
+                    courseCombo.getSelectionModel().select(currentIndex);
+                    
+                    messages.add("Enrolled " + s.getStudentID() + " to " + c.getCourseCode());
+
+                } catch (Exception ex) {
+                    showError("Add Failed", ex.getMessage());
+                    ex.printStackTrace();
+                }
+            }
+        });
+
+        // SİLME İŞLEMİ
+        btnRemove.setOnAction(e -> {
+            Student s = enrolledList.getSelectionModel().getSelectedItem();
+            Course c = courseCombo.getValue();
+
+            if (s == null) {
+                new Alert(Alert.AlertType.WARNING, "Please select a student to remove.").show();
+                return;
+            }
+
+            if (c != null) {
+                try {
+                    dataManager.unenrollStudentFromCourse(c, s);
+                    
+                    List<Student> freshEnrolled = c.getEnrolledStudents(); 
+                    List<Student> freshAvailable = new ArrayList<>(dataManager.getStudents());
+                    freshAvailable.removeAll(freshEnrolled);
+
+                    // UI Listelerini Güncelle
+                    enrolledList.setItems(FXCollections.observableArrayList(freshEnrolled));
+                    availableList.setItems(FXCollections.observableArrayList(freshAvailable));
+                    
+                    // Başlıkları Güncelle
+                    lblEnroll.setText("Enrolled Students (" + freshEnrolled.size() + ")");
+                    lblAvail.setText("Available Students (" + freshAvailable.size() + ")");
+                    
+                    // ComboBox yazısını güncelle
+                    int currentIndex = courseCombo.getSelectionModel().getSelectedIndex();
+                    ObservableList<Course> items = courseCombo.getItems();
+                    courseCombo.setItems(null); 
+                    courseCombo.setItems(items);
+                    courseCombo.getSelectionModel().select(currentIndex);
+
+                    messages.add("Removed " + s.getStudentID() + " from " + c.getCourseCode());
+
+                } catch (Exception ex) {
+                    showError("Remove Failed", ex.getMessage());
+                    ex.printStackTrace();
+                }
+            }
+        });
+
+        GridPane grid = new GridPane();
+        grid.setPadding(new Insets(15));
+        grid.setHgap(15);
+        grid.setVgap(10);
+        grid.add(new Label("Select Course:"), 0, 0);
+        grid.add(courseCombo, 1, 0, 2, 1);
+        grid.add(lblAvail, 0, 1);
+        grid.add(new Label(""), 1, 1);
+        grid.add(lblEnroll, 2, 1);
+        grid.add(availableList, 0, 2);
+        grid.add(btnBox, 1, 2);
+        grid.add(enrolledList, 2, 2);
+
+        dialog.setScene(new Scene(grid, 700, 500));
         dialog.show();
     }
 

@@ -1,14 +1,18 @@
 package com.examscheduler.logic;
 
-import com.examscheduler.model.*;
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileOutputStream;
+import java.io.IOException;
+import java.io.ObjectInputStream;
+import java.io.ObjectOutputStream;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Objects;
-import java.io.Serializable;
 
- import java.io.*;
-import java.util.ArrayList;
-import java.util.List;
+import com.examscheduler.model.Classroom;
+import com.examscheduler.model.Course;
+import com.examscheduler.model.Schedule;
+import com.examscheduler.model.Student;
 
 /**
  * DataManager - Singleton Pattern
@@ -30,6 +34,7 @@ public class DataManager {
     private File studentFile;
     private File courseFile;
     private File classroomFile;
+    private File attendanceFile;
     
     // Versiyon kontrolü
     private static final int DATA_VERSION = 1;
@@ -56,10 +61,11 @@ public class DataManager {
      * Yükleme işlemi sırasında (handleLoad) kaynak dosyaların yollarını kaydeder.
      * Bu sayede ekleme/silme işlemlerinde doğru dosyaya yazılabilir.
      */
-    public void setSourceFiles(File std, File crs, File room) {
+    public void setSourceFiles(File std, File crs, File room, File att) {
         this.studentFile = std;
         this.courseFile = crs;
         this.classroomFile = room;
+        this.attendanceFile = att;
     }
 
     // ==================== ÖĞRENCİ YÖNETİMİ (OTOMATİK CSV KAYDI) ====================
@@ -116,6 +122,47 @@ public class DataManager {
     public void removeClassroom(Classroom c) {
         if (classrooms.remove(c)) {
             if (classroomFile != null) CSVParser.updateClassroomFile(classroomFile, classrooms);
+        }
+    }
+
+    // ==================== ATTENDANCE YÖNETİMİ ====================
+
+    public void enrollStudentToCourse(Course course, Student student) {
+        if (course == null || student == null) return;
+
+        // 1. Course sınıfına eklemeyi dene (Başarılı olursa true döner)
+        boolean addedToCourse = course.addStudent(student);
+
+        // 2. Eğer derse eklendiyse, öğrenci tarafını ve dosyayı güncelle
+        if (addedToCourse) {
+            student.addCourse(course);
+
+            // Eğer attendance dosyası henüz yoksa oluştur
+            if (attendanceFile == null && courseFile != null) {
+                attendanceFile = new File(courseFile.getParent(), "attendance.csv");
+            }
+
+            // 3. Dosyayı güncelle
+            if (attendanceFile != null) {
+                CSVParser.updateAttendanceFile(attendanceFile, courses);
+            }
+        }
+    }
+
+    public void unenrollStudentFromCourse(Course course, Student student) {
+        if (course == null || student == null) return;
+
+        // 1. Course sınıfından silmeyi dene (Başarılı olursa true döner)
+        boolean removedFromCourse = course.removeStudent(student);
+
+        // 2. Öğrencinin kendi ders listesinden de sil
+        if (student.getCourses() != null) {
+            student.getCourses().removeIf(c -> c.getCourseCode().equals(course.getCourseCode()));
+        }
+
+        // 3. Eğer silme başarılıysa dosyayı güncelle
+        if (removedFromCourse && attendanceFile != null) {
+            CSVParser.updateAttendanceFile(attendanceFile, courses);
         }
     }
     
