@@ -2036,34 +2036,52 @@ private static class ImportResult {
         int placedCount = 0;
         unplacedCourses.clear();
 
-        // Greedy Algorithm 
+        // Greedy Algorithm - Randomized Room Selection with Additional Constraints
         for (Exam exam : examsToPlace) {
             boolean placed = false;
             List<Student> studentsOfCourse = exam.getEnrolledStudents();
             int enrolledCount = exam.getStudentCount();
             String instructor = exam.getCourse().getInstructor();
 
-            
+            // Randomize classroom search order for each new exam
             Collections.shuffle(availableClassrooms, new Random());
 
             outerLoop: for (int day = 1; day <= days; day++) {
+
+                final int currentDay = day; // <-- DÜZELTME: Lambda ifadesi için etkin olarak 'final' değişken
+
                 for (int slotNum = 1; slotNum <= timeSlotsRaw.size(); slotNum++) {
                     TimeSlot currentSlot = new TimeSlot(day, slotNum);
 
-                    
+                    // 1. CONSTRAINT: STUDENT CONFLICT
                     boolean studentConflict = false;
-                    
+
                     for (Student student : studentsOfCourse) {
                         Set<TimeSlot> busySlots = studentScheduledSlots.getOrDefault(student, Collections.emptySet());
+
+                        // A. Does the student have another exam at the same time? (Kritik Çakışma)
                         if (busySlots.contains(currentSlot)) {
                             studentConflict = true;
                             break;
                         }
+
+                        // --- YENİ KISITLAMA: GÜNLÜK MAKSİMUM 2 SINAV (User Req 6) ---
+                        // Öğrencinin o gün (currentDay) kaç tane sınavı olduğunu sayıyoruz.
+                        long examsOnDay = busySlots.stream()
+                                .filter(ts -> ts.getDay() == currentDay)
+                                .count();
+
+                        if (examsOnDay >= 2) {
+                            // Eğer öğrencinin o gün zaten 2 sınavı varsa, 3. sınav verilemez.
+                            studentConflict = true;
+                            break;
+                        }
+                        // ------------------------------------------------------------
                     }
                     if (studentConflict)
                         continue;
 
-                    
+                    // B. Consecutive Exam Constraint (Ardışık Sınav - Kesin Engel olarak kaldı)
                     if (slotNum > 1) {
                         TimeSlot previousSlot = new TimeSlot(day, slotNum - 1);
                         for (Student student : studentsOfCourse) {
@@ -2071,8 +2089,7 @@ private static class ImportResult {
                                     Collections.emptySet());
                             if (busySlots.contains(previousSlot)) {
                                 studentConflict = true;
-                                messages.add("  ⚠ WARNING: " + exam.getCourse().getCourseCode() +
-                                        " conflict (Consecutive) for student");
+                                // messages.add("  ⚠ WARNING: " + exam.getCourse().getCourseCode() + " conflict (Consecutive)");
                                 break;
                             }
                         }
@@ -2081,40 +2098,39 @@ private static class ImportResult {
                     if (studentConflict)
                         continue;
 
-                    
+                    // 2. CONSTRAINT: INSTRUCTOR CONFLICT
                     if (instructor != null && !instructor.isEmpty()) {
                         instructorOccupancy.putIfAbsent(currentSlot, new HashSet<>());
                         if (instructorOccupancy.get(currentSlot).contains(instructor)) {
-                            messages.add("  ⚠ WARNING: " + exam.getCourse().getCourseCode() +
-                                    " conflict (Instructor) for " + instructor);
+                            // messages.add("  ⚠ WARNING: " + exam.getCourse().getCourseCode() + " conflict (Instructor)");
                             continue;
                         }
                     }
 
-                    
+                    // 3. CONSTRAINT: CLASSROOM ASSIGNMENT AND ROOM CONFLICT
                     for (Classroom room : availableClassrooms) {
 
-                        
+                        // Capacity check
                         if (!room.canAccommodate(enrolledCount))
                             continue;
 
-                        
+                        // Room occupancy check
                         roomOccupancy.putIfAbsent(currentSlot, new HashSet<>());
                         if (roomOccupancy.get(currentSlot).contains(room.getClassroomID()))
                             continue;
 
-                        
+                        // --- ASSIGNMENT ---
                         exam.setTimeSlot(currentSlot);
                         exam.setClassroom(room);
                         dataManager.getSchedule().addExam(exam);
 
-                        
+                        // Record Room and Instructor occupancy
                         roomOccupancy.get(currentSlot).add(room.getClassroomID());
                         if (instructor != null && !instructor.isEmpty()) {
                             instructorOccupancy.get(currentSlot).add(instructor);
                         }
 
-                        
+                        // Update student schedule
                         for (Student student : studentsOfCourse) {
                             studentScheduledSlots.computeIfAbsent(student, k -> new HashSet<>()).add(currentSlot);
                         }
@@ -2127,7 +2143,7 @@ private static class ImportResult {
                                 ", Room " + room.getClassroomID() +
                                 " (" + enrolledCount + " students)");
 
-                        break outerLoop; 
+                        break outerLoop; // Successful assignment made, move to the next exam
                     }
                 }
             }
