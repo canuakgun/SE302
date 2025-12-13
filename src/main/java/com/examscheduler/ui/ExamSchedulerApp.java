@@ -4395,7 +4395,23 @@ private void exportConflictReportFile(Stage owner, String reportText) {
                 "• Default naming with timestamps\n" +
                 "• Overwrite protection\n\n" +
                 "--------------------------\n" +
-                "8. ADVANCED FEATURES\n" +
+                "8. IMPORTING SCHEDULES\n" +
+                "--------------------------\n\n" +
+                "PURPOSE:\n" +
+                "Restore a previously created and exported schedule to continue working on it.\n\n" +
+                "⚠ CRITICAL PREREQUISITE:\n" +
+                "Before importing, you MUST load the original Base Data files (students, courses, classrooms).\n" +
+                "The Import function maps the schedule to these existing data objects.\n\n" +
+                "HOW TO IMPORT:\n" +
+                "1. Click 'Load Data' and ensure base files are loaded.\n" +
+                "2. Click the '📥 Import Schedule' button.\n" +
+                "3. Select a 'schedule.csv' file previously created by this app.\n" +
+                "4. The system will restore exam times, rooms, and specific student counts.\n\n" +
+                "COMMON IMPORT ERRORS:\n" +
+                "• \"Course not found\": The loaded courses.csv does not contain a course listed in the schedule.\n" +
+                "• \"Room not found\": The loaded classrooms.csv is missing a room ID.\n\n" +
+                "--------------------------\n" +
+                "9. ADVANCED FEATURES\n" +
                 "--------------------------\n\n" +
                 "MANUAL EDITING:\n" +
                 "• Edit individual exams: Click ✏ button\n" +
