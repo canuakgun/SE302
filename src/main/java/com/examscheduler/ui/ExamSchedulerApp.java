@@ -66,6 +66,7 @@ import javafx.scene.layout.BorderPane;
 import javafx.scene.layout.GridPane;
 import javafx.scene.layout.HBox;
 import javafx.scene.layout.Priority;
+import javafx.scene.layout.Region;
 import javafx.scene.layout.VBox;
 import javafx.stage.DirectoryChooser;
 import javafx.stage.FileChooser;
@@ -94,6 +95,154 @@ public class ExamSchedulerApp extends Application {
 
     @Override
     public void start(Stage stage) {
+
+        showWelcomeScreen(stage);
+    }
+
+    private void showWelcomeScreen(Stage stage) {
+        stage.setTitle("Exam Scheduler - Welcome");
+
+        // --- Design Elements ---
+
+        // Title
+        Label titleLabel = new Label("🎓 Exam Scheduler");
+        titleLabel.setStyle("-fx-font-size: 36px; -fx-font-weight: bold; -fx-text-fill: #0078D4;");
+
+        Label subTitleLabel = new Label("Exam Planning and Management System v2.0");
+        subTitleLabel.setStyle("-fx-font-size: 16px; -fx-text-fill: #666;");
+
+        // Button Styles
+        String primaryBtnStyle = "-fx-background-color: #0078D4; -fx-text-fill: white; -fx-font-size: 16px; -fx-font-weight: bold; -fx-padding: 12px 30px; -fx-background-radius: 5; -fx-cursor: hand;";
+        String secondaryBtnStyle = "-fx-background-color: #555555; -fx-text-fill: white; -fx-font-size: 14px; -fx-font-weight: bold; -fx-padding: 10px 25px; -fx-background-radius: 5; -fx-cursor: hand;";
+        String helpBtnStyle = "-fx-background-color: #1976D2; -fx-text-fill: white; -fx-font-size: 14px; -fx-font-weight: bold; -fx-padding: 10px 25px; -fx-background-radius: 5; -fx-cursor: hand;";
+        String exitBtnStyle = "-fx-background-color: #D32F2F; -fx-text-fill: white; -fx-font-size: 14px; -fx-font-weight: bold; -fx-padding: 10px 25px; -fx-background-radius: 5; -fx-cursor: hand;";
+
+
+        // Admin/Main Entry Button
+        Button startBtn = new Button("Admin Login / Start ➤");
+        startBtn.setStyle(primaryBtnStyle);
+        startBtn.setOnAction(e -> showMainApplication(stage));
+
+        // Settings Button
+        Button settingsBtn = new Button("⚙ Settings");
+        settingsBtn.setStyle(secondaryBtnStyle);
+        settingsBtn.setOnAction(e -> showSettingsDialog()); // showSettingsDialog çağrıldı
+
+        // Help Buttons (New additions)
+        Button manualBtn = new Button("📚 User Manual");
+        manualBtn.setStyle(helpBtnStyle);
+        manualBtn.setOnAction(e -> showHelpDialog("📚 User Manual", getUserManualText()));
+
+        Button quickStartBtn = new Button("🚀 Quick Start Guide");
+        quickStartBtn.setStyle(helpBtnStyle);
+        quickStartBtn.setOnAction(e -> showHelpDialog("🚀 Quick Start Guide", getQuickStartText()));
+
+        Button faqBtn = new Button("❓ FAQ");
+        faqBtn.setStyle(helpBtnStyle);
+        faqBtn.setOnAction(e -> showHelpDialog("❓ Frequently Asked Questions", getFAQText()));
+
+        // Exit Button
+        Button exitBtn = new Button("❌ Exit");
+        exitBtn.setStyle(exitBtnStyle);
+        exitBtn.setOnAction(e -> stage.close());
+
+        // Group the secondary buttons (Settings, Help, Exit)
+        HBox utilityButtons = new HBox(20, settingsBtn, exitBtn);
+        utilityButtons.setAlignment(Pos.CENTER);
+
+        HBox helpButtons = new HBox(10, manualBtn, quickStartBtn, faqBtn);
+        helpButtons.setAlignment(Pos.CENTER);
+
+
+        // Footer
+        Label footerLabel = new Label("Developed by Team 11-Abdulhamid Yıldırım,Ahmet Emir Doğan,Ali Uğur Yalçın,Can Ulaş Akgün,Furkan Pala © " + LocalDate.now().getYear());
+        footerLabel.setStyle("-fx-text-fill: #999; -fx-font-size: 12px;");
+
+        // --- Layout Arrangement (VBox) ---
+        VBox layout = new VBox(25); // 25px spacing between elements
+        layout.setAlignment(Pos.CENTER);
+        layout.setPadding(new Insets(50));
+        layout.setStyle("-fx-background-color: linear-gradient(to bottom right, #ffffff, #f0f4f8);");
+
+        // Add elements
+        layout.getChildren().addAll(
+                titleLabel,
+                subTitleLabel,
+                new Separator(),
+                startBtn,
+                new Separator(),
+                helpButtons,
+                new Separator(),
+                utilityButtons,
+                new Region(), // Spacer
+                footerLabel
+        );
+
+        // Create and show the scene
+        Scene scene = new Scene(layout, 800, 600);
+        stage.setScene(scene);
+        stage.centerOnScreen();
+        stage.show();
+    }
+
+    // Örnek bir Ayarlar Diyaloğu Metodu
+    private void showSettingsDialog() {
+        Stage settingsStage = new Stage();
+        settingsStage.initModality(Modality.APPLICATION_MODAL);
+        settingsStage.setTitle("⚙ Application Settings");
+
+        VBox layout = new VBox(20);
+        layout.setPadding(new Insets(25));
+        layout.setAlignment(Pos.TOP_LEFT);
+
+        Label title = new Label("Global Preferences");
+        title.setStyle("-fx-font-size: 20px; -fx-font-weight: bold; -fx-text-fill: #0078D4;");
+
+        // --- 1. Scheduling Constraint Setting Example ---
+        Spinner<Integer> maxExamsSpinner = new Spinner<>(1, 5, 2);
+        maxExamsSpinner.setEditable(true);
+        maxExamsSpinner.setPrefWidth(80);
+        HBox maxExamsBox = new HBox(10, new Label("Max Exams Per Day (Student):"), maxExamsSpinner);
+        maxExamsBox.setAlignment(Pos.CENTER_LEFT);
+
+        // --- 2. Theme Setting Example ---
+        ComboBox<String> themeCombo = new ComboBox<>(FXCollections.observableArrayList("Light", "Dark (Not Implemented)", "Default"));
+        themeCombo.setValue("Default");
+        HBox themeBox = new HBox(10, new Label("Application Theme:"), themeCombo);
+        themeBox.setAlignment(Pos.CENTER_LEFT);
+
+        // --- 3. Auto-Save Setting Example ---
+        CheckBox autoSaveCheck = new CheckBox("Enable Auto-Save (Every 5 mins)");
+        autoSaveCheck.setSelected(true);
+
+        Button saveBtn = new Button("Apply Changes");
+        saveBtn.setStyle("-fx-background-color: #4CAF50; -fx-text-fill: white; -fx-padding: 8px 16px;");
+        saveBtn.setOnAction(e -> {
+            // Apply logic here (e.g., save maxExamsSpinner value to DataManager)
+            showInfo("Settings Applied", "Settings saved successfully! Changes will take effect on next generation/restart.");
+            settingsStage.close();
+        });
+
+        layout.getChildren().addAll(
+                title,
+                new Separator(),
+                new Label("Scheduling Constraints"),
+                maxExamsBox,
+                new Separator(),
+                new Label("Appearance & Automation"),
+                themeBox,
+                autoSaveCheck,
+                new Separator(),
+                saveBtn
+        );
+
+        Scene scene = new Scene(layout, 500, 450);
+        settingsStage.setScene(scene);
+        settingsStage.showAndWait();
+    }
+
+
+    private void showMainApplication(Stage stage) {
         stage.setTitle("📅 Exam Scheduler - Enhanced with Student Portal");
 
         String primaryColor = "#0078D4";
@@ -1125,7 +1274,7 @@ public class ExamSchedulerApp extends Application {
     }
 
     private void loadFilesWithPaths(Stage owner, String studentsPath, String coursesPath,
-            String classroomsPath, String attendancePath) {
+                                    String classroomsPath, String attendancePath) {
         messages.add("📄 Loading individual files...");
 
         try {
@@ -2131,8 +2280,8 @@ public class ExamSchedulerApp extends Application {
 
                         String suffix = (forcedSlot != null || examsToPlace.stream()
                                 .filter(e -> e.getCourse().getCourseCode().equals(courseCode)).count() > 1)
-                                        ? " [Part]"
-                                        : "";
+                                ? " [Part]"
+                                : "";
 
                         messages.add("  ✓ " + courseCode + suffix +
                                 " → Day " + day + ", Slot " + slotNum +
@@ -3685,8 +3834,8 @@ public class ExamSchedulerApp extends Application {
         boolean checkTimeDistribution;
 
         ValidationOptions(boolean studentConflicts, boolean consecutive, boolean roomConflicts,
-                boolean instructorConflicts, boolean capacity, boolean studentLoad,
-                boolean roomUtilization, boolean timeDistribution) {
+                          boolean instructorConflicts, boolean capacity, boolean studentLoad,
+                          boolean roomUtilization, boolean timeDistribution) {
             this.checkStudentConflicts = studentConflicts;
             this.checkConsecutive = consecutive;
             this.checkRoomConflicts = roomConflicts;
