@@ -8,9 +8,19 @@ import com.examscheduler.model.Exam;
 import com.examscheduler.model.Schedule;
 import com.examscheduler.model.Student;
 import com.examscheduler.model.TimeSlot;
-
+import com.itextpdf.text.BaseColor;
+import com.itextpdf.text.Document;
+import com.itextpdf.text.Element;
+import com.itextpdf.text.Font;
+import com.itextpdf.text.FontFactory;
+import com.itextpdf.text.Paragraph;
+import com.itextpdf.text.Phrase;
+import com.itextpdf.text.pdf.PdfPCell;
+import com.itextpdf.text.pdf.PdfPTable;
+import com.itextpdf.text.pdf.PdfWriter;
 
 import java.io.File;
+import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.PrintWriter;
 import java.nio.file.Files;
@@ -37,6 +47,7 @@ import javafx.collections.ObservableList;
 import javafx.concurrent.Task;
 import javafx.geometry.Insets;
 import javafx.geometry.Pos;
+import javafx.scene.Node;
 import javafx.scene.Scene;
 import javafx.scene.control.Alert;
 import javafx.scene.control.Button;
@@ -63,6 +74,8 @@ import javafx.scene.control.TableColumn;
 import javafx.scene.control.TableView;
 import javafx.scene.control.TextArea;
 import javafx.scene.control.TextField;
+import javafx.scene.control.ToggleButton;
+import javafx.scene.control.ToggleGroup;
 import javafx.scene.control.ToolBar;
 import javafx.scene.control.cell.PropertyValueFactory;
 import javafx.scene.control.cell.TextFieldListCell;
@@ -72,6 +85,7 @@ import javafx.scene.layout.GridPane;
 import javafx.scene.layout.HBox;
 import javafx.scene.layout.Priority;
 import javafx.scene.layout.Region;
+import javafx.scene.layout.StackPane;
 import javafx.scene.layout.VBox;
 import javafx.stage.DirectoryChooser;
 import javafx.stage.FileChooser;
@@ -315,6 +329,7 @@ public class ExamSchedulerApp extends Application {
         stage.setScene(sc);
         stage.setMinWidth(1200);
         stage.setMinHeight(700);
+        stage.centerOnScreen();
         stage.show();
     }
    private void showStudentPortal(Stage owner) {
@@ -559,189 +574,208 @@ private VBox createInfoCard(String icon, String value, String label) {
 }
 
 private void showStudentSchedule(Stage owner, Student student) {
-    Stage scheduleStage = new Stage();
-    scheduleStage.initOwner(owner);
-    scheduleStage.setTitle("📅 My Exam Schedule");
-    scheduleStage.setMaximized(false);
-    
-    // Modern gradient background
-    BorderPane root = new BorderPane();
-    root.setStyle("-fx-background-color: #f8f9fa;");
-    
-    // Profesyonel üst banner
-    VBox header = new VBox(15);
-    header.setPadding(new Insets(25, 30, 25, 30));
-    header.setStyle("-fx-background-color: linear-gradient(135deg, #667eea 0%, #764ba2 100%); " +
-                   "-fx-effect: dropshadow(gaussian, rgba(0,0,0,0.15), 8, 0, 0, 2);");
-    
-    // Öğrenci profil bölümü
-    HBox profileBox = new HBox(20);
-    profileBox.setAlignment(Pos.CENTER_LEFT);
-    
-    // Avatar/Icon
-    VBox avatarBox = new VBox();
-    avatarBox.setAlignment(Pos.CENTER);
-    avatarBox.setPrefSize(70, 70);
-    avatarBox.setStyle("-fx-background-color: white; " +
-                      "-fx-background-radius: 35; " +
-                      "-fx-effect: dropshadow(gaussian, rgba(0,0,0,0.2), 5, 0, 0, 2);");
-    
-    Label avatarLabel = new Label("👤");
-    avatarLabel.setStyle("-fx-font-size: 36px;");
-    avatarBox.getChildren().add(avatarLabel);
-    
-    // Öğrenci bilgileri
-    VBox studentInfo = new VBox(5);
-    Label studentNameLabel = new Label(student.getStudentID());
-    studentNameLabel.setStyle("-fx-font-size: 28px; -fx-font-weight: bold; -fx-text-fill: white; " +
-                             "-fx-effect: dropshadow(gaussian, rgba(0,0,0,0.3), 3, 0, 0, 1);");
-    
-    LocalDate startDate = examStartDatePicker != null && examStartDatePicker.getValue() != null ? 
-                         examStartDatePicker.getValue() : LocalDate.now();
-    LocalDate endDate = startDate.plusDays(daysSpinner.getValue() - 1);
-    
-    Label dateLabel = new Label("📅 " + startDate.format(java.time.format.DateTimeFormatter.ofPattern("MMM dd")) + 
-                               " - " + endDate.format(java.time.format.DateTimeFormatter.ofPattern("MMM dd, yyyy")));
-    dateLabel.setStyle("-fx-font-size: 13px; -fx-text-fill: rgba(255,255,255,0.95);");
-    
-    studentInfo.getChildren().addAll(studentNameLabel, dateLabel);
-    
-    // İstatistik kartları - Modern tasarım
-    List<Exam> studentExams = getStudentExams(student);
-    int totalExams = studentExams.size();
-    long busyDays = studentExams.stream()
-            .map(e -> e.getTimeSlot().getDay())
-            .distinct()
-            .count();
-    
-    double avgExamsPerDay = busyDays > 0 ? (double) totalExams / busyDays : 0;
-    
-    HBox statsBox = new HBox(15);
-    statsBox.setAlignment(Pos.CENTER_RIGHT);
-    
-    VBox totalExamsBox = createModernStatCard("📝", String.valueOf(totalExams), "Total Exams", "#667eea");
-    VBox busyDaysBox = createModernStatCard("📅", String.valueOf(busyDays), "Busy Days", "#2ecc71");
-    VBox avgBox = createModernStatCard("📊", String.format("%.1f", avgExamsPerDay), "Avg/Day", "#f39c12");
-    
-    statsBox.getChildren().addAll(totalExamsBox, busyDaysBox, avgBox);
-    
-    Region spacer = new Region();
-    HBox.setHgrow(spacer, Priority.ALWAYS);
-    profileBox.getChildren().addAll(avatarBox, studentInfo, spacer, statsBox);
-    
-    header.getChildren().add(profileBox);
-    root.setTop(header);
-    
-    // Ana içerik - Modern TabPane
-    TabPane tabPane = new TabPane();
-    tabPane.setTabClosingPolicy(TabPane.TabClosingPolicy.UNAVAILABLE);
-    tabPane.setStyle("-fx-background-color: transparent; " +
-                    "-fx-tab-min-height: 45px;");
-    tabPane.setPadding(new Insets(10, 20, 20, 20));
-    
-    // Tab 1: Dashboard (Özet + Takvim)
-    Tab dashboardTab = new Tab("  📊 Dashboard  ");
-    dashboardTab.setStyle("-fx-font-size: 14px; -fx-font-weight: bold;");
-    VBox dashboardContent = createDashboardView(studentExams);
-    dashboardTab.setContent(dashboardContent);
-    
-    // Tab 2: Takvim Görünümü
-    Tab calendarTab = new Tab("  📅 Calendar View  ");
-    calendarTab.setStyle("-fx-font-size: 14px; -fx-font-weight: bold;");
-    ScrollPane calendarScroll = new ScrollPane(createEnhancedCalendarView(studentExams));
-    calendarScroll.setFitToWidth(true);
-    calendarScroll.setStyle("-fx-background: transparent; -fx-background-color: transparent;");
-    calendarTab.setContent(calendarScroll);
-    
-    // Tab 3: Liste Görünümü
-    Tab listTab = new Tab("  📋 Detailed List  ");
-    listTab.setStyle("-fx-font-size: 14px; -fx-font-weight: bold;");
-    VBox listBox = createDetailedListView(studentExams);
-    listTab.setContent(listBox);
-    
-    // Tab 4: İstatistikler & Analiz
-    Tab statsTab = new Tab("  📈 Analytics  ");
-    statsTab.setStyle("-fx-font-size: 14px; -fx-font-weight: bold;");
-    statsTab.setContent(createStatisticsView(student, studentExams));
-    
-    tabPane.getTabs().addAll(dashboardTab, calendarTab, listTab, statsTab);
-    root.setCenter(tabPane);
-    
-    // Alt kısım - Export ve eylemler
-    HBox bottomBox = new HBox(20);
-    bottomBox.setPadding(new Insets(20, 30, 20, 30));
-    bottomBox.setAlignment(Pos.CENTER);
-    bottomBox.setStyle("-fx-background-color: white; " +
-                      "-fx-border-color: #e0e0e0; -fx-border-width: 1 0 0 0; " +
-                      "-fx-effect: dropshadow(gaussian, rgba(0,0,0,0.05), 5, 0, 0, -2);");
-    
-    Label exportLabel = new Label("Export Options:");
-    exportLabel.setStyle("-fx-font-size: 14px; -fx-font-weight: bold; -fx-text-fill: #2d3436;");
-    
-    // Export butonları - Modern, icon'lu
-    Button textBtn = createModernExportButton("📄", "Text File", "#3498db");
-    textBtn.setOnAction(e -> exportStudentSchedule(scheduleStage, student, studentExams));
-    
-    Button icalBtn = createModernExportButton("📅", "Calendar", "#2ecc71");
-    icalBtn.setOnAction(e -> exportAsICalendar(scheduleStage, student, studentExams));
-    
-    Button printBtn = createModernExportButton("🖨", "Print", "#95a5a6");
-    printBtn.setOnAction(e -> exportAsPDF(scheduleStage, student, studentExams));
-    
-    Region bottomSpacer = new Region();
-    HBox.setHgrow(bottomSpacer, Priority.ALWAYS);
-    
-    Button closeBtn = new Button("✕ Close");
-    closeBtn.setStyle("-fx-background-color: transparent; " +
-                     "-fx-text-fill: #636e72; " +
-                     "-fx-font-size: 13px; " +
-                     "-fx-padding: 8px 20px; " +
-                     "-fx-cursor: hand;");
-    closeBtn.setOnMouseEntered(e -> closeBtn.setStyle("-fx-background-color: #f8f9fa; " +
-                                                       "-fx-text-fill: #2d3436; " +
-                                                       "-fx-font-size: 13px; " +
-                                                       "-fx-background-radius: 5; " +
-                                                       "-fx-padding: 8px 20px; " +
-                                                       "-fx-cursor: hand;"));
-    closeBtn.setOnMouseExited(e -> closeBtn.setStyle("-fx-background-color: transparent; " +
-                                                      "-fx-text-fill: #636e72; " +
-                                                      "-fx-font-size: 13px; " +
-                                                      "-fx-padding: 8px 20px; " +
-                                                      "-fx-cursor: hand;"));
-    closeBtn.setOnAction(e -> scheduleStage.close());
-    
-    bottomBox.getChildren().addAll(exportLabel, textBtn, icalBtn, printBtn, bottomSpacer, closeBtn);
-    root.setBottom(bottomBox);
-    
-    Scene scene = new Scene(root, 900, 600);
-    scheduleStage.setScene(scene);
-    scheduleStage.setMinWidth(800);  
-    scheduleStage.show();
-}
+        Stage scheduleStage = new Stage();
+        scheduleStage.initOwner(owner);
+        scheduleStage.setTitle("📅 My Exam Schedule");
+        scheduleStage.setMaximized(false);
+        
+        // Modern gradient background
+        BorderPane root = new BorderPane();
+        root.setStyle("-fx-background-color: #f4f6f8;"); // Biraz daha yumuşak gri
+        
+        // --- 1. HEADER (AYNI KALIYOR) ---
+        VBox header = new VBox(15);
+        header.setPadding(new Insets(25, 30, 40, 30)); // Alt padding artırıldı (Navigasyon için yer)
+        header.setStyle("-fx-background-color: linear-gradient(to right, #667eea, #764ba2); " +
+                        "-fx-effect: dropshadow(gaussian, rgba(0,0,0,0.15), 10, 0, 0, 5);");
+        
+        // ... (Header içindeki Avatar, İsim, İstatistik Kartları kodları AYNEN kalsın) ...
+        // (Buraya senin yazdığın Header kodlarını tekrar yapıştırabilirsin, veya aşağıda özet geçeyim mi?)
+        // --- SENİN KODLARININ AYNISI BAŞLANGIÇ ---
+        HBox profileBox = new HBox(20);
+        profileBox.setAlignment(Pos.CENTER_LEFT);
+        
+        VBox avatarBox = new VBox();
+        avatarBox.setAlignment(Pos.CENTER);
+        avatarBox.setPrefSize(70, 70);
+        avatarBox.setStyle("-fx-background-color: white; -fx-background-radius: 35; -fx-effect: dropshadow(gaussian, rgba(0,0,0,0.2), 5, 0, 0, 2);");
+        Label avatarLabel = new Label("👤");
+        avatarLabel.setStyle("-fx-font-size: 36px;");
+        avatarBox.getChildren().add(avatarLabel);
+        
+        VBox studentInfo = new VBox(5);
+        Label studentNameLabel = new Label(student.getStudentID());
+        studentNameLabel.setStyle("-fx-font-size: 28px; -fx-font-weight: bold; -fx-text-fill: white; -fx-effect: dropshadow(gaussian, rgba(0,0,0,0.3), 3, 0, 0, 1);");
+        
+        LocalDate startDate = examStartDatePicker != null && examStartDatePicker.getValue() != null ? 
+                             examStartDatePicker.getValue() : LocalDate.now();
+        LocalDate endDate = startDate.plusDays(daysSpinner.getValue() - 1);
+        Label dateLabel = new Label("📅 " + startDate.toString() + " - " + endDate.toString());
+        dateLabel.setStyle("-fx-font-size: 13px; -fx-text-fill: rgba(255,255,255,0.9);");
+        studentInfo.getChildren().addAll(studentNameLabel, dateLabel);
 
-// Modern stat card oluşturucu
-private VBox createModernStatCard(String icon, String value, String label, String accentColor) {
+        // İstatistikleri hesapla
+        List<Exam> studentExams = getStudentExams(student);
+        int totalExams = studentExams.size();
+        long busyDays = studentExams.stream().map(e -> e.getTimeSlot().getDay()).distinct().count();
+        double avgExamsPerDay = busyDays > 0 ? (double) totalExams / busyDays : 0;
+
+        HBox statsBox = new HBox(15);
+        statsBox.setAlignment(Pos.CENTER_RIGHT);
+        // Kart renklerini biraz şeffaflaştırdım ki background üzerinde sırııtmasın
+        statsBox.getChildren().addAll(
+            createModernStatCard("📝", String.valueOf(totalExams), "Total Exams", "rgba(255,255,255,0.2)"), 
+            createModernStatCard("📅", String.valueOf(busyDays), "Busy Days", "rgba(255,255,255,0.2)"),
+            createModernStatCard("📊", String.format("%.1f", avgExamsPerDay), "Avg/Day", "rgba(255,255,255,0.2)")
+        );
+
+        Region spacer = new Region();
+        HBox.setHgrow(spacer, Priority.ALWAYS);
+        profileBox.getChildren().addAll(avatarBox, studentInfo, spacer, statsBox);
+        header.getChildren().add(profileBox);
+        
+        // --- Header'ı Root'a ekle ---
+        // Ancak navigasyonu header'ın içine değil, hemen altına bindireceğiz (Overlay etkisi)
+        root.setTop(header);
+        
+        // --- 2. MODERN NAVİGASYON (TAB YERİNE) ---
+        
+        // İçerik Alanı (Değişken Kısım)
+        StackPane contentArea = new StackPane();
+        contentArea.setPadding(new Insets(30, 20, 20, 20));
+        
+        // Görünümleri Hazırla
+        VBox dashboardView = createDashboardView(studentExams);
+        
+        ScrollPane calendarScroll = new ScrollPane(createEnhancedCalendarView(studentExams));
+        calendarScroll.setFitToWidth(true);
+        calendarScroll.setStyle("-fx-background: transparent; -fx-background-color: transparent;");
+        
+        // Buradaki scrollPane mantığına dikkat (Önceki sorudaki düzeltme)
+        Node analyticsView = createStatisticsView(student, studentExams); // VBox değil Node dönüyor artık
+
+        // Navigasyon Butonları
+        HBox navBar = new HBox(15);
+        navBar.setAlignment(Pos.CENTER);
+        navBar.setPadding(new Insets(10, 20, 10, 20));
+        // Yüzen Menü Stili (Floating Pill Design)
+        navBar.setStyle("-fx-background-color: white; " +
+                        "-fx-background-radius: 30; " +
+                        "-fx-effect: dropshadow(gaussian, rgba(0,0,0,0.1), 10, 0, 0, 4); " +
+                        "-fx-max-width: 500;"); // Genişliği sınırla
+        
+        // Toggle Grubu (Sadece biri seçili olsun diye)
+        ToggleGroup navGroup = new ToggleGroup();
+        
+        ToggleButton btnDash = createNavButton("📊 Dashboard", navGroup);
+        ToggleButton btnCal = createNavButton("📅 Calendar", navGroup);
+        ToggleButton btnStats = createNavButton("📈 Analytics", navGroup);
+        
+        // Aksiyonlar
+        btnDash.setOnAction(e -> contentArea.getChildren().setAll(dashboardView));
+        btnCal.setOnAction(e -> contentArea.getChildren().setAll(calendarScroll));
+        btnStats.setOnAction(e -> contentArea.getChildren().setAll(analyticsView));
+        
+        // Varsayılan Seçim
+        btnDash.setSelected(true);
+        contentArea.getChildren().setAll(dashboardView);
+        
+        navBar.getChildren().addAll(btnDash, btnCal, btnStats);
+        
+        // Header ile İçeriği Birleştiren Layout
+        // Navigasyon çubuğunu header'ın bittiği yere "yarı yarıya" bindirmek için StackPane kullanabiliriz
+        // Ama şimdilik basit olması için Header'ın altına VBox ile ekleyelim, fakat negatif margin verelim.
+        
+        VBox mainContent = new VBox();
+        mainContent.getChildren().addAll(navBar, contentArea);
+        VBox.setMargin(navBar, new Insets(-25, 0, 0, 0)); // YUKARI KAYDIR (Header'ın üstüne binsin)
+        mainContent.setAlignment(Pos.TOP_CENTER);
+        
+        root.setCenter(mainContent);
+
+        // --- 3. FOOTER (EXPORT) ---
+        HBox bottomBox = new HBox(20);
+        bottomBox.setPadding(new Insets(20, 30, 20, 30));
+        bottomBox.setAlignment(Pos.CENTER);
+        bottomBox.setStyle("-fx-background-color: white; -fx-border-color: #e0e0e0; -fx-border-width: 1 0 0 0;");
+        
+        Label exportLabel = new Label("Export Options:");
+        exportLabel.setStyle("-fx-font-size: 14px; -fx-font-weight: bold; -fx-text-fill: #2d3436;");
+        
+        Button textBtn = createModernExportButton("📄", "Text File", "#3498db");
+        textBtn.setOnAction(e -> exportStudentSchedule(scheduleStage, student, studentExams));
+        
+        Button icalBtn = createModernExportButton("📅", "Calendar", "#2ecc71");
+        icalBtn.setOnAction(e -> exportAsICalendar(scheduleStage, student, studentExams));
+        
+        Button printBtn = createModernExportButton("🖨", "Print (PDF)", "#9e0d0d");
+        printBtn.setOnAction(e -> exportAsPDF(scheduleStage, student, studentExams));
+        
+        Region bottomSpacer = new Region();
+        HBox.setHgrow(bottomSpacer, Priority.ALWAYS);
+        
+        Button closeBtn = new Button("Close");
+        closeBtn.setStyle("-fx-background-color: transparent; -fx-text-fill: #636e72; -fx-font-size: 13px; -fx-cursor: hand;");
+        closeBtn.setOnAction(e -> scheduleStage.close());
+        
+        bottomBox.getChildren().addAll(exportLabel, textBtn, icalBtn, printBtn, bottomSpacer, closeBtn);
+        root.setBottom(bottomBox);
+        
+        Scene scene = new Scene(root, 950, 700);
+        scheduleStage.setScene(scene);
+        scheduleStage.setMinWidth(900);
+        scheduleStage.show();
+    }
+
+    // --- YENİ YARDIMCI METOT (Navigasyon Butonları İçin) ---
+    private ToggleButton createNavButton(String text, ToggleGroup group) {
+        ToggleButton btn = new ToggleButton(text);
+        btn.setToggleGroup(group);
+        btn.setPrefWidth(140);
+        btn.setPrefHeight(35);
+        btn.setCursor(javafx.scene.Cursor.HAND);
+        
+        // CSS STİLİ (Normal ve Seçili Hali)
+        // Seçili değilken: Beyaz arka plan, Gri yazı, Kenarlık yok
+        // Seçiliyken: Mor/Mavi arka plan, Beyaz yazı, Yuvarlak köşe
+        String baseStyle = "-fx-background-radius: 20; -fx-font-weight: bold; -fx-font-size: 13px; -fx-background-insets: 0;";
+        
+        btn.styleProperty().bind(javafx.beans.binding.Bindings.when(btn.selectedProperty())
+            .then(baseStyle + "-fx-background-color: #667eea; -fx-text-fill: white;") // Seçili
+            .otherwise(baseStyle + "-fx-background-color: transparent; -fx-text-fill: #7f8c8d; -fx-border-color: transparent;") // Normal
+        );
+        
+        // Hover Efekti (Opsiyonel)
+        btn.setOnMouseEntered(e -> {
+            if (!btn.isSelected()) btn.setStyle(baseStyle + "-fx-background-color: #f0f2f5; -fx-text-fill: #2d3436;");
+        });
+        btn.setOnMouseExited(e -> {
+            if (!btn.isSelected()) btn.setStyle(baseStyle + "-fx-background-color: transparent; -fx-text-fill: #7f8c8d;");
+        });
+
+        return btn;
+    }
+
+
+// --- HEADER İÇİN KART METODU (Yazılar Beyaz) ---
+private VBox createModernStatCard(String icon, String value, String label, String bgColor) {
     VBox card = new VBox(5);
+    card.setPadding(new Insets(10, 15, 10, 15));
     card.setAlignment(Pos.CENTER);
-    card.setPadding(new Insets(15, 20, 15, 20));
-    card.setStyle("-fx-background-color: white; " +
-                 "-fx-background-radius: 12; " +
-                 "-fx-border-color: " + accentColor + "30; " +
-                 "-fx-border-width: 2; " +
-                 "-fx-border-radius: 12; " +
-                 "-fx-effect: dropshadow(gaussian, rgba(0,0,0,0.08), 5, 0, 0, 2);");
-    card.setMinWidth(110);
-    
-    Label iconLabel = new Label(icon);
-    iconLabel.setStyle("-fx-font-size: 24px;");
-    
-    Label valueLabel = new Label(value);
-    valueLabel.setStyle("-fx-font-size: 24px; -fx-font-weight: bold; -fx-text-fill: " + accentColor + ";");
-    
-    Label textLabel = new Label(label);
-    textLabel.setStyle("-fx-font-size: 11px; -fx-text-fill: #636e72; -fx-font-weight: 600;");
-    
-    card.getChildren().addAll(iconLabel, valueLabel, textLabel);
+
+    card.setStyle("-fx-background-color: " + bgColor + "; " +
+                  "-fx-background-radius: 15;");
+
+    Label iconLbl = new Label(icon);
+    iconLbl.setStyle("-fx-font-size: 20px; -fx-text-fill: rgba(255,255,255,0.9);");
+
+    Label valueLbl = new Label(value);
+    valueLbl.setStyle("-fx-font-size: 24px; -fx-font-weight: bold; -fx-text-fill: white;");
+
+    Label labelLbl = new Label(label);
+    labelLbl.setStyle("-fx-font-size: 10px; -fx-text-fill: rgba(255,255,255,0.8);");
+
+    card.getChildren().addAll(iconLbl, valueLbl, labelLbl);
     return card;
 }
 
@@ -894,95 +928,6 @@ private VBox createQuickStatItem(String icon, String label, String value) {
     return item;
 }
 
-// Detaylı liste görünümü
-private VBox createDetailedListView(List<Exam> studentExams) {
-    VBox listBox = new VBox(15);
-    listBox.setPadding(new Insets(20));
-    
-    Label title = new Label("📋 Complete Exam List");
-    title.setStyle("-fx-font-size: 20px; -fx-font-weight: bold; -fx-text-fill: #2d3436;");
-    
-    // Filtreleme kontrolleri
-    HBox filterBox = new HBox(15);
-    filterBox.setAlignment(Pos.CENTER_LEFT);
-    filterBox.setPadding(new Insets(10, 0, 10, 0));
-    
-    Label filterLabel = new Label("Sort by:");
-    filterLabel.setStyle("-fx-font-weight: 600; -fx-text-fill: #636e72;");
-    
-    ComboBox<String> sortCombo = new ComboBox<>();
-    sortCombo.getItems().addAll("Date (Earliest First)", "Date (Latest First)", "Course Code", "Room Number");
-    sortCombo.setValue("Date (Earliest First)");
-    sortCombo.setStyle("-fx-font-size: 12px;");
-    
-    filterBox.getChildren().addAll(filterLabel, sortCombo);
-    
-    // Sınavlar listesi
-    VBox examsList = new VBox(10);
-    
-    LocalDate startDate = examStartDatePicker != null && examStartDatePicker.getValue() != null ? 
-                         examStartDatePicker.getValue() : LocalDate.now();
-    
-    studentExams.stream()
-            .sorted(Comparator.comparing((Exam e) -> e.getTimeSlot().getDay())
-                    .thenComparing(e -> e.getTimeSlot().getSlotNumber()))
-            .forEach(exam -> examsList.getChildren().add(createDetailedExamCard(exam, startDate)));
-    
-    ScrollPane scrollPane = new ScrollPane(examsList);
-    scrollPane.setFitToWidth(true);
-    scrollPane.setStyle("-fx-background-color: transparent;");
-    VBox.setVgrow(scrollPane, Priority.ALWAYS);
-    
-    listBox.getChildren().addAll(title, filterBox, new Separator(), scrollPane);
-    return listBox;
-}
-
-// Detaylı sınav kartı
-private VBox createDetailedExamCard(Exam exam, LocalDate startDate) {
-    VBox card = new VBox(12);
-    card.setPadding(new Insets(18));
-    card.setStyle("-fx-background-color: white; " +
-                 "-fx-background-radius: 10; " +
-                 "-fx-border-color: #e0e0e0; " +
-                 "-fx-border-width: 1; " +
-                 "-fx-border-radius: 10; " +
-                 "-fx-effect: dropshadow(gaussian, rgba(0,0,0,0.05), 3, 0, 0, 1);");
-    
-    HBox headerBox = new HBox(15);
-    headerBox.setAlignment(Pos.CENTER_LEFT);
-    
-    LocalDate examDate = startDate.plusDays(exam.getTimeSlot().getDay() - 1);
-    
-    Label courseCodeLabel = new Label(exam.getCourse().getCourseCode());
-    courseCodeLabel.setStyle("-fx-font-size: 18px; -fx-font-weight: bold; -fx-text-fill: #667eea;");
-    
-    Label courseNameLabel = new Label(exam.getCourse().getCourseName());
-    courseNameLabel.setStyle("-fx-font-size: 14px; -fx-text-fill: #636e72;");
-    courseNameLabel.setWrapText(true);
-    HBox.setHgrow(courseNameLabel, Priority.ALWAYS);
-    
-    headerBox.getChildren().addAll(courseCodeLabel, courseNameLabel);
-    
-    GridPane detailsGrid = new GridPane();
-    detailsGrid.setHgap(30);
-    detailsGrid.setVgap(8);
-    
-    List<String> timeSlots = getTimeSlotsFromUI.get();
-    String timeSlot = "";
-    try {
-        timeSlot = timeSlots.get(exam.getTimeSlot().getSlotNumber() - 1);
-    } catch (Exception e) {
-        timeSlot = "Slot " + exam.getTimeSlot().getSlotNumber();
-    }
-    
-    detailsGrid.add(createDetailItem("📅", "Date", examDate.format(java.time.format.DateTimeFormatter.ofPattern("EEE, MMM dd, yyyy"))), 0, 0);
-    detailsGrid.add(createDetailItem("⏰", "Time", timeSlot), 1, 0);
-    detailsGrid.add(createDetailItem("📍", "Room", exam.getClassroom().getClassroomID()), 0, 1);
-    detailsGrid.add(createDetailItem("👨‍🏫", "Instructor", exam.getCourse().getInstructor()), 1, 1);
-    
-    card.getChildren().addAll(headerBox, new Separator(), detailsGrid);
-    return card;
-}
 
 // Detay item oluşturucu
 private HBox createDetailItem(String icon, String label, String value) {
@@ -1151,18 +1096,22 @@ private GridPane createEnhancedCalendarView(List<Exam> studentExams) {
     return calendar;
 }
 private VBox createStatisticsView(Student student, List<Exam> studentExams) {
-    VBox statsBox = new VBox(20);
-    statsBox.setPadding(new Insets(25));
-    statsBox.setStyle("-fx-background-color: white; -fx-border-radius: 10;");
+    // 1. ANA KAPLAYICI (Return edilecek olan)
+    VBox mainLayout = new VBox();
+    mainLayout.setPadding(new Insets(20));
+    mainLayout.setStyle("-fx-background-color: white; -fx-border-radius: 10; -fx-background-radius: 10;");
+
+    // 2. İÇERİK KUTUSU (Scroll edilecek olan tüm istatistikler burada)
+    VBox contentBox = new VBox(20);
+    contentBox.setPadding(new Insets(5)); // Scrollbar ile içerik arasına mesafe
     
     Label title = new Label("📊 Schedule Statistics");
     title.setStyle("-fx-font-size: 20px; -fx-font-weight: bold; -fx-text-fill: #2c3e50;");
     
-    // İstatistik kartları
+    // --- İSTATİSTİK KARTLARI ---
     GridPane statsGrid = new GridPane();
     statsGrid.setHgap(15);
     statsGrid.setVgap(15);
-    statsGrid.setPadding(new Insets(20));
     
     int totalExams = studentExams.size();
     Map<Integer, Long> examsPerDay = studentExams.stream()
@@ -1175,75 +1124,82 @@ private VBox createStatisticsView(Student student, List<Exam> studentExams) {
     
     long busyDayCount = examsPerDay.size();
     
-    // İstatistik kartları oluştur
     statsGrid.add(createStatCard("Total Exams", String.valueOf(totalExams), "#3498db"), 0, 0);
-    statsGrid.add(createStatCard("Busy Days", String.valueOf(busyDayCount), "#2ecc71"), 1, 0);
-    statsGrid.add(createStatCard("Busiest Day", "Day " + busiestDay, "#e74c3c"), 2, 0);
+    statsGrid.add(createStatCard("Active Days", String.valueOf(busyDayCount), "#2ecc71"), 1, 0);
+    statsGrid.add(createStatCard("Heaviest Day", "Day " + busiestDay, "#e74c3c"), 2, 0);
     
-    // Günlük dağılım grafiği
+    // --- GÜNLÜK DAĞILIM ---
     VBox distributionBox = new VBox(10);
     distributionBox.setPadding(new Insets(20));
-    distributionBox.setStyle("-fx-background-color: #f8f9fa; -fx-border-radius: 8;");
+    distributionBox.setStyle("-fx-background-color: #f8f9fa; -fx-border-radius: 8; -fx-background-radius: 8;");
     
-    Label distTitle = new Label("📈 Daily Exam Distribution");
-    distTitle.setStyle("-fx-font-weight: bold; -fx-font-size: 16px;");
+    Label distTitle = new Label("📈 Daily Exam Load");
+    distTitle.setStyle("-fx-font-weight: bold; -fx-font-size: 16px; -fx-text-fill: #34495e;");
     
+    distributionBox.getChildren().add(distTitle);
+
     examsPerDay.entrySet().stream()
             .sorted(Map.Entry.comparingByKey())
             .forEach(entry -> {
                 HBox dayBar = new HBox(10);
                 dayBar.setAlignment(Pos.CENTER_LEFT);
                 
-                Label dayLabel = new Label("Day " + entry.getKey() + ":");
-                dayLabel.setStyle("-fx-font-weight: bold; -fx-min-width: 60;");
+                Label dayLabel = new Label("Day " + entry.getKey());
+                dayLabel.setPrefWidth(60);
+                dayLabel.setStyle("-fx-font-weight: bold; -fx-text-fill: #7f8c8d;");
                 
-                ProgressBar progress = new ProgressBar(entry.getValue() / 5.0); // Max 5 exam per day
-                progress.setPrefWidth(300);
-                progress.setStyle("-fx-accent: #3498db;");
+                double progressValue = Math.min(entry.getValue() / 5.0, 1.0);
+                ProgressBar progress = new ProgressBar(progressValue);
+                progress.setPrefWidth(250);
+                String color = entry.getValue() <= 1 ? "#2ecc71" : (entry.getValue() <= 2 ? "#f1c40f" : "#e74c3c");
+                progress.setStyle("-fx-accent: " + color + "; -fx-control-inner-background: #ecf0f1;");
                 
                 Label countLabel = new Label(entry.getValue() + " exam(s)");
-                countLabel.setStyle("-fx-text-fill: #6c757d;");
+                countLabel.setStyle("-fx-font-size: 11px; -fx-text-fill: #666;");
                 
                 dayBar.getChildren().addAll(dayLabel, progress, countLabel);
                 distributionBox.getChildren().add(dayBar);
             });
     
-    // Öneriler
+    // --- ÖNERİLER ---
     VBox recommendationsBox = new VBox(10);
     recommendationsBox.setPadding(new Insets(20));
     recommendationsBox.setStyle("-fx-background-color: #fff3cd; -fx-border-color: #ffeaa7; " +
-                               "-fx-border-width: 1; -fx-border-radius: 8;");
+                              "-fx-border-width: 1; -fx-border-radius: 8; -fx-background-radius: 8;");
     
-    Label recTitle = new Label("💡 Recommendations");
-    recTitle.setStyle("-fx-font-weight: bold; -fx-font-size: 16px;");
+    Label recTitle = new Label("💡 Smart Insights");
+    recTitle.setStyle("-fx-font-weight: bold; -fx-font-size: 16px; -fx-text-fill: #856404;");
     
-    TextArea recommendations = new TextArea();
-    recommendations.setEditable(false);
-    recommendations.setWrapText(true);
-    recommendations.setPrefHeight(100);
-    recommendations.setStyle("-fx-background-color: transparent; -fx-border: none; " +
-                            "-fx-font-size: 13px;");
+    Label recText = new Label();
+    recText.setWrapText(true);
+    recText.setStyle("-fx-font-size: 13px; -fx-text-fill: #856404;");
     
-    StringBuilder recText = new StringBuilder();
+    StringBuilder recBuilder = new StringBuilder();
     if (totalExams == 0) {
-        recText.append("✓ No exams scheduled for this student\n");
+        recBuilder.append("• No exams found.\n");
     } else {
         if (examsPerDay.values().stream().anyMatch(count -> count >= 3)) {
-            recText.append("⚠ You have busy days with 3+ exams. Consider preparing in advance.\n");
+            recBuilder.append("⚠ Warning: You have days with 3+ exams.\n");
+        } else {
+            recBuilder.append("✓ Balanced schedule.\n");
         }
-        if (totalExams >= 8) {
-            recText.append("✓ Heavy exam load detected. Plan your study schedule accordingly.\n");
-        }
-        recText.append("✓ Total of " + totalExams + " exams across " + busyDayCount + " days\n");
-        recText.append("✓ Most exams on Day " + busiestDay + "\n");
     }
-    recommendations.setText(recText.toString());
+    recText.setText(recBuilder.toString());
+    recommendationsBox.getChildren().addAll(recTitle, recText);
     
-    recommendationsBox.getChildren().addAll(recTitle, recommendations);
+    // --- TÜM İÇERİĞİ CONTENT BOX'A EKLE ---
+    contentBox.getChildren().addAll(title, statsGrid, distributionBox, recommendationsBox);
     
-    statsBox.getChildren().addAll(title, statsGrid, distTitle, distributionBox, recommendationsBox);
+    // --- 3. SCROLLPANE OLUŞTURMA VE BAĞLAMA ---
+    ScrollPane scrollPane = new ScrollPane(contentBox); // İçeriği ScrollPane'e koy
+    scrollPane.setFitToWidth(true); // Yatayda sığdır
+    scrollPane.setStyle("-fx-background-color: transparent; -fx-background: transparent;");
     
-    return statsBox;
+    // ScrollPane'i ana kutuya ekle ve büyüt
+    mainLayout.getChildren().add(scrollPane);
+    VBox.setVgrow(scrollPane, Priority.ALWAYS); // Ana kutu büyürse ScrollPane de büyüsün
+    
+    return mainLayout; // VBox döndürür
 }
 
 private VBox createStatCard(String title, String value, String color) {
@@ -1472,62 +1428,118 @@ private void exportStudentSchedule(Stage owner, Student student, List<Exam> stud
         }
     }
 }
-private void createPDF(File file, Student student, List<Exam> studentExams) {
-    // PDF oluşturma için basit implementasyon
-    // Gerçek implementasyon için iText veya Apache PDFBox kütüphaneleri gerekli
-    try (PrintWriter pw = new PrintWriter(file, "UTF-8")) {
-        pw.println("==================================================");
-        pw.println("             OFFICIAL EXAM SCHEDULE");
-        pw.println("==================================================");
-        pw.println();
-        pw.println("STUDENT ID: " + student.getStudentID());
-        pw.println("GENERATED: " + LocalDate.now());
-        pw.println();
-        pw.println("==================================================");
-        pw.println("                    SCHEDULE");
-        pw.println("==================================================");
-        pw.println();
+private void createPDF(File file, Student student, List<Exam> exams) throws Exception {
+        Document document = new Document();
+        PdfWriter.getInstance(document, new FileOutputStream(file));
+        document.open();
+
+        // --- TASARIM RENKLERİ ---
+        BaseColor HEADER_COLOR = new BaseColor(0, 120, 212); // Kurumsal Mavi (#0078D4)
+        BaseColor ROW_COLOR_ODD = new BaseColor(240, 240, 240); // Açık Gri
+        BaseColor ROW_COLOR_EVEN = BaseColor.WHITE;
+
+        // --- BAŞLIK KISMI ---
+        Font titleFont = FontFactory.getFont(FontFactory.HELVETICA_BOLD, 20, BaseColor.DARK_GRAY);
+        Paragraph title = new Paragraph("Student Exam Schedule", titleFont);
+        title.setAlignment(Element.ALIGN_CENTER);
+        document.add(title);
         
-        List<String> timeSlots = getTimeSlotsFromUI.get();
-        LocalDate startDate = examStartDatePicker != null && examStartDatePicker.getValue() != null
-                ? examStartDatePicker.getValue()
-                : LocalDate.now();
-        
-        for (Exam exam : studentExams) {
-            LocalDate examDate = startDate.plusDays(exam.getTimeSlot().getDay() - 1);
-            String timeSlot = "";
-            try {
-                timeSlot = timeSlots.get(exam.getTimeSlot().getSlotNumber() - 1);
-            } catch (Exception e) {
-                timeSlot = "Slot " + exam.getTimeSlot().getSlotNumber();
-            }
-            
-            pw.println("Date:        " + examDate + " (" + examDate.getDayOfWeek() + ")");
-            pw.println("Time:        " + timeSlot);
-            pw.println("Course:      " + exam.getCourse().getCourseCode());
-            pw.println("Title:       " + exam.getCourse().getCourseName());
-            pw.println("Instructor:  " + exam.getCourse().getInstructor());
-            pw.println("Room:        " + exam.getClassroom().getClassroomID());
-            pw.println("Students:    " + exam.getStudentCount());
-            pw.println("---------------------------------------------");
-            pw.println();
+        Font subTitleFont = FontFactory.getFont(FontFactory.HELVETICA, 12, BaseColor.GRAY);
+        Paragraph subTitle = new Paragraph("Student ID: " + student.getStudentID(), subTitleFont);
+        subTitle.setAlignment(Element.ALIGN_CENTER);
+        subTitle.setSpacingAfter(20); // Altına boşluk bırak
+        document.add(subTitle);
+
+        // --- TABLO OLUŞTURMA (4 Sütun) ---
+        PdfPTable table = new PdfPTable(new float[]{2, 2, 4, 2}); // Sütun genişlik oranları
+        table.setWidthPercentage(100);
+        table.setSpacingBefore(10f);
+        table.setSpacingAfter(10f);
+
+        // --- TABLO BAŞLIKLARI ---
+        String[] headers = {"Day / Date", "Time", "Course Info", "Location"};
+        for (String headerTitle : headers) {
+            PdfPCell header = new PdfPCell(new Phrase(headerTitle, FontFactory.getFont(FontFactory.HELVETICA_BOLD, 12, BaseColor.WHITE)));
+            header.setBackgroundColor(HEADER_COLOR);
+            header.setHorizontalAlignment(Element.ALIGN_CENTER);
+            header.setVerticalAlignment(Element.ALIGN_MIDDLE);
+            header.setPadding(8); // İç boşluk
+            header.setBorderColor(BaseColor.GRAY);
+            table.addCell(header);
         }
-        
-        pw.println("==================================================");
-        pw.println("                 STATISTICS");
-        pw.println("==================================================");
-        pw.println();
-        pw.println("Total Exams: " + studentExams.size());
-        pw.println("Schedule Period: " + startDate + " to " + 
-                  startDate.plusDays(daysSpinner.getValue() - 1));
-        pw.println();
-        pw.println("This is an official document generated by");
-        pw.println("Exam Scheduler v2.0 - Student Portal");
-        
-    } catch (Exception e) {
-        throw new RuntimeException("Failed to create PDF: " + e.getMessage());
+
+        // --- VERİLERİ DOLDURMA ---
+        // Tarihe göre sırala
+        exams.sort(Comparator.comparing((Exam e) -> e.getTimeSlot().getDay())
+                .thenComparing(e -> e.getTimeSlot().getSlotNumber()));
+
+        List<String> timeSlots = getTimeSlotsFromUI.get();
+        LocalDate startDate = examStartDatePicker.getValue() != null ? examStartDatePicker.getValue() : LocalDate.now();
+
+        boolean isOdd = true;
+        for (Exam exam : exams) {
+            BaseColor rowColor = isOdd ? ROW_COLOR_ODD : ROW_COLOR_EVEN;
+            
+            // Tarih ve Saat Hesapla
+            LocalDate date = startDate.plusDays(exam.getTimeSlot().getDay() - 1);
+            String timeSlotStr;
+            try {
+                timeSlotStr = timeSlots.get(exam.getTimeSlot().getSlotNumber() - 1);
+            } catch (Exception e) {
+                timeSlotStr = "Slot " + exam.getTimeSlot().getSlotNumber();
+            }
+
+            // 1. Hücre: Tarih
+            addStyledCell(table, "Day " + exam.getTimeSlot().getDay() + "\n" + date.toString(), rowColor, true);
+            
+            // 2. Hücre: Saat
+            addStyledCell(table, timeSlotStr, rowColor, true);
+            
+            // 3. Hücre: Ders Bilgisi (Ders Kodu kalın, adı normal)
+            PdfPCell courseCell = new PdfPCell();
+            
+            // Ders Kodu Paragrafı
+            Paragraph pCode = new Paragraph(exam.getCourse().getCourseCode(), 
+                                          FontFactory.getFont(FontFactory.HELVETICA_BOLD, 11));
+            pCode.setAlignment(Element.ALIGN_CENTER); // <--- İŞTE BU SATIR ORTALIYOR
+            courseCell.addElement(pCode);
+
+            courseCell.setBackgroundColor(rowColor);
+            courseCell.setPadding(8);
+            courseCell.setVerticalAlignment(Element.ALIGN_MIDDLE); // Dikeyde ortala
+            courseCell.setUseAscender(true); // Dikey ortalamayı iyileştirir
+            table.addCell(courseCell);
+
+            // 4. Hücre: Oda
+            PdfPCell roomCell = new PdfPCell(new Phrase(exam.getClassroom().getClassroomID(), FontFactory.getFont(FontFactory.HELVETICA, 12)));
+            roomCell.setBackgroundColor(rowColor);
+            roomCell.setHorizontalAlignment(Element.ALIGN_CENTER);
+            roomCell.setVerticalAlignment(Element.ALIGN_MIDDLE);
+            roomCell.setPadding(8);
+            table.addCell(roomCell);
+
+            isOdd = !isOdd; // Sıradaki satır rengini değiştir
+        }
+
+        document.add(table);
+
+        // --- ALT BİLGİ ---
+        Paragraph footer = new Paragraph("Generated by Exam Scheduler v2.0", FontFactory.getFont(FontFactory.COURIER, 8, BaseColor.GRAY));
+        footer.setAlignment(Element.ALIGN_RIGHT);
+        document.add(footer);
+
+        document.close();
     }
-}
+
+    // Yardımcı Metod: Basit hücre ekleme
+    private void addStyledCell(PdfPTable table, String text, BaseColor bgColor, boolean center) {
+        PdfPCell cell = new PdfPCell(new Phrase(text, FontFactory.getFont(FontFactory.HELVETICA, 10)));
+        cell.setBackgroundColor(bgColor);
+        cell.setPadding(8);
+        cell.setVerticalAlignment(Element.ALIGN_MIDDLE);
+        if (center) cell.setHorizontalAlignment(Element.ALIGN_CENTER);
+        table.addCell(cell);
+    }
 
 
     
