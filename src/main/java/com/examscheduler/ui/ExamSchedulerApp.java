@@ -2484,10 +2484,11 @@ public class ExamSchedulerApp extends Application {
         remBtn.setOnAction(e -> {
             int idx = classroomList.getSelectionModel().getSelectedIndex();
             if (idx >= 0) {
-                dataManager.getClassrooms().remove(idx);
-                classroomList.getItems().remove(idx);
+                Classroom roomToRemove = dataManager.getClassrooms().get(idx);
+                dataManager.removeClassroom(roomToRemove);
+                classroomList.getItems().remove(idx);            
                 updateClassroomsView();
-                messages.add("Classroom removed");
+                messages.add("Classroom removed: " + roomToRemove.getClassroomID());
             }
         });
 
