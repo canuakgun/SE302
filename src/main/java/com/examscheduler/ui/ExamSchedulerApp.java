@@ -77,8 +77,6 @@ import javafx.stage.DirectoryChooser;
 import javafx.stage.FileChooser;
 import javafx.stage.Modality;
 import javafx.stage.Stage;
-import java.awt.image.RenderedImage;
-import javax.imageio.ImageIO;
 
 
 public class ExamSchedulerApp extends Application {
@@ -4653,45 +4651,38 @@ private void createPDF(File file, Student student, List<Exam> studentExams) {
         Stage resultStage = new Stage();
         resultStage.initModality(Modality.APPLICATION_MODAL);
         resultStage.setTitle("✓ Validation Results");
+        resultStage.setResizable(true);
 
         TextArea resultArea = new TextArea();
         resultArea.setEditable(false);
-        resultArea.setPrefSize(800, 500);
-        resultArea.setStyle("-fx-font-family: 'Monospaced'; -fx-font-size: 12px;");
+        resultArea.setStyle("-fx-font-family: 'Courier New', monospace; -fx-font-size: 12px;");
+        resultArea.setWrapText(true);
 
         StringBuilder sb = new StringBuilder();
-
+        
         sb.append("╔══════════════════════════════════════════════════════════════════╗\n");
         sb.append("║                    VALIDATION REPORT                             ║\n");
         sb.append("╚══════════════════════════════════════════════════════════════════╝\n\n");
-
+        
         sb.append("Generated: ").append(LocalDate.now()).append(" ").append(java.time.LocalTime.now()).append("\n");
         sb.append("Total Exams: ").append(dataManager.getSchedule().getExams().size()).append("\n");
         sb.append("Placed Exams: ").append(exams.size()).append("\n");
         sb.append("Unplaced Courses: ").append(unplacedCourses.size()).append("\n\n");
-
+        
         sb.append("═══ SUMMARY ═══════════════════════════════════════════════════════\n");
         sb.append(String.format("❌ Critical Issues: %d\n", result.getCriticalCount()));
         sb.append(String.format("⚠️  Warnings: %d\n", result.getWarningCount()));
         sb.append(String.format("ℹ️  Info: %d\n", result.info.size()));
         sb.append(String.format("📊 Analysis Items: %d\n\n", result.analysis.size()));
-
+        
         if (result.getCriticalCount() == 0 && unplacedCourses.isEmpty()) {
             sb.append("✅ VALIDATION PASSED - Schedule is valid!\n\n");
             messages.add("✅ Validation PASSED: No critical issues found");
-
-            if (result.getWarningCount() == 0) {
-                Alert alert = new Alert(Alert.AlertType.INFORMATION);
-                alert.setTitle("Validation Successful");
-                alert.setHeaderText(null);
-                alert.setContentText("No issues found in the schedule.");
-                alert.showAndWait();
-            }
         } else {
             sb.append("❌ VALIDATION FAILED - Critical issues found!\n\n");
             messages.add("❌ Validation FAILED: " + result.getCriticalCount() + " critical issues");
         }
-
+        
         if (!result.critical.isEmpty()) {
             sb.append("═══ CRITICAL ISSUES (MUST FIX) ════════════════════════════════════\n");
             for (int i = 0; i < result.critical.size(); i++) {
@@ -4699,76 +4690,78 @@ private void createPDF(File file, Student student, List<Exam> studentExams) {
             }
             sb.append("\n");
         }
-
+        
         if (!result.warnings.isEmpty()) {
             sb.append("═══ WARNINGS (SHOULD FIX) ═════════════════════════════════════════\n");
-            for (int i = 0; i < Math.min(result.warnings.size(), 20); i++) {
+            for (int i = 0; i < Math.min(result.warnings.size(), 50); i++) {
                 sb.append(String.format("%3d. ⚠️  %s\n", i + 1, result.warnings.get(i)));
             }
-            if (result.warnings.size() > 20) {
-                sb.append(String.format("     ... and %d more warnings\n", result.warnings.size() - 20));
+            if (result.warnings.size() > 50) {
+                sb.append(String.format("     ... and %d more warnings\n", result.warnings.size() - 50));
             }
             sb.append("\n");
         }
-
+        
         if (!result.info.isEmpty()) {
             sb.append("═══ INFORMATION ═══════════════════════════════════════════════════\n");
             result.info.forEach(info -> sb.append("ℹ️  ").append(info).append("\n"));
             sb.append("\n");
         }
-
+        
         if (!result.analysis.isEmpty()) {
             sb.append("═══ DETAILED ANALYSIS ═════════════════════════════════════════════\n");
             result.analysis.forEach(analysis -> sb.append(analysis).append("\n"));
             sb.append("\n");
         }
-
+        
         sb.append("═══ RECOMMENDATIONS ═══════════════════════════════════════════════\n");
         if (result.getCriticalCount() > 0) {
             sb.append("• Fix all critical issues before finalizing the schedule\n");
-            if (result.critical.stream().anyMatch(s -> s.contains("Unplaced"))) {
-                sb.append("• Increase exam days or add more classrooms for unplaced courses\n");
-            }
-            if (result.critical.stream().anyMatch(s -> s.contains("Student Conflict"))) {
-                sb.append("• Re-generate schedule with more time slots or days\n");
-            }
-            if (result.critical.stream().anyMatch(s -> s.contains("Capacity"))) {
-                sb.append("• Assign larger classrooms or split courses\n");
-            }
         }
-
-        if (result.getWarningCount() > 5) {
-            sb.append("• Review warnings and adjust schedule if possible\n");
-        }
-
-        if (result.analysis.stream().anyMatch(s -> s.contains("Underutilized"))) {
-            sb.append("• Consider consolidating to fewer rooms for better utilization\n");
-        }
-
         if (result.getCriticalCount() == 0 && result.getWarningCount() == 0) {
             sb.append("• Schedule is optimal! Ready to export and distribute\n");
         }
-
+        
         resultArea.setText(sb.toString());
-
+        resultArea.setScrollTop(0);
+        
         Button exportBtn = new Button("📄 Export Report");
-        exportBtn.setStyle("-fx-background-color: #2196F3; -fx-text-fill: white; -fx-padding: 8px 16px;");
+        exportBtn.setStyle("-fx-background-color: #2196F3; -fx-text-fill: white; -fx-padding: 8px 16px; -fx-cursor: hand;");
         exportBtn.setOnAction(e -> exportValidationReport(resultStage, sb.toString()));
 
         Button closeBtn = new Button("Close");
-        closeBtn.setStyle("-fx-padding: 8px 16px;");
+        closeBtn.setStyle("-fx-padding: 8px 16px; -fx-cursor: hand;");
         closeBtn.setOnAction(e -> resultStage.close());
 
         HBox buttonBox = new HBox(10, exportBtn, closeBtn);
         buttonBox.setAlignment(Pos.CENTER_RIGHT);
-        buttonBox.setPadding(new Insets(10));
+        buttonBox.setPadding(new Insets(10, 0, 0, 0));
 
-        VBox layout = new VBox(10, resultArea, buttonBox);
-        layout.setPadding(new Insets(15));
+        BorderPane root = new BorderPane();
+        root.setPadding(new Insets(15));
+        
+        Label headerLabel = new Label("Validation & Analysis Report");
+        headerLabel.setStyle("-fx-font-size: 16px; -fx-font-weight: bold; -fx-padding: 0 0 10 0;");
+        
+        root.setTop(headerLabel);
+        root.setCenter(resultArea);
+        root.setBottom(buttonBox); 
 
-        Scene scene = new Scene(layout, 850, 600);
+        Scene scene = new Scene(root, 900, 600);
         resultStage.setScene(scene);
-        resultStage.showAndWait();
+        
+        resultStage.show();
+        if (result.getCriticalCount() == 0 && unplacedCourses.isEmpty()) {
+            if (result.getWarningCount() == 0) {
+                Alert alert = new Alert(Alert.AlertType.INFORMATION);
+                alert.initOwner(resultStage); // Alert'i rapora bağla
+                alert.setTitle("Validation Successful");
+                alert.setHeaderText("Perfect Schedule!");
+                alert.setContentText("No critical issues or warnings found.\nThe schedule is fully optimized.");
+                alert.showAndWait();
+            } 
+        
+        }
     }
 
     private void exportValidationReport(Stage owner, String reportText) {
