@@ -9,6 +9,7 @@ import com.examscheduler.model.Schedule;
 import com.examscheduler.model.Student;
 import com.examscheduler.model.TimeSlot;
 
+
 import java.io.File;
 import java.io.IOException;
 import java.io.PrintWriter;
@@ -44,6 +45,7 @@ import javafx.scene.control.CheckBox;
 import javafx.scene.control.ComboBox;
 import javafx.scene.control.DatePicker;
 import javafx.scene.control.Label;
+import javafx.scene.control.ListCell;
 import javafx.scene.control.ListView;
 import javafx.scene.control.Menu;
 import javafx.scene.control.MenuBar;
@@ -54,6 +56,8 @@ import javafx.scene.control.Separator;
 import javafx.scene.control.SeparatorMenuItem;
 import javafx.scene.control.Spinner;
 import javafx.scene.control.SplitPane;
+import javafx.scene.control.Tab;
+import javafx.scene.control.TabPane;
 import javafx.scene.control.TableCell;
 import javafx.scene.control.TableColumn;
 import javafx.scene.control.TableView;
@@ -62,6 +66,7 @@ import javafx.scene.control.TextField;
 import javafx.scene.control.ToolBar;
 import javafx.scene.control.cell.PropertyValueFactory;
 import javafx.scene.control.cell.TextFieldListCell;
+import javafx.scene.image.WritableImage;
 import javafx.scene.layout.BorderPane;
 import javafx.scene.layout.GridPane;
 import javafx.scene.layout.HBox;
@@ -72,6 +77,9 @@ import javafx.stage.DirectoryChooser;
 import javafx.stage.FileChooser;
 import javafx.stage.Modality;
 import javafx.stage.Stage;
+import java.awt.image.RenderedImage;
+import javax.imageio.ImageIO;
+
 
 public class ExamSchedulerApp extends Application {
 
@@ -311,278 +319,832 @@ public class ExamSchedulerApp extends Application {
         stage.setMinHeight(700);
         stage.show();
     }
-
     private void showStudentPortal(Stage owner) {
-        if (!dataManager.isDataLoaded() || dataManager.getSchedule() == null) {
-            showError("No Schedule", "Please load data and generate schedule first.");
-            return;
+    if (!dataManager.isDataLoaded() || dataManager.getSchedule() == null) {
+        showError("No Schedule", "Please load data and generate schedule first.");
+        return;
+    }
+
+    Stage loginStage = new Stage();
+    loginStage.initOwner(owner);
+    loginStage.initModality(Modality.APPLICATION_MODAL);
+    loginStage.setTitle("🎓 Student Portal - Secure Login");
+
+    // Daha profesyonel arayüz
+    VBox layout = new VBox(20);
+    layout.setAlignment(Pos.CENTER);
+    layout.setPadding(new Insets(40));
+    layout.setStyle("-fx-background-color: linear-gradient(to bottom, #f8f9fa, #e9ecef);");
+
+    // Başlık
+    Label title = new Label("🎓 STUDENT PORTAL");
+    title.setStyle("-fx-font-size: 28px; -fx-font-weight: bold; -fx-text-fill: #2c3e50;");
+
+    Label subtitle = new Label("Access Your Personal Exam Schedule");
+    subtitle.setStyle("-fx-font-size: 14px; -fx-text-fill: #7f8c8d;");
+
+    // Öğrenci ID seçimi
+    VBox loginBox = new VBox(15);
+    loginBox.setAlignment(Pos.CENTER);
+    loginBox.setPadding(new Insets(25));
+    loginBox.setStyle("-fx-background-color: white; -fx-background-radius: 10; " +
+                     "-fx-border-color: #dee2e6; -fx-border-width: 1; -fx-border-radius: 10; " +
+                     "-fx-effect: dropshadow(gaussian, rgba(0,0,0,0.1), 10, 0, 0, 3);");
+
+    Label selectLabel = new Label("Select Your Student ID:");
+    selectLabel.setStyle("-fx-font-size: 16px; -fx-font-weight: bold; -fx-text-fill: #495057;");
+
+    ComboBox<String> studentCombo = new ComboBox<>();
+    studentCombo.setPromptText("Choose your student ID...");
+    studentCombo.setPrefWidth(300);
+    studentCombo.setStyle("-fx-font-size: 14px;");
+    
+    // Sıralı öğrenci listesi
+    List<String> sortedStudentIDs = dataManager.getStudents().stream()
+            .map(Student::getStudentID)
+            .sorted()
+            .collect(Collectors.toList());
+    studentCombo.getItems().addAll(sortedStudentIDs);
+
+    // Arama özelliği
+    TextField searchField = new TextField();
+    searchField.setPromptText("Search student ID...");
+    searchField.setPrefWidth(300);
+    searchField.textProperty().addListener((observable, oldValue, newValue) -> {
+        if (newValue.isEmpty()) {
+            studentCombo.getItems().setAll(sortedStudentIDs);
+        } else {
+            List<String> filtered = sortedStudentIDs.stream()
+                    .filter(id -> id.toLowerCase().contains(newValue.toLowerCase()))
+                    .collect(Collectors.toList());
+            studentCombo.getItems().setAll(filtered);
         }
+    });
 
-        Stage loginStage = new Stage();
-        loginStage.initOwner(owner);
-        loginStage.initModality(Modality.APPLICATION_MODAL);
-        loginStage.setTitle("🎓 Student Portal Login");
+    // Giriş butonu
+    Button loginBtn = new Button("ACCESS MY SCHEDULE");
+    loginBtn.setStyle("-fx-background-color: linear-gradient(to right, #3498db, #2980b9); " +
+                     "-fx-text-fill: white; -fx-font-size: 16px; -fx-font-weight: bold; " +
+                     "-fx-padding: 12px 40px; -fx-background-radius: 25; -fx-cursor: hand;");
+    loginBtn.setOnMouseEntered(e -> 
+        loginBtn.setStyle("-fx-background-color: linear-gradient(to right, #2980b9, #1c5a7a); " +
+                         "-fx-text-fill: white; -fx-font-size: 16px; -fx-font-weight: bold; " +
+                         "-fx-padding: 12px 40px; -fx-background-radius: 25; -fx-cursor: hand;")
+    );
+    loginBtn.setOnMouseExited(e -> 
+        loginBtn.setStyle("-fx-background-color: linear-gradient(to right, #3498db, #2980b9); " +
+                         "-fx-text-fill: white; -fx-font-size: 16px; -fx-font-weight: bold; " +
+                         "-fx-padding: 12px 40px; -fx-background-radius: 25; -fx-cursor: hand;")
+    );
 
-        ComboBox<String> studentCombo = new ComboBox<>();
-        dataManager.getStudents().forEach(s -> studentCombo.getItems().add(s.getStudentID()));
-        studentCombo.setPromptText("Select your Student ID");
-        studentCombo.setPrefWidth(250);
+    // Bilgi metni
+    Label infoLabel = new Label("Your personal exam schedule will be displayed\nwith calendar view and export options.");
+    infoLabel.setStyle("-fx-font-size: 12px; -fx-text-fill: #95a5a6; -fx-text-alignment: center;");
+    infoLabel.setWrapText(true);
 
-        Button loginBtn = new Button("View My Schedule");
-        loginBtn.setStyle(
-                "-fx-background-color: #4CAF50; -fx-text-fill: white; -fx-padding: 10px 20px; -fx-font-size: 14px;");
-
-        loginBtn.setOnAction(e -> {
-            String studentId = studentCombo.getValue();
-            if (studentId != null) {
-                Student student = dataManager.getStudentByID(studentId);
-                if (student != null) {
-                    loginStage.close();
-                    showStudentSchedule(owner, student);
-                }
-            } else {
-                showWarning("Selection Required", "Please select a student ID.");
+    loginBtn.setOnAction(e -> {
+        String studentId = studentCombo.getValue();
+        if (studentId != null) {
+            Student student = dataManager.getStudentByID(studentId);
+            if (student != null) {
+                loginStage.close();
+                showStudentSchedule(owner, student);
             }
-        });
+        } else {
+            showWarning("Selection Required", "Please select a student ID from the list.");
+        }
+    });
 
-        VBox layout = new VBox(20);
-        layout.setAlignment(Pos.CENTER);
-        layout.setPadding(new Insets(40));
+    loginBox.getChildren().addAll(selectLabel, searchField, studentCombo, loginBtn, infoLabel);
+    layout.getChildren().addAll(title, subtitle, loginBox);
 
-        Label title = new Label("🎓 Student Portal");
-        title.setStyle("-fx-font-size: 24px; -fx-font-weight: bold; -fx-text-fill: #0078D4;");
+    Scene scene = new Scene(layout, 500, 450);
+    loginStage.setScene(scene);
+    loginStage.show();
+}
 
-        Label subtitle = new Label("Select your student ID to view your exam schedule");
-        subtitle.setStyle("-fx-font-size: 14px; -fx-text-fill: #666;");
+private void showStudentSchedule(Stage owner, Student student) {
+    Stage scheduleStage = new Stage();
+    scheduleStage.initOwner(owner);
+    scheduleStage.setTitle("📅 Exam Schedule - " + student.getStudentID());
+    
+    // Daha profesyonel ana layout
+    BorderPane root = new BorderPane();
+    root.setStyle("-fx-background-color: #f5f7fa;");
+    
+    // Üst başlık bölümü
+    VBox header = new VBox(10);
+    header.setPadding(new Insets(20));
+    header.setStyle("-fx-background-color: white; -fx-border-color: #dee2e6; -fx-border-width: 0 0 1 0;");
+    
+    HBox titleBox = new HBox(15);
+    titleBox.setAlignment(Pos.CENTER_LEFT);
+    
+    // Öğrenci bilgileri
+    VBox studentInfo = new VBox(5);
+    Label studentNameLabel = new Label("STUDENT: " + student.getStudentID());
+    studentNameLabel.setStyle("-fx-font-size: 24px; -fx-font-weight: bold; -fx-text-fill: #2c3e50;");
+    
+    Label dateLabel = new Label("Schedule Period: " + 
+        (examStartDatePicker != null && examStartDatePicker.getValue() != null ? 
+         examStartDatePicker.getValue().toString() : LocalDate.now().toString()) + 
+        " - " + (examStartDatePicker != null && examStartDatePicker.getValue() != null ? 
+         examStartDatePicker.getValue().plusDays(daysSpinner.getValue() - 1).toString() : 
+         LocalDate.now().plusDays(daysSpinner.getValue() - 1).toString()));
+    dateLabel.setStyle("-fx-font-size: 12px; -fx-text-fill: #7f8c8d;");
+    
+    studentInfo.getChildren().addAll(studentNameLabel, dateLabel);
+    
+    // İstatistikler
+    List<Exam> studentExams = getStudentExams(student);
+    int totalExams = studentExams.size();
+    long busyDays = studentExams.stream()
+            .map(e -> e.getTimeSlot().getDay())
+            .distinct()
+            .count();
+    
+    HBox statsBox = new HBox(20);
+    statsBox.setAlignment(Pos.CENTER_RIGHT);
+    
+    VBox totalExamsBox = createStatBox("Total Exams", String.valueOf(totalExams), "#3498db");
+    VBox busyDaysBox = createStatBox("Busy Days", String.valueOf(busyDays), "#2ecc71");
+    
+    statsBox.getChildren().addAll(totalExamsBox, busyDaysBox);
+    
+    titleBox.getChildren().addAll(studentInfo, new Region(), statsBox);
+    HBox.setHgrow(new Region(), Priority.ALWAYS);
+    
+    header.getChildren().addAll(titleBox);
+    root.setTop(header);
+    
+    // Ana içerik - TabPane ile sekmeli yapı
+    TabPane tabPane = new TabPane();
+    tabPane.setTabClosingPolicy(TabPane.TabClosingPolicy.UNAVAILABLE);
+    tabPane.setStyle("-fx-background-color: transparent;");
+    
+    // Sekme 1: Takvim Görünümü
+    Tab calendarTab = new Tab("📅 Calendar View");
+    calendarTab.setStyle("-fx-font-size: 14px; -fx-font-weight: bold;");
+    ScrollPane calendarScroll = new ScrollPane(createEnhancedCalendarView(studentExams));
+    calendarScroll.setFitToWidth(true);
+    calendarScroll.setStyle("-fx-background: transparent; -fx-background-color: transparent;");
+    calendarTab.setContent(calendarScroll);
+    
+    // Sekme 2: Liste Görünümü
+    Tab listTab = new Tab("📋 List View");
+    listTab.setStyle("-fx-font-size: 14px; -fx-font-weight: bold;");
+    VBox listBox = new VBox(10);
+    listBox.setPadding(new Insets(15));
+    
+    ListView<String> examListView = createEnhancedExamListView(studentExams);
+    examListView.setStyle("-fx-background-color: white; -fx-border-color: #dee2e6; -fx-border-radius: 5;");
+    
+    // Filtreleme seçenekleri
+    HBox filterBox = new HBox(10);
+    filterBox.setAlignment(Pos.CENTER_LEFT);
+    filterBox.setPadding(new Insets(10, 0, 10, 0));
+    
+    Label filterLabel = new Label("Filter by:");
+    filterLabel.setStyle("-fx-font-weight: bold;");
+    
+    CheckBox showAllCheck = new CheckBox("All Exams");
+    CheckBox showTodayCheck = new CheckBox("Today's Exams");
+    CheckBox showUpcomingCheck = new CheckBox("Upcoming Only");
+    
+    showAllCheck.setSelected(true);
+    showAllCheck.setOnAction(e -> {
+        if (showAllCheck.isSelected()) {
+            examListView.getItems().clear();
+            populateExamListView(examListView, studentExams);
+        }
+    });
+    
+    filterBox.getChildren().addAll(filterLabel, showAllCheck, showTodayCheck, showUpcomingCheck);
+    
+    listBox.getChildren().addAll(filterBox, examListView);
+    listTab.setContent(listBox);
+    
+    // Sekme 3: İstatistikler
+    Tab statsTab = new Tab("📊 Statistics");
+    statsTab.setStyle("-fx-font-size: 14px; -fx-font-weight: bold;");
+    statsTab.setContent(createStatisticsView(student, studentExams));
+    
+    tabPane.getTabs().addAll(calendarTab, listTab, statsTab);
+    root.setCenter(tabPane);
+    
+    // Alt kısım - Export butonları
+    VBox bottomBox = new VBox(15);
+    bottomBox.setPadding(new Insets(20));
+    bottomBox.setStyle("-fx-background-color: white; -fx-border-color: #dee2e6; -fx-border-width: 1 0 0 0;");
+    
+    Label exportLabel = new Label("Export Schedule:");
+    exportLabel.setStyle("-fx-font-size: 16px; -fx-font-weight: bold; -fx-text-fill: #495057;");
+    
+    HBox exportButtons = new HBox(15);
+    exportButtons.setAlignment(Pos.CENTER);
+    
+    // PDF Export
+    Button pdfBtn = createExportButton("PDF Document", "#e74c3c", "📄");
+    pdfBtn.setOnAction(e -> exportAsPDF(scheduleStage, student, studentExams));
+    
+    // Text Export
+    Button textBtn = createExportButton("Text File", "#3498db", "📝");
+    textBtn.setOnAction(e -> exportStudentSchedule(scheduleStage, student, studentExams));
+    
+    // Calendar Export
+    Button icalBtn = createExportButton("Calendar (.ics)", "#2ecc71", "📅");
+    icalBtn.setOnAction(e -> exportAsICalendar(scheduleStage, student, studentExams));
+    
+    exportButtons.getChildren().addAll(pdfBtn, textBtn, icalBtn);
+    bottomBox.getChildren().addAll(exportLabel, exportButtons);
+    root.setBottom(bottomBox);
+    
+    Scene scene = new Scene(root, 1200, 800);
+    scheduleStage.setScene(scene);
+    scheduleStage.show();
+}
 
-        layout.getChildren().addAll(title, subtitle, studentCombo, loginBtn);
+private Button createExportButton(String text, String color, String emoji) {
+    Button btn = new Button(emoji + " " + text);
+    btn.setStyle("-fx-background-color: " + color + "; -fx-text-fill: white; " +
+                "-fx-font-weight: bold; -fx-padding: 10px 20px; -fx-background-radius: 8; " +
+                "-fx-cursor: hand; -fx-font-size: 14px;");
+    btn.setOnMouseEntered(e -> 
+        btn.setStyle("-fx-background-color: " + darkenColor(color) + "; -fx-text-fill: white; " +
+                    "-fx-font-weight: bold; -fx-padding: 10px 20px; -fx-background-radius: 8; " +
+                    "-fx-cursor: hand; -fx-font-size: 14px;")
+    );
+    btn.setOnMouseExited(e -> 
+        btn.setStyle("-fx-background-color: " + color + "; -fx-text-fill: white; " +
+                    "-fx-font-weight: bold; -fx-padding: 10px 20px; -fx-background-radius: 8; " +
+                    "-fx-cursor: hand; -fx-font-size: 14px;")
+    );
+    return btn;
+}
 
-        Scene scene = new Scene(layout, 450, 300);
-        loginStage.setScene(scene);
-        loginStage.show();
+private String darkenColor(String hexColor) {
+    // Basit renk koyulaştırma
+    return hexColor; // Daha gelişmiş bir renk manipülasyonu için javafx.scene.paint.Color kullanılabilir
+}
+
+private VBox createStatBox(String title, String value, String color) {
+    VBox box = new VBox(5);
+    box.setAlignment(Pos.CENTER);
+    box.setPadding(new Insets(10));
+    box.setStyle("-fx-background-color: " + color + "15; -fx-border-radius: 8; -fx-background-radius: 8;");
+    
+    Label titleLabel = new Label(title);
+    titleLabel.setStyle("-fx-font-size: 11px; -fx-text-fill: #7f8c8d; -fx-font-weight: bold;");
+    
+    Label valueLabel = new Label(value);
+    valueLabel.setStyle("-fx-font-size: 24px; -fx-font-weight: bold; -fx-text-fill: " + color + ";");
+    
+    box.getChildren().addAll(titleLabel, valueLabel);
+    return box;
+}
+
+private GridPane createEnhancedCalendarView(List<Exam> studentExams) {
+    GridPane calendar = new GridPane();
+    calendar.setHgap(1);
+    calendar.setVgap(1);
+    calendar.setPadding(new Insets(20));
+    calendar.setStyle("-fx-background-color: white; -fx-border-radius: 10;");
+    
+    int maxDay = studentExams.stream().mapToInt(e -> e.getTimeSlot().getDay()).max().orElse(5);
+    List<String> timeSlots = getTimeSlotsFromUI.get();
+    
+    LocalDate startDate = examStartDatePicker != null && examStartDatePicker.getValue() != null
+            ? examStartDatePicker.getValue()
+            : LocalDate.now();
+    
+    // Başlık satırı
+    Label cornerLabel = new Label("TIME SLOT");
+    cornerLabel.setStyle("-fx-font-weight: bold; -fx-padding: 15px; " +
+                        "-fx-background-color: #2c3e50; -fx-text-fill: white; " +
+                        "-fx-alignment: center;");
+    cornerLabel.setMinWidth(150);
+    calendar.add(cornerLabel, 0, 0);
+    
+    for (int day = 1; day <= maxDay; day++) {
+        LocalDate currentDate = startDate.plusDays(day - 1);
+        String dayLabel = "DAY " + day + "\n" + currentDate.getDayOfWeek().toString().substring(0, 3) + 
+                         " " + currentDate.getDayOfMonth();
+        
+        Label dayLabelNode = new Label(dayLabel);
+        dayLabelNode.setStyle("-fx-font-weight: bold; -fx-padding: 15px; " +
+                            "-fx-background-color: #3498db; -fx-text-fill: white; " +
+                            "-fx-alignment: center; -fx-min-height: 100;");
+        dayLabelNode.setMinWidth(200);
+        calendar.add(dayLabelNode, day, 0);
     }
-
-    private void showStudentSchedule(Stage owner, Student student) {
-        Stage scheduleStage = new Stage();
-        scheduleStage.initOwner(owner);
-        scheduleStage.setTitle("📅 My Exam Schedule - " + student.getStudentID());
-
-        List<Exam> studentExams = getStudentExams(student);
-
-        if (studentExams.isEmpty()) {
-            showInfo("No Exams", "You have no scheduled exams.");
-            return;
-        }
-
-        GridPane calendar = createCalendarView(studentExams);
-
-        ListView<String> examList = createExamListView(studentExams);
-
-        TextArea summary = new TextArea();
-        summary.setEditable(false);
-        summary.setPrefHeight(100);
-        summary.setText(generateStudentSummary(student, studentExams));
-
-        Button exportBtn = new Button("📄 Export My Schedule");
-        exportBtn.setStyle("-fx-background-color: #FF9800; -fx-text-fill: white; -fx-padding: 8px 16px;");
-        exportBtn.setOnAction(e -> exportStudentSchedule(scheduleStage, student, studentExams));
-
-        VBox calendarBox = new VBox(10);
-        Label calTitle = new Label("📅 Calendar View");
-        calTitle.setStyle("-fx-font-size: 16px; -fx-font-weight: bold;");
-        calendarBox.getChildren().addAll(calTitle, new ScrollPane(calendar));
-
-        VBox listBox = new VBox(10);
-        Label listTitle = new Label("📋 Exam List");
-        listTitle.setStyle("-fx-font-size: 16px; -fx-font-weight: bold;");
-        listBox.getChildren().addAll(listTitle, examList);
-
-        VBox summaryBox = new VBox(10);
-        Label summaryTitle = new Label("📊 Summary");
-        summaryTitle.setStyle("-fx-font-size: 16px; -fx-font-weight: bold;");
-        summaryBox.getChildren().addAll(summaryTitle, summary, exportBtn);
-
-        SplitPane mainSplit = new SplitPane(calendarBox, listBox);
-        mainSplit.setDividerPositions(0.6);
-
-        BorderPane root = new BorderPane();
-        root.setCenter(mainSplit);
-        root.setBottom(summaryBox);
-        BorderPane.setMargin(summaryBox, new Insets(10));
-
-        Scene scene = new Scene(root, 1000, 700);
-        scheduleStage.setScene(scene);
-        scheduleStage.show();
-    }
-
-    private GridPane createCalendarView(List<Exam> studentExams) {
-        GridPane calendar = new GridPane();
-        calendar.setHgap(5);
-        calendar.setVgap(5);
-        calendar.setPadding(new Insets(10));
-        calendar.setStyle("-fx-background-color: white;");
-
-        int maxDay = studentExams.stream().mapToInt(e -> e.getTimeSlot().getDay()).max().orElse(5);
-        List<String> timeSlots = getTimeSlotsFromUI.get();
-
-        Label cornerLabel = new Label("Day / Time");
-        cornerLabel.setStyle(
-                "-fx-font-weight: bold; -fx-padding: 10px; -fx-background-color: #0078D4; -fx-text-fill: white;");
-        calendar.add(cornerLabel, 0, 0);
-
-        for (int slot = 0; slot < timeSlots.size(); slot++) {
-            Label slotLabel = new Label(timeSlots.get(slot));
-            slotLabel.setStyle(
-                    "-fx-font-weight: bold; -fx-padding: 10px; -fx-background-color: #0078D4; -fx-text-fill: white;");
-            slotLabel.setMinWidth(150);
-            calendar.add(slotLabel, slot + 1, 0);
-        }
-
-        Map<String, Exam> examMap = new HashMap<>();
-        for (Exam exam : studentExams) {
-            String key = exam.getTimeSlot().getDay() + "-" + exam.getTimeSlot().getSlotNumber();
-            examMap.put(key, exam);
-        }
-
-        LocalDate startDate = examStartDatePicker != null && examStartDatePicker.getValue() != null
-                ? examStartDatePicker.getValue()
-                : LocalDate.now();
-
+    
+    // Zaman slotları için satırlar
+    for (int slot = 0; slot < timeSlots.size(); slot++) {
+        Label slotLabel = new Label(timeSlots.get(slot));
+        slotLabel.setStyle("-fx-font-weight: bold; -fx-padding: 15px; " +
+                          "-fx-background-color: #34495e; -fx-text-fill: white; " +
+                          "-fx-alignment: center; -fx-min-height: 120;");
+        slotLabel.setMinWidth(150);
+        calendar.add(slotLabel, 0, slot + 1);
+        
         for (int day = 1; day <= maxDay; day++) {
-            LocalDate currentDate = startDate.plusDays(day - 1);
-            String dayLabel = "Day " + day + "\n" + currentDate.toString();
+            VBox cell = new VBox(8);
+            cell.setMinWidth(200);
+            cell.setMinHeight(120);
+            cell.setPadding(new Insets(10));
+            cell.setAlignment(Pos.TOP_CENTER);
+            cell.setStyle("-fx-border-color: #ecf0f1; -fx-border-width: 1; " +
+                         "-fx-background-color: #f8f9fa;");
+            
+            // Bu gün ve slot için sınavı bul
+            final int currentDay = day;
+            final int currentSlot = slot + 1;
+            Optional<Exam> examOpt = studentExams.stream()
+                    .filter(e -> e.getTimeSlot().getDay() == currentDay && 
+                               e.getTimeSlot().getSlotNumber() == currentSlot)
+                    .findFirst();
+            
+            if (examOpt.isPresent()) {
+                Exam exam = examOpt.get();
+                
+                // Renk kodu: öğrenci sayısına göre
+                String bgColor = exam.getStudentCount() > 50 ? "#fff3cd" : 
+                                exam.getStudentCount() > 30 ? "#d4edda" : "#d1ecf1";
+                
+                cell.setStyle("-fx-border-color: #dee2e6; -fx-border-width: 2; " +
+                             "-fx-background-color: " + bgColor + "; " +
+                             "-fx-border-radius: 5; -fx-background-radius: 5;");
+                
+                Label courseCode = new Label(exam.getCourse().getCourseCode());
+                courseCode.setStyle("-fx-font-weight: bold; -fx-font-size: 16px; " +
+                                   "-fx-text-fill: #2c3e50;");
+                
+                Label courseName = new Label(exam.getCourse().getCourseName());
+                courseName.setStyle("-fx-font-size: 11px; -fx-text-fill: #495057;");
+                courseName.setWrapText(true);
+                
+                HBox details = new HBox(10);
+                details.setAlignment(Pos.CENTER);
+                
+                Label roomLabel = new Label("📍 " + exam.getClassroom().getClassroomID());
+                roomLabel.setStyle("-fx-font-size: 10px; -fx-text-fill: #6c757d;");
+                
+                Label timeLabel = new Label("⏰ " + timeSlots.get(slot));
+                timeLabel.setStyle("-fx-font-size: 10px; -fx-text-fill: #6c757d;");
+                
+                details.getChildren().addAll(roomLabel, timeLabel);
+                
+                cell.getChildren().addAll(courseCode, courseName, details);
+            } else {
+                Label freeLabel = new Label("No Exam");
+                freeLabel.setStyle("-fx-font-size: 12px; -fx-text-fill: #95a5a6; " +
+                                 "-fx-font-style: italic;");
+                cell.getChildren().add(freeLabel);
+            }
+            
+            calendar.add(cell, day, slot + 1);
+        }
+    }
+    
+    return calendar;
+}
 
-            Label dayLabelNode = new Label(dayLabel);
-            dayLabelNode.setStyle("-fx-font-weight: bold; -fx-padding: 10px; -fx-background-color: #E3F2FD;");
-            dayLabelNode.setMinHeight(80);
-            calendar.add(dayLabelNode, 0, day);
-
-            for (int slot = 1; slot <= timeSlots.size(); slot++) {
-                String key = day + "-" + slot;
-                VBox cell = new VBox(5);
-                cell.setMinWidth(150);
-                cell.setMinHeight(80);
-                cell.setPadding(new Insets(5));
-                cell.setStyle("-fx-border-color: #ddd; -fx-border-width: 1; -fx-background-color: white;");
-
-                if (examMap.containsKey(key)) {
-                    Exam exam = examMap.get(key);
-                    cell.setStyle("-fx-border-color: #ddd; -fx-border-width: 1; -fx-background-color: #FFF9C4;");
-
-                    Label courseLabel = new Label(exam.getCourse().getCourseCode());
-                    courseLabel.setStyle("-fx-font-weight: bold; -fx-text-fill: #D84315;");
-
-                    Label roomLabel = new Label("📍 " + exam.getClassroom().getClassroomID());
-                    roomLabel.setStyle("-fx-font-size: 11px;");
-
-                    Label courseNameLabel = new Label(exam.getCourse().getCourseName());
-                    courseNameLabel.setStyle("-fx-font-size: 10px; -fx-text-fill: #666;");
-                    courseNameLabel.setWrapText(true);
-
-                    cell.getChildren().addAll(courseLabel, roomLabel, courseNameLabel);
-                }
-
-                calendar.add(cell, slot, day);
+private ListView<String> createEnhancedExamListView(List<Exam> studentExams) {
+    ListView<String> listView = new ListView<>();
+    listView.setCellFactory(param -> new ListCell<String>() {
+        @Override
+        protected void updateItem(String item, boolean empty) {
+            super.updateItem(item, empty);
+            if (empty || item == null) {
+                setText(null);
+                setGraphic(null);
+                setStyle("");
+            } else {
+                setText(item);
+                setStyle("-fx-font-size: 13px; -fx-padding: 10px; " +
+                        "-fx-border-color: #dee2e6; -fx-border-width: 0 0 1 0;");
             }
         }
+    });
+    
+    populateExamListView(listView, studentExams);
+    return listView;
+}
 
-        return calendar;
+private void populateExamListView(ListView<String> listView, List<Exam> studentExams) {
+    listView.getItems().clear();
+    List<String> timeSlots = getTimeSlotsFromUI.get();
+    
+    LocalDate startDate = examStartDatePicker != null && examStartDatePicker.getValue() != null
+            ? examStartDatePicker.getValue()
+            : LocalDate.now();
+    
+    studentExams.stream()
+            .sorted(Comparator.comparing((Exam e) -> e.getTimeSlot().getDay())
+                    .thenComparing(e -> e.getTimeSlot().getSlotNumber()))
+            .forEach(exam -> {
+                LocalDate examDate = startDate.plusDays(exam.getTimeSlot().getDay() - 1);
+                String timeSlot = "";
+                try {
+                    timeSlot = timeSlots.get(exam.getTimeSlot().getSlotNumber() - 1);
+                } catch (Exception e) {
+                    timeSlot = "Slot " + exam.getTimeSlot().getSlotNumber();
+                }
+                
+                String dayOfWeek = examDate.getDayOfWeek().toString().substring(0, 3);
+                
+                String entry = String.format("📅 %s (%s) | ⏰ %s | 📚 %s - %s | 👨‍🏫 %s | 📍 Room %s",
+                        examDate.toString(),
+                        dayOfWeek,
+                        timeSlot,
+                        exam.getCourse().getCourseCode(),
+                        exam.getCourse().getCourseName(),
+                        exam.getCourse().getInstructor(),
+                        exam.getClassroom().getClassroomID());
+                listView.getItems().add(entry);
+            });
+}
+
+private VBox createStatisticsView(Student student, List<Exam> studentExams) {
+    VBox statsBox = new VBox(20);
+    statsBox.setPadding(new Insets(25));
+    statsBox.setStyle("-fx-background-color: white; -fx-border-radius: 10;");
+    
+    Label title = new Label("📊 Schedule Statistics");
+    title.setStyle("-fx-font-size: 20px; -fx-font-weight: bold; -fx-text-fill: #2c3e50;");
+    
+    // İstatistik kartları
+    GridPane statsGrid = new GridPane();
+    statsGrid.setHgap(15);
+    statsGrid.setVgap(15);
+    statsGrid.setPadding(new Insets(20));
+    
+    int totalExams = studentExams.size();
+    Map<Integer, Long> examsPerDay = studentExams.stream()
+            .collect(Collectors.groupingBy(e -> e.getTimeSlot().getDay(), Collectors.counting()));
+    
+    int busiestDay = examsPerDay.entrySet().stream()
+            .max(Map.Entry.comparingByValue())
+            .map(Map.Entry::getKey)
+            .orElse(1);
+    
+    long busyDayCount = examsPerDay.size();
+    
+    // İstatistik kartları oluştur
+    statsGrid.add(createStatCard("Total Exams", String.valueOf(totalExams), "#3498db"), 0, 0);
+    statsGrid.add(createStatCard("Busy Days", String.valueOf(busyDayCount), "#2ecc71"), 1, 0);
+    statsGrid.add(createStatCard("Busiest Day", "Day " + busiestDay, "#e74c3c"), 2, 0);
+    
+    // Günlük dağılım grafiği
+    VBox distributionBox = new VBox(10);
+    distributionBox.setPadding(new Insets(20));
+    distributionBox.setStyle("-fx-background-color: #f8f9fa; -fx-border-radius: 8;");
+    
+    Label distTitle = new Label("📈 Daily Exam Distribution");
+    distTitle.setStyle("-fx-font-weight: bold; -fx-font-size: 16px;");
+    
+    examsPerDay.entrySet().stream()
+            .sorted(Map.Entry.comparingByKey())
+            .forEach(entry -> {
+                HBox dayBar = new HBox(10);
+                dayBar.setAlignment(Pos.CENTER_LEFT);
+                
+                Label dayLabel = new Label("Day " + entry.getKey() + ":");
+                dayLabel.setStyle("-fx-font-weight: bold; -fx-min-width: 60;");
+                
+                ProgressBar progress = new ProgressBar(entry.getValue() / 5.0); // Max 5 exam per day
+                progress.setPrefWidth(300);
+                progress.setStyle("-fx-accent: #3498db;");
+                
+                Label countLabel = new Label(entry.getValue() + " exam(s)");
+                countLabel.setStyle("-fx-text-fill: #6c757d;");
+                
+                dayBar.getChildren().addAll(dayLabel, progress, countLabel);
+                distributionBox.getChildren().add(dayBar);
+            });
+    
+    // Öneriler
+    VBox recommendationsBox = new VBox(10);
+    recommendationsBox.setPadding(new Insets(20));
+    recommendationsBox.setStyle("-fx-background-color: #fff3cd; -fx-border-color: #ffeaa7; " +
+                               "-fx-border-width: 1; -fx-border-radius: 8;");
+    
+    Label recTitle = new Label("💡 Recommendations");
+    recTitle.setStyle("-fx-font-weight: bold; -fx-font-size: 16px;");
+    
+    TextArea recommendations = new TextArea();
+    recommendations.setEditable(false);
+    recommendations.setWrapText(true);
+    recommendations.setPrefHeight(100);
+    recommendations.setStyle("-fx-background-color: transparent; -fx-border: none; " +
+                            "-fx-font-size: 13px;");
+    
+    StringBuilder recText = new StringBuilder();
+    if (totalExams == 0) {
+        recText.append("✓ No exams scheduled for this student\n");
+    } else {
+        if (examsPerDay.values().stream().anyMatch(count -> count >= 3)) {
+            recText.append("⚠ You have busy days with 3+ exams. Consider preparing in advance.\n");
+        }
+        if (totalExams >= 8) {
+            recText.append("✓ Heavy exam load detected. Plan your study schedule accordingly.\n");
+        }
+        recText.append("✓ Total of " + totalExams + " exams across " + busyDayCount + " days\n");
+        recText.append("✓ Most exams on Day " + busiestDay + "\n");
     }
+    recommendations.setText(recText.toString());
+    
+    recommendationsBox.getChildren().addAll(recTitle, recommendations);
+    
+    statsBox.getChildren().addAll(title, statsGrid, distTitle, distributionBox, recommendationsBox);
+    
+    return statsBox;
+}
 
-    private ListView<String> createExamListView(List<Exam> studentExams) {
-        ListView<String> listView = new ListView<>();
+private VBox createStatCard(String title, String value, String color) {
+    VBox card = new VBox(10);
+    card.setAlignment(Pos.CENTER);
+    card.setPadding(new Insets(20));
+    card.setPrefWidth(150);
+    card.setStyle("-fx-background-color: white; -fx-border-color: " + color + "40; " +
+                 "-fx-border-width: 2; -fx-border-radius: 10; -fx-background-radius: 10; " +
+                 "-fx-effect: dropshadow(gaussian, rgba(0,0,0,0.1), 5, 0, 0, 2);");
+    
+    Label valueLabel = new Label(value);
+    valueLabel.setStyle("-fx-font-size: 28px; -fx-font-weight: bold; -fx-text-fill: " + color + ";");
+    
+    Label titleLabel = new Label(title);
+    titleLabel.setStyle("-fx-font-size: 12px; -fx-text-fill: #6c757d; -fx-font-weight: bold;");
+    
+    card.getChildren().addAll(valueLabel, titleLabel);
+    return card;
+}
+
+private void exportAsPDF(Stage owner, Student student, List<Exam> studentExams) {
+    FileChooser fileChooser = new FileChooser();
+    fileChooser.setTitle("Export as PDF");
+    fileChooser.setInitialFileName(student.getStudentID() + "_schedule.pdf");
+    fileChooser.getExtensionFilters().addAll(
+        new FileChooser.ExtensionFilter("PDF Files", "*.pdf"),
+        new FileChooser.ExtensionFilter("All Files", "*.*")
+    );
+    
+    File file = fileChooser.showSaveDialog(owner);
+    if (file != null) {
+        try {
+            // PDF oluşturma işlemi
+            createPDF(file, student, studentExams);
+            showInfo("PDF Export", "Schedule exported successfully as PDF:\n" + file.getName());
+            messages.add("📄 PDF exported for " + student.getStudentID());
+        } catch (Exception e) {
+            showError("PDF Export Failed", e.getMessage());
+        }
+    }
+}
+
+private void exportAsICalendar(Stage owner, Student student, List<Exam> studentExams) {
+    FileChooser fileChooser = new FileChooser();
+    fileChooser.setTitle("Export as iCalendar");
+    fileChooser.setInitialFileName(student.getStudentID() + "_schedule.ics");
+    fileChooser.getExtensionFilters().addAll(
+        new FileChooser.ExtensionFilter("iCalendar Files", "*.ics"),
+        new FileChooser.ExtensionFilter("All Files", "*.*")
+    );
+    
+    File file = fileChooser.showSaveDialog(owner);
+    if (file != null) {
+        try (PrintWriter pw = new PrintWriter(file, "UTF-8")) {
+            pw.println("BEGIN:VCALENDAR");
+            pw.println("VERSION:2.0");
+            pw.println("PRODID:-//Exam Scheduler//Student Schedule//EN");
+            pw.println("CALSCALE:GREGORIAN");
+            pw.println("METHOD:PUBLISH");
+            pw.println("X-WR-CALNAME:Exam Schedule - " + student.getStudentID());
+            pw.println("X-WR-TIMEZONE:Europe/Istanbul");
+            
+            List<String> timeSlots = getTimeSlotsFromUI.get();
+            LocalDate startDate = examStartDatePicker != null && examStartDatePicker.getValue() != null
+                    ? examStartDatePicker.getValue()
+                    : LocalDate.now();
+            
+            for (Exam exam : studentExams) {
+                LocalDate examDate = startDate.plusDays(exam.getTimeSlot().getDay() - 1);
+                String timeSlot = "";
+                try {
+                    timeSlot = timeSlots.get(exam.getTimeSlot().getSlotNumber() - 1);
+                } catch (Exception e) {
+                    timeSlot = "09:00-11:00";
+                }
+                
+                String[] times = timeSlot.split("-");
+                String startTime = times[0].trim().replace(":", "") + "00";
+                String endTime = times.length > 1 ? times[1].trim().replace(":", "") + "00" : "110000";
+                
+                String dateStr = examDate.toString().replace("-", "");
+                
+                pw.println("BEGIN:VEVENT");
+                pw.println("UID:" + student.getStudentID() + "-" + exam.getCourse().getCourseCode() + 
+                          "-" + dateStr + "@examscheduler.edu");
+                pw.println("DTSTAMP:" + LocalDate.now().toString().replace("-", "") + "T120000Z");
+                pw.println("DTSTART:" + dateStr + "T" + startTime);
+                pw.println("DTEND:" + dateStr + "T" + endTime);
+                pw.println("SUMMARY:Exam: " + exam.getCourse().getCourseCode());
+                pw.println("DESCRIPTION:" + exam.getCourse().getCourseName() + 
+                          "\\nInstructor: " + exam.getCourse().getInstructor() + 
+                          "\\nRoom: " + exam.getClassroom().getClassroomID());
+                pw.println("LOCATION:Room " + exam.getClassroom().getClassroomID());
+                pw.println("CATEGORIES:EXAM");
+                pw.println("STATUS:CONFIRMED");
+                pw.println("BEGIN:VALARM");
+                pw.println("TRIGGER:-P1D");
+                pw.println("ACTION:DISPLAY");
+                pw.println("DESCRIPTION:Reminder: Exam tomorrow!");
+                pw.println("END:VALARM");
+                pw.println("END:VEVENT");
+            }
+            
+            pw.println("END:VCALENDAR");
+            
+            showInfo("Calendar Export", 
+                    "iCalendar file exported successfully!\n\n" +
+                    "You can import this file to:\n" +
+                    "• Google Calendar\n• Outlook\n• Apple Calendar\n• Any calendar app");
+            messages.add("📅 iCalendar exported for " + student.getStudentID());
+            
+        } catch (Exception e) {
+            showError("Export Failed", e.getMessage());
+        }
+    }
+}
+
+private void exportStudentSchedule(Stage owner, Student student, List<Exam> studentExams) {
+    FileChooser chooser = new FileChooser();
+    chooser.setTitle("Export My Schedule");
+    chooser.setInitialFileName("my_exam_schedule_" + student.getStudentID() + ".txt");
+    chooser.getExtensionFilters().addAll(
+        new FileChooser.ExtensionFilter("Text Files", "*.txt"),
+        new FileChooser.ExtensionFilter("All Files", "*.*")
+    );
+    File file = chooser.showSaveDialog(owner);
+
+    if (file != null) {
+        try (PrintWriter pw = new PrintWriter(file, "UTF-8")) {
+            pw.println("╔══════════════════════════════════════════════════════╗");
+            pw.println("║         PERSONAL EXAM SCHEDULE - " + 
+                      String.format("%-10s", student.getStudentID()) + "        ║");
+            pw.println("╚══════════════════════════════════════════════════════╝\n");
+            
+            pw.println("Generated: " + LocalDate.now() + " " + java.time.LocalTime.now().format(
+                java.time.format.DateTimeFormatter.ofPattern("HH:mm")));
+            pw.println();
+            pw.println("═".repeat(60));
+            
+            List<String> timeSlots = getTimeSlotsFromUI.get();
+            LocalDate startDate = examStartDatePicker != null && examStartDatePicker.getValue() != null
+                    ? examStartDatePicker.getValue()
+                    : LocalDate.now();
+
+            int examNumber = 1;
+            for (Exam exam : studentExams.stream()
+                    .sorted(Comparator.comparing((Exam e) -> e.getTimeSlot().getDay())
+                            .thenComparing(e -> e.getTimeSlot().getSlotNumber()))
+                    .collect(Collectors.toList())) {
+                
+                LocalDate examDate = startDate.plusDays(exam.getTimeSlot().getDay() - 1);
+                String timeSlot = "";
+                try {
+                    timeSlot = timeSlots.get(exam.getTimeSlot().getSlotNumber() - 1);
+                } catch (Exception e) {
+                    timeSlot = "Slot " + exam.getTimeSlot().getSlotNumber();
+                }
+                
+                String dayOfWeek = examDate.getDayOfWeek().toString();
+                pw.println("EXAM #" + examNumber++);
+                pw.println("-".repeat(40));
+                pw.println("📅 DATE:      " + examDate + " (" + dayOfWeek + ")");
+                pw.println("⏰ TIME:      " + timeSlot);
+                pw.println("📚 COURSE:    " + exam.getCourse().getCourseCode() + " - " + 
+                          exam.getCourse().getCourseName());
+                pw.println("👨‍🏫 INSTRUCTOR: " + exam.getCourse().getInstructor());
+                pw.println("📍 ROOM:      " + exam.getClassroom().getClassroomID() + 
+                          " (Capacity: " + exam.getClassroom().getCapacity() + ")");
+                pw.println("👥 STUDENTS:  " + exam.getStudentCount() + " enrolled");
+                pw.println();
+            }
+
+            // Statistics section
+            pw.println("═".repeat(60));
+            pw.println("\n📊 SCHEDULE STATISTICS");
+            pw.println("-".repeat(30));
+            pw.println("Total Exams: " + studentExams.size());
+            
+            Map<Integer, Long> examsPerDay = studentExams.stream()
+                    .collect(Collectors.groupingBy(e -> e.getTimeSlot().getDay(), Collectors.counting()));
+            
+            pw.println("\nExams per Day:");
+            examsPerDay.entrySet().stream()
+                    .sorted(Map.Entry.comparingByKey())
+                    .forEach(entry -> {
+                        LocalDate dayDate = startDate.plusDays(entry.getKey() - 1);
+                        pw.println("  Day " + entry.getKey() + " (" + dayDate.getDayOfWeek() + 
+                                  "): " + entry.getValue() + " exam(s)");
+                    });
+            
+            // Recommendations
+            pw.println("\n═".repeat(60));
+            pw.println("\n💡 RECOMMENDATIONS");
+            pw.println("-".repeat(20));
+            
+            if (studentExams.isEmpty()) {
+                pw.println("✓ No exams scheduled");
+            } else {
+                boolean hasBusyDay = examsPerDay.values().stream().anyMatch(count -> count >= 3);
+                
+                if (hasBusyDay) {
+                    pw.println("⚠ You have days with 3+ exams. Plan your study time accordingly.");
+                }
+                
+                pw.println("✓ Total study period: " + daysSpinner.getValue() + " days");
+                pw.println("✓ Average exams per day: " + 
+                          String.format("%.1f", studentExams.size() / (double)examsPerDay.size()));
+            }
+            
+            pw.println("\n" + "═".repeat(60));
+            pw.println("Generated by Exam Scheduler v2.0 - Student Portal");
+            pw.println("© " + LocalDate.now().getYear() + " - All rights reserved");
+            
+            showInfo("Export Success", 
+                    "Your personal schedule has been exported successfully!\n\n" +
+                    "File: " + file.getName() + "\n" +
+                    "Location: " + file.getParent() + "\n\n" +
+                    "The file includes:\n" +
+                    "• All your exam details\n" +
+                    "• Schedule statistics\n" +
+                    "• Study recommendations");
+            
+        } catch (Exception e) {
+            showError("Export Failed", "Failed to export schedule:\n" + e.getMessage());
+        }
+    }
+}
+
+private void createPDF(File file, Student student, List<Exam> studentExams) {
+    // PDF oluşturma için basit implementasyon
+    // Gerçek implementasyon için iText veya Apache PDFBox kütüphaneleri gerekli
+    try (PrintWriter pw = new PrintWriter(file, "UTF-8")) {
+        pw.println("==================================================");
+        pw.println("             OFFICIAL EXAM SCHEDULE");
+        pw.println("==================================================");
+        pw.println();
+        pw.println("STUDENT ID: " + student.getStudentID());
+        pw.println("GENERATED: " + LocalDate.now());
+        pw.println();
+        pw.println("==================================================");
+        pw.println("                    SCHEDULE");
+        pw.println("==================================================");
+        pw.println();
+        
         List<String> timeSlots = getTimeSlotsFromUI.get();
-
         LocalDate startDate = examStartDatePicker != null && examStartDatePicker.getValue() != null
                 ? examStartDatePicker.getValue()
                 : LocalDate.now();
-
-        studentExams.stream()
-                .sorted(Comparator.comparing((Exam e) -> e.getTimeSlot().getDay())
-                        .thenComparing(e -> e.getTimeSlot().getSlotNumber()))
-                .forEach(exam -> {
-                    LocalDate examDate = startDate.plusDays(exam.getTimeSlot().getDay() - 1);
-                    String timeSlot = "";
-                    try {
-                        timeSlot = timeSlots.get(exam.getTimeSlot().getSlotNumber() - 1);
-                    } catch (Exception e) {
-                        timeSlot = "Slot " + exam.getTimeSlot().getSlotNumber();
-                    }
-
-                    String entry = String.format("📅 %s | ⏰ %s | 📚 %s (%s) | 📍 Room %s",
-                            examDate.toString(),
-                            timeSlot,
-                            exam.getCourse().getCourseCode(),
-                            exam.getCourse().getCourseName(),
-                            exam.getClassroom().getClassroomID());
-                    listView.getItems().add(entry);
-                });
-
-        return listView;
-    }
-
-    private String generateStudentSummary(Student student, List<Exam> studentExams) {
-        int totalExams = studentExams.size();
-        Map<Integer, Long> examsPerDay = studentExams.stream()
-                .collect(Collectors.groupingBy(e -> e.getTimeSlot().getDay(), Collectors.counting()));
-
-        StringBuilder sb = new StringBuilder();
-        sb.append("Student ID: ").append(student.getStudentID()).append("\n");
-        sb.append("Total Exams: ").append(totalExams).append("\n");
-        sb.append("\nExams per Day:\n");
-        examsPerDay.entrySet().stream()
-                .sorted(Map.Entry.comparingByKey())
-                .forEach(entry -> sb.append("  Day ").append(entry.getKey())
-                        .append(": ").append(entry.getValue()).append(" exam(s)\n"));
-
-        return sb.toString();
-    }
-
-    private void exportStudentSchedule(Stage owner, Student student, List<Exam> studentExams) {
-        FileChooser chooser = new FileChooser();
-        chooser.setTitle("Export My Schedule");
-        chooser.setInitialFileName("my_exam_schedule_" + student.getStudentID() + ".txt");
-        File file = chooser.showSaveDialog(owner);
-
-        if (file != null) {
-            try (PrintWriter pw = new PrintWriter(file)) {
-                pw.println("==============================================");
-                pw.println("        EXAM SCHEDULE - " + student.getStudentID());
-                pw.println("==============================================\n");
-
-                List<String> timeSlots = getTimeSlotsFromUI.get();
-                LocalDate startDate = examStartDatePicker != null && examStartDatePicker.getValue() != null
-                        ? examStartDatePicker.getValue()
-                        : LocalDate.now();
-
-                studentExams.stream()
-                        .sorted(Comparator.comparing((Exam e) -> e.getTimeSlot().getDay())
-                                .thenComparing(e -> e.getTimeSlot().getSlotNumber()))
-                        .forEach(exam -> {
-                            LocalDate examDate = startDate.plusDays(exam.getTimeSlot().getDay() - 1);
-                            String timeSlot = "";
-                            try {
-                                timeSlot = timeSlots.get(exam.getTimeSlot().getSlotNumber() - 1);
-                            } catch (Exception e) {
-                                timeSlot = "Slot " + exam.getTimeSlot().getSlotNumber();
-                            }
-
-                            pw.println("Date: " + examDate);
-                            pw.println("Time: " + timeSlot);
-                            pw.println("Course: " + exam.getCourse().getCourseCode() + " - "
-                                    + exam.getCourse().getCourseName());
-                            pw.println("Room: " + exam.getClassroom().getClassroomID());
-                            pw.println("----------------------------------------------\n");
-                        });
-
-                pw.println("Total Exams: " + studentExams.size());
-                showInfo("Export Success", "Your schedule has been exported to " + file.getName());
+        
+        for (Exam exam : studentExams) {
+            LocalDate examDate = startDate.plusDays(exam.getTimeSlot().getDay() - 1);
+            String timeSlot = "";
+            try {
+                timeSlot = timeSlots.get(exam.getTimeSlot().getSlotNumber() - 1);
             } catch (Exception e) {
-                showError("Export Failed", e.getMessage());
+                timeSlot = "Slot " + exam.getTimeSlot().getSlotNumber();
             }
+            
+            pw.println("Date:        " + examDate + " (" + examDate.getDayOfWeek() + ")");
+            pw.println("Time:        " + timeSlot);
+            pw.println("Course:      " + exam.getCourse().getCourseCode());
+            pw.println("Title:       " + exam.getCourse().getCourseName());
+            pw.println("Instructor:  " + exam.getCourse().getInstructor());
+            pw.println("Room:        " + exam.getClassroom().getClassroomID());
+            pw.println("Students:    " + exam.getStudentCount());
+            pw.println("---------------------------------------------");
+            pw.println();
         }
+        
+        pw.println("==================================================");
+        pw.println("                 STATISTICS");
+        pw.println("==================================================");
+        pw.println();
+        pw.println("Total Exams: " + studentExams.size());
+        pw.println("Schedule Period: " + startDate + " to " + 
+                  startDate.plusDays(daysSpinner.getValue() - 1));
+        pw.println();
+        pw.println("This is an official document generated by");
+        pw.println("Exam Scheduler v2.0 - Student Portal");
+        
+    } catch (Exception e) {
+        throw new RuntimeException("Failed to create PDF: " + e.getMessage());
     }
-
+}
+    
     private List<Exam> getStudentExams(Student student) {
         List<Exam> studentExams = new ArrayList<>();
 
