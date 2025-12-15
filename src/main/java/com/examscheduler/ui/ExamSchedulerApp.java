@@ -199,6 +199,7 @@ public class ExamSchedulerApp extends Application {
 
         // Create and show the scene
         Scene scene = new Scene(layout, 800, 600);
+        ThemeManager.getInstance().registerScene(scene);
         stage.setScene(scene);
         stage.centerOnScreen();
         stage.show();
@@ -224,6 +225,15 @@ public class ExamSchedulerApp extends Application {
         HBox maxExamsBox = new HBox(10, new Label("Max Exams Per Day (Student):"), maxExamsSpinner);
         maxExamsBox.setAlignment(Pos.CENTER_LEFT);
 
+        // --- 2. Dark Mode Toggle ---
+        CheckBox darkModeCheck = new CheckBox("🌙 Enable Dark Mode");
+        darkModeCheck.setSelected(ThemeManager.getInstance().isDarkMode());
+        darkModeCheck.setStyle("-fx-font-size: 14px;");
+
+        Label themeDescription = new Label("Dark mode applies to all windows and dialogs");
+        themeDescription.setStyle("-fx-font-size: 11px; -fx-text-fill: #888;");
+
+        VBox themeBox = new VBox(5, darkModeCheck, themeDescription);
         // --- 2. Theme Setting Example ---
         ComboBox<String> themeCombo = new ComboBox<>(
                 FXCollections.observableArrayList("Light", "Dark (Not Implemented)", "Default"));
@@ -238,6 +248,12 @@ public class ExamSchedulerApp extends Application {
         Button saveBtn = new Button("Apply Changes");
         saveBtn.setStyle("-fx-background-color: #4CAF50; -fx-text-fill: white; -fx-padding: 8px 16px;");
         saveBtn.setOnAction(e -> {
+            // Apply dark mode
+            ThemeManager.getInstance().setDarkMode(darkModeCheck.isSelected());
+
+            showInfo("Settings Applied", "Settings saved successfully!" +
+                    (darkModeCheck.isSelected() ? "\n\n🌙 Dark mode is now enabled."
+                            : "\n\n☀ Light mode is now enabled."));
             // Apply logic here (e.g., save maxExamsSpinner value to DataManager)
             showInfo("Settings Applied",
                     "Settings saved successfully! Changes will take effect on next generation/restart.");
@@ -257,6 +273,7 @@ public class ExamSchedulerApp extends Application {
                 saveBtn);
 
         Scene scene = new Scene(layout, 500, 450);
+        ThemeManager.getInstance().registerScene(scene);
         settingsStage.setScene(scene);
         settingsStage.showAndWait();
     }
@@ -325,6 +342,7 @@ public class ExamSchedulerApp extends Application {
         messages.add("✓ System ready. Click 'Load Data' to import CSV files.");
 
         Scene sc = new Scene(root, 1400, 800);
+        ThemeManager.getInstance().registerScene(sc);
         stage.setScene(sc);
         stage.setMinWidth(1200);
         stage.setMinHeight(700);
@@ -530,6 +548,12 @@ public class ExamSchedulerApp extends Application {
         VBox totalExamsCard = createInfoCard("📝", String.valueOf(dataManager.getCourses().size()), "Total Exams");
         VBox examDaysCard = createInfoCard("📅", String.valueOf(daysSpinner.getValue()), "Exam Days");
 
+
+        VBox totalStudentsCard = createInfoCard("👥", String.valueOf(dataManager.getStudents().size()),
+                "Total Students");
+        VBox totalExamsCard = createInfoCard("📝", String.valueOf(dataManager.getCourses().size()), "Total Exams");
+        VBox examDaysCard = createInfoCard("📅", String.valueOf(daysSpinner.getValue()), "Exam Days");
+
         statsBox.getChildren().addAll(totalStudentsCard, totalExamsCard, examDaysCard);
 
         loginCard.getChildren().addAll(welcomeBox, new Separator(), searchBox, loginBtn, new Separator(), statsBox);
@@ -546,6 +570,7 @@ public class ExamSchedulerApp extends Application {
         root.setBottom(footer);
 
         Scene scene = new Scene(root, 600, 700);
+        ThemeManager.getInstance().registerScene(scene);
         loginStage.setScene(scene);
         loginStage.show();
     }
@@ -651,13 +676,16 @@ public class ExamSchedulerApp extends Application {
 
         // Görünümleri Hazırla
         VBox dashboardView = createDashboardView(studentExams);
+        ThemeManager.getInstance().styleNode(dashboardView);
 
         ScrollPane calendarScroll = new ScrollPane(createEnhancedCalendarView(studentExams));
         calendarScroll.setFitToWidth(true);
         calendarScroll.setStyle("-fx-background: transparent; -fx-background-color: transparent;");
+        ThemeManager.getInstance().styleNode(calendarScroll);
 
         // Buradaki scrollPane mantığına dikkat (Önceki sorudaki düzeltme)
         Node analyticsView = createStatisticsView(student, studentExams); // VBox değil Node dönüyor artık
+        ThemeManager.getInstance().styleNode(analyticsView);
 
         // Navigasyon Butonları
         HBox navBar = new HBox(15);
@@ -730,6 +758,7 @@ public class ExamSchedulerApp extends Application {
         root.setBottom(bottomBox);
 
         Scene scene = new Scene(root, 950, 700);
+        ThemeManager.getInstance().registerScene(scene);
         scheduleStage.setScene(scene);
         scheduleStage.setMinWidth(900);
         scheduleStage.show();
@@ -823,6 +852,10 @@ public class ExamSchedulerApp extends Application {
         VBox quickStatsSection = new VBox(15);
         Label statsTitle = new Label("📊 Quick Statistics");
         statsTitle.setStyle("-fx-font-size: 20px; -fx-font-weight: bold; -fx-text-fill: #2d3436;");
+
+        GridPane quickStats = createQuickStatsGrid(studentExams);
+        quickStatsSection.getChildren().addAll(statsTitle, quickStats);
+
 
         GridPane quickStats = createQuickStatsGrid(studentExams);
         quickStatsSection.getChildren().addAll(statsTitle, quickStats);
@@ -925,6 +958,37 @@ public class ExamSchedulerApp extends Application {
         item.setStyle("-fx-background-color: #f8f9fa; " +
                 "-fx-background-radius: 8; " +
                 "-fx-min-width: 180;");
+
+        Label iconLabel = new Label(icon);
+        iconLabel.setStyle("-fx-font-size: 20px;");
+
+        Label textLabel = new Label(label);
+        textLabel.setStyle("-fx-font-size: 11px; -fx-text-fill: #636e72; -fx-font-weight: 600;");
+
+        Label valueLabel = new Label(value);
+        valueLabel.setStyle("-fx-font-size: 18px; -fx-font-weight: bold; -fx-text-fill: #2d3436;");
+
+        item.getChildren().addAll(iconLabel, textLabel, valueLabel);
+        return item;
+    }
+
+    // Detay item oluşturucu
+    private HBox createDetailItem(String icon, String label, String value) {
+        HBox item = new HBox(8);
+        item.setAlignment(Pos.CENTER_LEFT);
+
+        Label iconLabel = new Label(icon);
+        iconLabel.setStyle("-fx-font-size: 14px;");
+        iconLabel.setPrefWidth(20);
+
+        VBox textBox = new VBox(2);
+
+        Label labelText = new Label(label);
+        labelText.setStyle("-fx-font-size: 10px; -fx-text-fill: #95a5a6; -fx-font-weight: 600;");
+
+        Label valueText = new Label(value);
+        valueText.setStyle("-fx-font-size: 13px; -fx-text-fill: #2d3436; -fx-font-weight: 500;");
+
 
         Label iconLabel = new Label(icon);
         iconLabel.setStyle("-fx-font-size: 20px;");
@@ -1380,6 +1444,45 @@ public class ExamSchedulerApp extends Application {
                             " (Capacity: " + exam.getClassroom().getCapacity() + ")");
                     pw.println("👥 STUDENTS:  " + exam.getStudentCount() + " enrolled");
                     pw.println();
+                }
+
+                // Statistics section
+                pw.println("═".repeat(60));
+                pw.println("\n📊 SCHEDULE STATISTICS");
+                pw.println("-".repeat(30));
+                pw.println("Total Exams: " + studentExams.size());
+
+                Map<Integer, Long> examsPerDay = studentExams.stream()
+                        .collect(Collectors.groupingBy(e -> e.getTimeSlot().getDay(), Collectors.counting()));
+
+                pw.println("\nExams per Day:");
+                examsPerDay.entrySet().stream()
+                        .sorted(Map.Entry.comparingByKey())
+                        .forEach(entry -> {
+                            LocalDate dayDate = startDate.plusDays(entry.getKey() - 1);
+                            pw.println("  Day " + entry.getKey() + " (" + dayDate.getDayOfWeek() +
+                                    "): " + entry.getValue() + " exam(s)");
+                        });
+
+                // Recommendations
+                pw.println("\n═".repeat(60));
+                pw.println("\n💡 RECOMMENDATIONS");
+                pw.println("-".repeat(20));
+
+                if (studentExams.isEmpty()) {
+                    pw.println("✓ No exams scheduled");
+                } else {
+                    boolean hasBusyDay = examsPerDay.values().stream().anyMatch(count -> count >= 3);
+
+                    if (hasBusyDay) {
+                        pw.println("⚠ You have days with 3+ exams. Plan your study time accordingly.");
+                    }
+
+                    pw.println("✓ Total study period: " + daysSpinner.getValue() + " days");
+                    pw.println("✓ Average exams per day: " +
+                            String.format("%.1f", studentExams.size() / (double) examsPerDay.size()));
+                }
+
                 }
 
                 // Statistics section
@@ -1885,6 +1988,7 @@ public class ExamSchedulerApp extends Application {
         scrollPane.setStyle("-fx-background: white;");
 
         Scene scene = new Scene(scrollPane, 600, 750);
+        ThemeManager.getInstance().registerScene(scene);
         loadDialog.setScene(scene);
         loadDialog.showAndWait();
     }
@@ -1942,7 +2046,9 @@ public class ExamSchedulerApp extends Application {
         logArea.setStyle("-fx-font-family: monospace; -fx-font-size: 11px;");
 
         progressBox.getChildren().addAll(statusLabel, progressBar, logArea);
-        progressStage.setScene(new Scene(progressBox, 500, 350));
+        Scene progressScene = new Scene(progressBox, 500, 350);
+        ThemeManager.getInstance().registerScene(progressScene);
+        progressStage.setScene(progressScene);
         progressStage.show();
 
         Task<LoadResult> loadTask = new Task<LoadResult>() {
@@ -2265,12 +2371,14 @@ public class ExamSchedulerApp extends Application {
 
         cancelBtn.setOnAction(e -> fileSelectionStage.close());
 
-        fileSelectionStage.setScene(new Scene(grid, 600, 350));
+        Scene fileScene = new Scene(grid, 600, 350);
+        ThemeManager.getInstance().registerScene(fileScene);
+        fileSelectionStage.setScene(fileScene);
         fileSelectionStage.showAndWait();
     }
 
     private void loadFilesWithPaths(Stage owner, String studentsPath, String coursesPath,
-                                    String classroomsPath, String attendancePath) {
+            String classroomsPath, String attendancePath) {
         messages.add("📄 Loading individual files...");
 
         try {
@@ -2640,6 +2748,7 @@ public class ExamSchedulerApp extends Application {
         scrollPane.setStyle("-fx-background: white;");
 
         Scene scene = new Scene(scrollPane, 600, 700);
+        ThemeManager.getInstance().registerScene(scene);
         importDialog.setScene(scene);
         importDialog.showAndWait();
     }
@@ -2703,7 +2812,9 @@ public class ExamSchedulerApp extends Application {
         closeBtn.setOnAction(e -> progressStage.close());
 
         progressBox.getChildren().addAll(statusLabel, progressBar, logArea, closeBtn);
-        progressStage.setScene(new Scene(progressBox, 600, 450));
+        Scene progressScene2 = new Scene(progressBox, 600, 450);
+        ThemeManager.getInstance().registerScene(progressScene2);
+        progressStage.setScene(progressScene2);
         progressStage.show();
 
         Task<ImportResult> importTask = new Task<ImportResult>() {
@@ -3274,8 +3385,8 @@ public class ExamSchedulerApp extends Application {
 
                         String suffix = (forcedSlot != null || examsToPlace.stream()
                                 .filter(e -> e.getCourse().getCourseCode().equals(courseCode)).count() > 1)
-                                ? " [Part]"
-                                : "";
+                                        ? " [Part]"
+                                        : "";
 
                         messages.add("  ✓ " + courseCode + suffix +
                                 " → Day " + day + ", Slot " + slotNum +
@@ -3387,7 +3498,9 @@ public class ExamSchedulerApp extends Application {
 
         VBox root = new VBox(10, new Label("Students"), listView, new HBox(5, idField, addBtn, remBtn));
         root.setPadding(new Insets(10));
-        dialog.setScene(new Scene(root, 300, 400));
+        Scene dialogScene = new Scene(root, 300, 400);
+        ThemeManager.getInstance().registerScene(dialogScene);
+        dialog.setScene(dialogScene);
         dialog.show();
     }
 
@@ -3460,7 +3573,9 @@ public class ExamSchedulerApp extends Application {
         VBox inputs = new VBox(5, codeField, nameField);
         VBox root = new VBox(10, new Label("Courses"), listView, inputs, new HBox(5, addBtn, remBtn));
         root.setPadding(new Insets(10));
-        dialog.setScene(new Scene(root, 300, 450));
+        Scene dialogScene = new Scene(root, 300, 450);
+        ThemeManager.getInstance().registerScene(dialogScene);
+        dialog.setScene(dialogScene);
         dialog.show();
     }
 
@@ -3522,7 +3637,9 @@ public class ExamSchedulerApp extends Application {
         grid.add(capacitySpinner, 1, 3);
         grid.add(new HBox(10, addBtn, remBtn, closeBtn), 0, 4, 2, 1);
 
-        dialog.setScene(new Scene(grid, 400, 400));
+        Scene dialogScene = new Scene(grid, 400, 400);
+        ThemeManager.getInstance().registerScene(dialogScene);
+        dialog.setScene(dialogScene);
         dialog.show();
     }
 
@@ -3706,7 +3823,9 @@ public class ExamSchedulerApp extends Application {
         grid.add(btnBox, 1, 2);
         grid.add(enrolledList, 2, 2);
 
-        dialog.setScene(new Scene(grid, 700, 500));
+        Scene dialogScene = new Scene(grid, 700, 500);
+        ThemeManager.getInstance().registerScene(dialogScene);
+        dialog.setScene(dialogScene);
         dialog.show();
     }
 
@@ -3757,7 +3876,9 @@ public class ExamSchedulerApp extends Application {
         grid.add(enroll, 1, 4);
         grid.add(save, 1, 5);
 
-        d.setScene(new Scene(grid, 350, 350));
+        Scene dialogScene = new Scene(grid, 350, 350);
+        ThemeManager.getInstance().registerScene(dialogScene);
+        d.setScene(dialogScene);
         d.showAndWait();
     }
 
@@ -3859,6 +3980,7 @@ public class ExamSchedulerApp extends Application {
         layout.getChildren().addAll(title, new Separator(), formatBox, descBox, fileNameBox, buttonBox);
 
         Scene scene = new Scene(layout, 500, 450);
+        ThemeManager.getInstance().registerScene(scene);
         saveDialog.setScene(scene);
         saveDialog.showAndWait();
     }
@@ -4271,6 +4393,7 @@ public class ExamSchedulerApp extends Application {
         layout.getChildren().addAll(title, new Separator(), formatBox, descBox, buttonBox);
 
         Scene scene = new Scene(layout, 500, 450);
+        ThemeManager.getInstance().registerScene(scene);
         dialog.setScene(scene);
         dialog.showAndWait();
     }
@@ -4839,6 +4962,7 @@ public class ExamSchedulerApp extends Application {
                 buttonBox);
 
         Scene scene = new Scene(layout, 550, 720);
+        ThemeManager.getInstance().registerScene(scene);
         validationDialog.setScene(scene);
         validationDialog.showAndWait();
     }
@@ -4854,8 +4978,8 @@ public class ExamSchedulerApp extends Application {
         boolean checkTimeDistribution;
 
         ValidationOptions(boolean studentConflicts, boolean consecutive, boolean roomConflicts,
-                          boolean instructorConflicts, boolean capacity, boolean studentLoad,
-                          boolean roomUtilization, boolean timeDistribution) {
+                boolean instructorConflicts, boolean capacity, boolean studentLoad,
+                boolean roomUtilization, boolean timeDistribution) {
             this.checkStudentConflicts = studentConflicts;
             this.checkConsecutive = consecutive;
             this.checkRoomConflicts = roomConflicts;
@@ -5208,6 +5332,7 @@ public class ExamSchedulerApp extends Application {
         root.setBottom(buttonBox);
 
         Scene scene = new Scene(root, 900, 600);
+        ThemeManager.getInstance().registerScene(scene);
         resultStage.setScene(scene);
 
         resultStage.show();
@@ -5450,7 +5575,9 @@ public class ExamSchedulerApp extends Application {
         VBox root = new VBox(10, new Label("Detailed Conflict Analysis:"), reportArea, buttonBox);
         root.setPadding(new Insets(10));
 
-        dialogStage.setScene(new Scene(root, 850, 600));
+        Scene dialogScene = new Scene(root, 850, 600);
+        ThemeManager.getInstance().registerScene(dialogScene);
+        dialogStage.setScene(dialogScene);
         dialogStage.show();
 
         messages.add("✓ Conflict report generated");
@@ -5497,6 +5624,7 @@ public class ExamSchedulerApp extends Application {
         layout.getChildren().addAll(scrollPane, closeButton);
 
         Scene scene = new Scene(layout, 750, 550);
+        ThemeManager.getInstance().registerScene(scene);
         dialog.setScene(scene);
         dialog.showAndWait();
     }
@@ -6121,6 +6249,7 @@ public class ExamSchedulerApp extends Application {
         alert.setTitle(title);
         alert.setHeaderText(null);
         alert.setContentText(message);
+        ThemeManager.getInstance().styleAlert(alert);
         alert.showAndWait();
     }
 
@@ -6129,6 +6258,7 @@ public class ExamSchedulerApp extends Application {
         alert.setTitle(title);
         alert.setHeaderText(null);
         alert.setContentText(message);
+        ThemeManager.getInstance().styleAlert(alert);
         alert.showAndWait();
     }
 
@@ -6137,6 +6267,7 @@ public class ExamSchedulerApp extends Application {
         alert.setTitle(title);
         alert.setHeaderText(null);
         alert.setContentText(message);
+        ThemeManager.getInstance().styleAlert(alert);
         alert.showAndWait();
     }
 
