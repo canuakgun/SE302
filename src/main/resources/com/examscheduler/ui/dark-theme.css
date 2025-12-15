@@ -1,0 +1,454 @@
+/* Dark Theme for Exam Scheduler Application */
+
+/* Root background and text colors */
+.root {
+    -fx-base: #1e1e1e;
+    -fx-background: #1e1e1e;
+    -fx-control-inner-background: #2d2d2d;
+    -fx-control-inner-background-alt: #353535;
+    -fx-accent: #0078D4;
+    -fx-focus-color: #0078D4;
+    -fx-faint-focus-color: transparent;
+    -fx-text-fill: #e0e0e0;
+    -fx-text-base-color: #e0e0e0;
+    -fx-text-background-color: ladder(-fx-background,
+            #e0e0e0 45%,
+            #e0e0e0 46%,
+            #e0e0e0 59%,
+            #e0e0e0 60%);
+}
+
+/* Labels */
+.label {
+    -fx-text-fill: #e0e0e0;
+}
+
+/* Buttons */
+.button {
+    -fx-background-color: #3c3c3c;
+    -fx-text-fill: #ffffff;
+    -fx-background-radius: 4;
+    -fx-border-color: #555555;
+    -fx-border-radius: 4;
+}
+
+.button:hover {
+    -fx-background-color: #4a4a4a;
+}
+
+.button:pressed {
+    -fx-background-color: #2a2a2a;
+}
+
+.button:focused {
+    -fx-border-color: #0078D4;
+}
+
+/* Text fields and text areas */
+.text-field,
+.text-area,
+.password-field {
+    -fx-background-color: #2d2d2d;
+    -fx-text-fill: #e0e0e0;
+    -fx-prompt-text-fill: #808080;
+    -fx-border-color: #555555;
+    -fx-border-radius: 4;
+    -fx-background-radius: 4;
+}
+
+.text-field:focused,
+.text-area:focused,
+.password-field:focused {
+    -fx-border-color: #0078D4;
+}
+
+/* ComboBox */
+.combo-box {
+    -fx-background-color: #2d2d2d;
+    -fx-border-color: #555555;
+    -fx-border-radius: 4;
+    -fx-background-radius: 4;
+}
+
+.combo-box .list-cell {
+    -fx-background-color: #2d2d2d;
+    -fx-text-fill: #e0e0e0;
+}
+
+.combo-box-popup .list-view {
+    -fx-background-color: #2d2d2d;
+}
+
+.combo-box-popup .list-view .list-cell {
+    -fx-background-color: #2d2d2d;
+    -fx-text-fill: #e0e0e0;
+}
+
+.combo-box-popup .list-view .list-cell:hover {
+    -fx-background-color: #3c3c3c;
+}
+
+.combo-box-popup .list-view .list-cell:filled:selected {
+    -fx-background-color: #0078D4;
+    -fx-text-fill: white;
+}
+
+/* Spinner */
+.spinner {
+    -fx-background-color: #2d2d2d;
+    -fx-border-color: #555555;
+}
+
+.spinner .text-field {
+    -fx-background-color: #2d2d2d;
+    -fx-text-fill: #e0e0e0;
+}
+
+.spinner .increment-arrow-button,
+.spinner .decrement-arrow-button {
+    -fx-background-color: #3c3c3c;
+}
+
+.spinner .increment-arrow-button:hover,
+.spinner .decrement-arrow-button:hover {
+    -fx-background-color: #4a4a4a;
+}
+
+/* CheckBox */
+.check-box {
+    -fx-text-fill: #e0e0e0;
+}
+
+.check-box .box {
+    -fx-background-color: #2d2d2d;
+    -fx-border-color: #555555;
+}
+
+.check-box:selected .box {
+    -fx-background-color: #0078D4;
+    -fx-border-color: #0078D4;
+}
+
+/* ListView */
+.list-view {
+    -fx-background-color: #2d2d2d;
+    -fx-border-color: #555555;
+}
+
+.list-view .list-cell {
+    -fx-background-color: #2d2d2d;
+    -fx-text-fill: #e0e0e0;
+}
+
+.list-view .list-cell:odd {
+    -fx-background-color: #333333;
+}
+
+.list-view .list-cell:hover {
+    -fx-background-color: #3c3c3c;
+}
+
+.list-view .list-cell:selected {
+    -fx-background-color: #0078D4;
+    -fx-text-fill: white;
+}
+
+/* TableView */
+.table-view {
+    -fx-background-color: #2d2d2d;
+    -fx-border-color: #555555;
+}
+
+.table-view .column-header-background {
+    -fx-background-color: #3c3c3c;
+}
+
+.table-view .column-header {
+    -fx-background-color: #3c3c3c;
+}
+
+.table-view .column-header .label {
+    -fx-text-fill: #e0e0e0;
+    -fx-font-weight: bold;
+}
+
+.table-view .table-row-cell {
+    -fx-background-color: #2d2d2d;
+}
+
+.table-view .table-row-cell:odd {
+    -fx-background-color: #333333;
+}
+
+.table-view .table-row-cell:hover {
+    -fx-background-color: #3c3c3c;
+}
+
+.table-view .table-row-cell:selected {
+    -fx-background-color: #0078D4;
+}
+
+.table-view .table-cell {
+    -fx-text-fill: #e0e0e0;
+}
+
+.table-view .table-row-cell:selected .table-cell {
+    -fx-text-fill: white;
+}
+
+/* ScrollPane */
+.scroll-pane {
+    -fx-background-color: #1e1e1e;
+}
+
+.scroll-pane>.viewport {
+    -fx-background-color: #1e1e1e;
+}
+
+.scroll-bar {
+    -fx-background-color: #2d2d2d;
+}
+
+.scroll-bar .thumb {
+    -fx-background-color: #555555;
+    -fx-background-radius: 4;
+}
+
+.scroll-bar .thumb:hover {
+    -fx-background-color: #666666;
+}
+
+.scroll-bar .increment-button,
+.scroll-bar .decrement-button {
+    -fx-background-color: #2d2d2d;
+}
+
+/* MenuBar and Menu */
+.menu-bar {
+    -fx-background-color: #2d2d2d;
+}
+
+.menu-bar .menu {
+    -fx-background-color: #2d2d2d;
+}
+
+.menu-bar .menu .label {
+    -fx-text-fill: #e0e0e0;
+}
+
+.context-menu {
+    -fx-background-color: #2d2d2d;
+    -fx-border-color: #555555;
+}
+
+.menu-item {
+    -fx-background-color: #2d2d2d;
+}
+
+.menu-item .label {
+    -fx-text-fill: #e0e0e0;
+}
+
+.menu-item:hover,
+.menu-item:focused {
+    -fx-background-color: #3c3c3c;
+}
+
+/* ToolBar */
+.tool-bar {
+    -fx-background-color: #2d2d2d;
+}
+
+/* TabPane */
+.tab-pane {
+    -fx-background-color: #1e1e1e;
+}
+
+.tab-pane .tab-header-area {
+    -fx-background-color: #2d2d2d;
+}
+
+.tab-pane .tab {
+    -fx-background-color: #2d2d2d;
+}
+
+.tab-pane .tab:selected {
+    -fx-background-color: #0078D4;
+}
+
+.tab-pane .tab .tab-label {
+    -fx-text-fill: #e0e0e0;
+}
+
+.tab-pane .tab:selected .tab-label {
+    -fx-text-fill: white;
+}
+
+/* Separator */
+.separator .line {
+    -fx-border-color: #555555;
+}
+
+/* Progress Bar */
+.progress-bar {
+    -fx-background-color: #2d2d2d;
+}
+
+.progress-bar .bar {
+    -fx-background-color: #0078D4;
+}
+
+/* DatePicker */
+.date-picker {
+    -fx-background-color: #2d2d2d;
+    -fx-border-color: #555555;
+}
+
+.date-picker .text-field {
+    -fx-background-color: #2d2d2d;
+    -fx-text-fill: #e0e0e0;
+}
+
+.date-picker-popup {
+    -fx-background-color: #2d2d2d;
+}
+
+.date-picker-popup .month-year-pane {
+    -fx-background-color: #3c3c3c;
+}
+
+.date-picker-popup .day-cell {
+    -fx-background-color: #2d2d2d;
+    -fx-text-fill: #e0e0e0;
+}
+
+.date-picker-popup .day-cell:hover {
+    -fx-background-color: #3c3c3c;
+}
+
+/* Dialog styling */
+.dialog-pane {
+    -fx-background-color: #2d2d2d;
+}
+
+.dialog-pane .content {
+    -fx-background-color: #2d2d2d;
+}
+
+.dialog-pane .header-panel {
+    -fx-background-color: #3c3c3c;
+}
+
+.dialog-pane .button-bar .button {
+    -fx-background-color: #3c3c3c;
+    -fx-text-fill: white;
+}
+
+.dark-dialog {
+    -fx-background-color: #2d2d2d;
+}
+
+.dark-dialog .content.label {
+    -fx-text-fill: #e0e0e0;
+}
+
+/* Split Pane */
+.split-pane {
+    -fx-background-color: #1e1e1e;
+}
+
+.split-pane-divider {
+    -fx-background-color: #555555;
+}
+
+/* Titled Pane */
+.titled-pane {
+    -fx-background-color: #2d2d2d;
+}
+
+.titled-pane>.title {
+    -fx-background-color: #3c3c3c;
+}
+
+.titled-pane>.title>.text {
+    -fx-text-fill: #e0e0e0;
+}
+
+/* VBox and HBox with dark background class */
+.dark-background {
+    -fx-background-color: #1e1e1e;
+}
+
+.dark-card {
+    -fx-background-color: #2d2d2d;
+    -fx-background-radius: 8;
+}
+
+/* Toggle Button */
+.toggle-button {
+    -fx-background-color: #3c3c3c;
+    -fx-text-fill: #e0e0e0;
+}
+
+.toggle-button:selected {
+    -fx-background-color: #0078D4;
+    -fx-text-fill: white;
+}
+
+/* Dark mode class - applied dynamically to containers */
+.dark-mode {
+    -fx-background-color: #1e1e1e !important;
+    -fx-background: #1e1e1e !important;
+}
+
+/* VBox and HBox containers */
+.dark-mode.v-box,
+.dark-mode.h-box,
+.dark-mode.vbox,
+.dark-mode.hbox {
+    -fx-background-color: #1e1e1e;
+}
+
+/* BorderPane */
+.dark-mode.border-pane {
+    -fx-background-color: #1e1e1e;
+}
+
+/* GridPane */
+.dark-mode.grid-pane {
+    -fx-background-color: #1e1e1e;
+}
+
+/* StackPane */
+.dark-mode.stack-pane {
+    -fx-background-color: #1e1e1e;
+}
+
+/* AnchorPane */
+.dark-mode.anchor-pane {
+    -fx-background-color: #1e1e1e;
+}
+
+/* FlowPane */
+.dark-mode.flow-pane {
+    -fx-background-color: #1e1e1e;
+}
+
+/* Pane */
+.dark-mode.pane {
+    -fx-background-color: #1e1e1e;
+}
+
+/* Region base */
+.dark-mode.region {
+    -fx-background-color: #1e1e1e;
+}
+
+/* Scroll pane content */
+.scroll-pane .content {
+    -fx-background-color: #1e1e1e;
+}
+
+.scroll-pane>.viewport>* {
+    -fx-background-color: #1e1e1e;
+}
