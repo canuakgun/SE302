@@ -3483,7 +3483,10 @@ private void createPDF(File file, Student student, List<Exam> exams) throws Exce
 
         Label courseLabel = new Label("Select Course:");
         ComboBox<Course> courseCombo = new ComboBox<>();
-        courseCombo.setItems(FXCollections.observableArrayList(dataManager.getCourses()));
+        List<Course> validCourses = dataManager.getCourses().stream()
+                                    .filter(c -> c.getCourseCode() != null && !c.getCourseCode().trim().startsWith("["))
+                                    .collect(Collectors.toList());
+        courseCombo.setItems(FXCollections.observableArrayList(validCourses));
         courseCombo.setPrefWidth(300);
 
         // Converter: Dersteki güncel öğrenci sayısını gösterir
