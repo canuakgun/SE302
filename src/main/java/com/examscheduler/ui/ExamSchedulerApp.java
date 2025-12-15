@@ -3362,26 +3362,37 @@ private void createPDF(File file, Student student, List<Exam> exams) throws Exce
             showError("No Data", "Please load data first.");
             return;
         }
-
+    
         Stage dialog = new Stage();
         dialog.initOwner(owner);
         dialog.initModality(Modality.APPLICATION_MODAL);
         dialog.setTitle("Manage Courses");
-
+    
         ListView<String> listView = new ListView<>();
-        dataManager.getCourses().forEach(c -> listView.getItems().add(c.getCourseCode()));
-
+    
+        // --- DÜZELTME 1: LİSTE DOLDURMA ---
+        // Sadece '[' ile başlamayan, geçerli dersleri listeye ekle
+        dataManager.getCourses().stream()
+    .filter(c -> {
+        String code = c.getCourseCode();
+        // Null değilse, boş değilse VE köşeli parantez ile başlamıyorsa ekle
+        return code != null && !code.trim().isEmpty() && !code.trim().startsWith("[");
+    })
+    .forEach(c -> listView.getItems().add(c.getCourseCode()));
+        // ----------------------------------
+    
         TextField codeField = new TextField();
         codeField.setPromptText("Course Code");
         TextField nameField = new TextField();
         nameField.setPromptText("Course Name");
-
+    
         Button addBtn = new Button("Add");
         Button remBtn = new Button("Remove");
-
+    
         addBtn.setOnAction(e -> {
             String code = codeField.getText().trim();
             if (!code.isEmpty()) {
+                // Yeni eklenen derslerde sorun yok, doğrudan ekle
                 Course c = new Course(code, nameField.getText(), "", 1);
                 dataManager.addCourse(c);
                 listView.getItems().add(code);
@@ -3390,17 +3401,28 @@ private void createPDF(File file, Student student, List<Exam> exams) throws Exce
                 nameField.clear();
             }
         });
-
+    
+        // --- DÜZELTME 2: SİLME İŞLEMİ (GÜVENLİ) ---
         remBtn.setOnAction(e -> {
-            int idx = listView.getSelectionModel().getSelectedIndex();
-            if (idx >= 0) {
-                Course c = dataManager.getCourses().get(idx);
-                dataManager.removeCourse(c);
-                listView.getItems().remove(idx);
-                messages.add("Course removed.");
+            // İndeks yerine seçilen yazıyı (String) alıyoruz
+            String selectedCode = listView.getSelectionModel().getSelectedItem();
+            
+            if (selectedCode != null) {
+                // DataManager içinden bu koda sahip olan dersi buluyoruz
+                Course toRemove = dataManager.getCourses().stream()
+                    .filter(c -> c.getCourseCode().equals(selectedCode))
+                    .findFirst()
+                    .orElse(null);
+    
+                if (toRemove != null) {
+                    dataManager.removeCourse(toRemove); // Hafızadan sil
+                    listView.getItems().remove(selectedCode); // Listeden sil
+                    messages.add("Course removed: " + selectedCode);
+                }
             }
         });
-
+        // ------------------------------------------
+    
         VBox inputs = new VBox(5, codeField, nameField);
         VBox root = new VBox(10, new Label("Courses"), listView, inputs, new HBox(5, addBtn, remBtn));
         root.setPadding(new Insets(10));
