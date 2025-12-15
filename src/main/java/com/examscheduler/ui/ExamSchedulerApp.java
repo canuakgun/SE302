@@ -107,6 +107,7 @@ public class ExamSchedulerApp extends Application {
 
     private DatePicker examStartDatePicker;
     private List<String> unplacedCourses = new ArrayList<>();
+    private File lastSelectedDirectory = null;
 
     public static void main(String[] args) {
         launch(args);
@@ -233,6 +234,11 @@ public class ExamSchedulerApp extends Application {
         themeDescription.setStyle("-fx-font-size: 11px; -fx-text-fill: #888;");
 
         VBox themeBox = new VBox(5, darkModeCheck, themeDescription);
+        // --- 2. Theme Setting Example ---
+        ComboBox<String> themeCombo = new ComboBox<>(
+                FXCollections.observableArrayList("Light", "Dark (Not Implemented)", "Default"));
+        themeCombo.setValue("Default");
+        HBox themeBox = new HBox(10, new Label("Application Theme:"), themeCombo);
         themeBox.setAlignment(Pos.CENTER_LEFT);
 
         // --- 3. Auto-Save Setting Example ---
@@ -248,6 +254,9 @@ public class ExamSchedulerApp extends Application {
             showInfo("Settings Applied", "Settings saved successfully!" +
                     (darkModeCheck.isSelected() ? "\n\n🌙 Dark mode is now enabled."
                             : "\n\n☀ Light mode is now enabled."));
+            // Apply logic here (e.g., save maxExamsSpinner value to DataManager)
+            showInfo("Settings Applied",
+                    "Settings saved successfully! Changes will take effect on next generation/restart.");
             settingsStage.close();
         });
 
@@ -533,6 +542,12 @@ public class ExamSchedulerApp extends Application {
         HBox statsBox = new HBox(15);
         statsBox.setAlignment(Pos.CENTER);
         statsBox.setPadding(new Insets(10, 0, 0, 0));
+
+        VBox totalStudentsCard = createInfoCard("👥", String.valueOf(dataManager.getStudents().size()),
+                "Total Students");
+        VBox totalExamsCard = createInfoCard("📝", String.valueOf(dataManager.getCourses().size()), "Total Exams");
+        VBox examDaysCard = createInfoCard("📅", String.valueOf(daysSpinner.getValue()), "Exam Days");
+
 
         VBox totalStudentsCard = createInfoCard("👥", String.valueOf(dataManager.getStudents().size()),
                 "Total Students");
@@ -841,6 +856,10 @@ public class ExamSchedulerApp extends Application {
         GridPane quickStats = createQuickStatsGrid(studentExams);
         quickStatsSection.getChildren().addAll(statsTitle, quickStats);
 
+
+        GridPane quickStats = createQuickStatsGrid(studentExams);
+        quickStatsSection.getChildren().addAll(statsTitle, quickStats);
+
         dashboard.getChildren().addAll(upcomingSection, new Separator(), quickStatsSection);
 
         ScrollPane scrollPane = new ScrollPane(dashboard);
@@ -939,6 +958,37 @@ public class ExamSchedulerApp extends Application {
         item.setStyle("-fx-background-color: #f8f9fa; " +
                 "-fx-background-radius: 8; " +
                 "-fx-min-width: 180;");
+
+        Label iconLabel = new Label(icon);
+        iconLabel.setStyle("-fx-font-size: 20px;");
+
+        Label textLabel = new Label(label);
+        textLabel.setStyle("-fx-font-size: 11px; -fx-text-fill: #636e72; -fx-font-weight: 600;");
+
+        Label valueLabel = new Label(value);
+        valueLabel.setStyle("-fx-font-size: 18px; -fx-font-weight: bold; -fx-text-fill: #2d3436;");
+
+        item.getChildren().addAll(iconLabel, textLabel, valueLabel);
+        return item;
+    }
+
+    // Detay item oluşturucu
+    private HBox createDetailItem(String icon, String label, String value) {
+        HBox item = new HBox(8);
+        item.setAlignment(Pos.CENTER_LEFT);
+
+        Label iconLabel = new Label(icon);
+        iconLabel.setStyle("-fx-font-size: 14px;");
+        iconLabel.setPrefWidth(20);
+
+        VBox textBox = new VBox(2);
+
+        Label labelText = new Label(label);
+        labelText.setStyle("-fx-font-size: 10px; -fx-text-fill: #95a5a6; -fx-font-weight: 600;");
+
+        Label valueText = new Label(value);
+        valueText.setStyle("-fx-font-size: 13px; -fx-text-fill: #2d3436; -fx-font-weight: 500;");
+
 
         Label iconLabel = new Label(icon);
         iconLabel.setStyle("-fx-font-size: 20px;");
@@ -1433,6 +1483,45 @@ public class ExamSchedulerApp extends Application {
                             String.format("%.1f", studentExams.size() / (double) examsPerDay.size()));
                 }
 
+                }
+
+                // Statistics section
+                pw.println("═".repeat(60));
+                pw.println("\n📊 SCHEDULE STATISTICS");
+                pw.println("-".repeat(30));
+                pw.println("Total Exams: " + studentExams.size());
+
+                Map<Integer, Long> examsPerDay = studentExams.stream()
+                        .collect(Collectors.groupingBy(e -> e.getTimeSlot().getDay(), Collectors.counting()));
+
+                pw.println("\nExams per Day:");
+                examsPerDay.entrySet().stream()
+                        .sorted(Map.Entry.comparingByKey())
+                        .forEach(entry -> {
+                            LocalDate dayDate = startDate.plusDays(entry.getKey() - 1);
+                            pw.println("  Day " + entry.getKey() + " (" + dayDate.getDayOfWeek() +
+                                    "): " + entry.getValue() + " exam(s)");
+                        });
+
+                // Recommendations
+                pw.println("\n═".repeat(60));
+                pw.println("\n💡 RECOMMENDATIONS");
+                pw.println("-".repeat(20));
+
+                if (studentExams.isEmpty()) {
+                    pw.println("✓ No exams scheduled");
+                } else {
+                    boolean hasBusyDay = examsPerDay.values().stream().anyMatch(count -> count >= 3);
+
+                    if (hasBusyDay) {
+                        pw.println("⚠ You have days with 3+ exams. Plan your study time accordingly.");
+                    }
+
+                    pw.println("✓ Total study period: " + daysSpinner.getValue() + " days");
+                    pw.println("✓ Average exams per day: " +
+                            String.format("%.1f", studentExams.size() / (double) examsPerDay.size()));
+                }
+
                 pw.println("\n" + "═".repeat(60));
                 pw.println("Generated by Exam Scheduler v2.0 - Student Portal");
                 pw.println("© " + LocalDate.now().getYear() + " - All rights reserved");
@@ -1823,7 +1912,7 @@ public class ExamSchedulerApp extends Application {
         VBox option1 = createLoadOption(
                 "📂 Load from Folder",
                 "Load CSV files from a directory",
-                "• students.csv\n• courses.csv\n• classrooms.csv\n• attendance.csv (optional)",
+                "• students.csv\n• courses.csv\n• classrooms.csv\n• attendance.csv",
                 "#4CAF50");
 
         Button loadFolderBtn = new Button("Select Folder");
@@ -1991,12 +2080,13 @@ public class ExamSchedulerApp extends Application {
                     log.append("  Students: ").append(studentsPath != null ? "✓ Found" : "✗ Missing").append("\n");
                     log.append("  Courses: ").append(coursesPath != null ? "✓ Found" : "✗ Missing").append("\n");
                     log.append("  Classrooms: ").append(classroomsPath != null ? "✓ Found" : "✗ Missing").append("\n");
-                    log.append("  Attendance: ").append(attendancePath != null ? "✓ Found" : "⚠ Optional")
+                    log.append("  Attendance: ").append(attendancePath != null ? "✓ Found" : "✗ Missing")
                             .append("\n\n");
 
-                    if (studentsPath == null || coursesPath == null || classroomsPath == null) {
+                    if (studentsPath == null || coursesPath == null || classroomsPath == null
+                            || attendancePath == null) {
                         result.success = false;
-                        result.error = "Missing required CSV files (students, courses, classrooms)";
+                        result.error = "Missing required CSV files (students, courses, classrooms, attendance)";
                         log.append("❌ ERROR: Missing required files\n");
                         result.log = log.toString();
                         return result;
@@ -2031,22 +2121,18 @@ public class ExamSchedulerApp extends Application {
                     log.append("✓ Loaded ").append(loadedClassrooms.size()).append(" classrooms\n\n");
                     result.classroomsCount = loadedClassrooms.size();
 
-                    if (attendancePath != null) {
-                        updateMessage("Loading attendance lists...");
-                        updateProgress(85, 100);
-                        log.append("Loading attendance lists...\n");
-                        CSVParser.parseAttendanceLists(attendancePath, dataManager.getStudents(),
-                                dataManager.getCourses());
+                    updateMessage("Loading attendance lists...");
+                    updateProgress(85, 100);
+                    log.append("Loading attendance lists...\n");
+                    CSVParser.parseAttendanceLists(attendancePath, dataManager.getStudents(),
+                            dataManager.getCourses());
 
-                        int totalEnrollments = dataManager.getCourses().stream()
-                                .mapToInt(c -> c.getEnrolledStudents().size())
-                                .sum();
-                        log.append("✓ Loaded attendance data (").append(totalEnrollments)
-                                .append(" total enrollments)\n\n");
-                        result.attendanceCount = totalEnrollments;
-                    } else {
-                        log.append("⚠ No attendance file found - courses have no enrolled students\n\n");
-                    }
+                    int totalEnrollments = dataManager.getCourses().stream()
+                            .mapToInt(c -> c.getEnrolledStudents().size())
+                            .sum();
+                    log.append("✓ Loaded attendance data (").append(totalEnrollments)
+                            .append(" total enrollments)\n\n");
+                    result.attendanceCount = totalEnrollments;
 
                     dataManager.setSourceFiles(
                             new File(studentsPath),
@@ -2174,7 +2260,7 @@ public class ExamSchedulerApp extends Application {
         classroomsField.setPrefWidth(300);
 
         TextField attendanceField = new TextField();
-        attendanceField.setPromptText("No file selected (optional)");
+        attendanceField.setPromptText("No file selected");
         attendanceField.setEditable(false);
         attendanceField.setPrefWidth(300);
 
@@ -2186,28 +2272,53 @@ public class ExamSchedulerApp extends Application {
         FileChooser fileChooser = new FileChooser();
         fileChooser.getExtensionFilters().add(new FileChooser.ExtensionFilter("CSV Files", "*.csv"));
 
+        // Set initial directory to last selected folder if available
+        if (lastSelectedDirectory != null && lastSelectedDirectory.exists()) {
+            fileChooser.setInitialDirectory(lastSelectedDirectory);
+        }
+
         studentsBtn.setOnAction(e -> {
+            if (lastSelectedDirectory != null && lastSelectedDirectory.exists()) {
+                fileChooser.setInitialDirectory(lastSelectedDirectory);
+            }
             File file = fileChooser.showOpenDialog(fileSelectionStage);
-            if (file != null)
+            if (file != null) {
                 studentsField.setText(file.getAbsolutePath());
+                lastSelectedDirectory = file.getParentFile();
+            }
         });
 
         coursesBtn.setOnAction(e -> {
+            if (lastSelectedDirectory != null && lastSelectedDirectory.exists()) {
+                fileChooser.setInitialDirectory(lastSelectedDirectory);
+            }
             File file = fileChooser.showOpenDialog(fileSelectionStage);
-            if (file != null)
+            if (file != null) {
                 coursesField.setText(file.getAbsolutePath());
+                lastSelectedDirectory = file.getParentFile();
+            }
         });
 
         classroomsBtn.setOnAction(e -> {
+            if (lastSelectedDirectory != null && lastSelectedDirectory.exists()) {
+                fileChooser.setInitialDirectory(lastSelectedDirectory);
+            }
             File file = fileChooser.showOpenDialog(fileSelectionStage);
-            if (file != null)
+            if (file != null) {
                 classroomsField.setText(file.getAbsolutePath());
+                lastSelectedDirectory = file.getParentFile();
+            }
         });
 
         attendanceBtn.setOnAction(e -> {
+            if (lastSelectedDirectory != null && lastSelectedDirectory.exists()) {
+                fileChooser.setInitialDirectory(lastSelectedDirectory);
+            }
             File file = fileChooser.showOpenDialog(fileSelectionStage);
-            if (file != null)
+            if (file != null) {
                 attendanceField.setText(file.getAbsolutePath());
+                lastSelectedDirectory = file.getParentFile();
+            }
         });
 
         grid.add(new Label("Students CSV: *"), 0, 1);
@@ -2222,7 +2333,7 @@ public class ExamSchedulerApp extends Application {
         grid.add(classroomsField, 1, 3);
         grid.add(classroomsBtn, 2, 3);
 
-        grid.add(new Label("Attendance CSV:"), 0, 4);
+        grid.add(new Label("Attendance CSV: *"), 0, 4);
         grid.add(attendanceField, 1, 4);
         grid.add(attendanceBtn, 2, 4);
 
@@ -2246,14 +2357,16 @@ public class ExamSchedulerApp extends Application {
             String classroomsPath = classroomsField.getText();
             String attendancePath = attendanceField.getText();
 
-            if (studentsPath.isEmpty() || coursesPath.isEmpty() || classroomsPath.isEmpty()) {
-                showWarning("Missing Files", "Please select all required files (Students, Courses, Classrooms).");
+            if (studentsPath.isEmpty() || coursesPath.isEmpty() || classroomsPath.isEmpty()
+                    || attendancePath.isEmpty()) {
+                showWarning("Missing Files",
+                        "Please select all required files (Students, Courses, Classrooms, Attendance).");
                 return;
             }
 
             fileSelectionStage.close();
             loadFilesWithPaths(owner, studentsPath, coursesPath, classroomsPath,
-                    attendancePath.isEmpty() ? null : attendancePath);
+                    attendancePath);
         });
 
         cancelBtn.setOnAction(e -> fileSelectionStage.close());
@@ -2279,16 +2392,14 @@ public class ExamSchedulerApp extends Application {
             dataManager.setCourses(courses);
             dataManager.setClassrooms(classrooms);
 
-            if (attendancePath != null) {
-                CSVParser.parseAttendanceLists(attendancePath, students, courses);
-                messages.add("✓ Attendance lists loaded");
-            }
+            CSVParser.parseAttendanceLists(attendancePath, students, courses);
+            messages.add("✓ Attendance lists loaded");
 
             dataManager.setSourceFiles(
                     new File(studentsPath),
                     new File(coursesPath),
                     new File(classroomsPath),
-                    attendancePath != null ? new File(attendancePath) : null);
+                    new File(attendancePath));
 
             updateClassroomsView();
 
@@ -2525,7 +2636,7 @@ public class ExamSchedulerApp extends Application {
                             "• Students\n" +
                             "• Courses\n" +
                             "• Classrooms\n" +
-                            "• Attendance (optional but recommended)");
+                            "• Attendance");
             return;
         }
 
