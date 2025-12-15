@@ -92,7 +92,6 @@ import javafx.stage.FileChooser;
 import javafx.stage.Modality;
 import javafx.stage.Stage;
 
-
 public class ExamSchedulerApp extends Application {
 
     private final DataManager dataManager = DataManager.getInstance();
@@ -108,6 +107,7 @@ public class ExamSchedulerApp extends Application {
 
     private DatePicker examStartDatePicker;
     private List<String> unplacedCourses = new ArrayList<>();
+    private File lastSelectedDirectory = null;
 
     public static void main(String[] args) {
         launch(args);
@@ -136,7 +136,6 @@ public class ExamSchedulerApp extends Application {
         String secondaryBtnStyle = "-fx-background-color: #555555; -fx-text-fill: white; -fx-font-size: 14px; -fx-font-weight: bold; -fx-padding: 10px 25px; -fx-background-radius: 5; -fx-cursor: hand;";
         String helpBtnStyle = "-fx-background-color: #1976D2; -fx-text-fill: white; -fx-font-size: 14px; -fx-font-weight: bold; -fx-padding: 10px 25px; -fx-background-radius: 5; -fx-cursor: hand;";
         String exitBtnStyle = "-fx-background-color: #D32F2F; -fx-text-fill: white; -fx-font-size: 14px; -fx-font-weight: bold; -fx-padding: 10px 25px; -fx-background-radius: 5; -fx-cursor: hand;";
-
 
         // Admin/Main Entry Button
         Button startBtn = new Button("Admin Login / Start ➤");
@@ -173,9 +172,10 @@ public class ExamSchedulerApp extends Application {
         HBox helpButtons = new HBox(10, manualBtn, quickStartBtn, faqBtn);
         helpButtons.setAlignment(Pos.CENTER);
 
-
         // Footer
-        Label footerLabel = new Label("Developed by Team 11-Abdulhamid Yıldırım,Ahmet Emir Doğan,Ali Uğur Yalçın,Can Ulaş Akgün,Furkan Pala © " + LocalDate.now().getYear());
+        Label footerLabel = new Label(
+                "Developed by Team 11-Abdulhamid Yıldırım,Ahmet Emir Doğan,Ali Uğur Yalçın,Can Ulaş Akgün,Furkan Pala © "
+                        + LocalDate.now().getYear());
         footerLabel.setStyle("-fx-text-fill: #999; -fx-font-size: 12px;");
 
         // --- Layout Arrangement (VBox) ---
@@ -195,8 +195,7 @@ public class ExamSchedulerApp extends Application {
                 new Separator(),
                 utilityButtons,
                 new Region(), // Spacer
-                footerLabel
-        );
+                footerLabel);
 
         // Create and show the scene
         Scene scene = new Scene(layout, 800, 600);
@@ -226,7 +225,8 @@ public class ExamSchedulerApp extends Application {
         maxExamsBox.setAlignment(Pos.CENTER_LEFT);
 
         // --- 2. Theme Setting Example ---
-        ComboBox<String> themeCombo = new ComboBox<>(FXCollections.observableArrayList("Light", "Dark (Not Implemented)", "Default"));
+        ComboBox<String> themeCombo = new ComboBox<>(
+                FXCollections.observableArrayList("Light", "Dark (Not Implemented)", "Default"));
         themeCombo.setValue("Default");
         HBox themeBox = new HBox(10, new Label("Application Theme:"), themeCombo);
         themeBox.setAlignment(Pos.CENTER_LEFT);
@@ -239,7 +239,8 @@ public class ExamSchedulerApp extends Application {
         saveBtn.setStyle("-fx-background-color: #4CAF50; -fx-text-fill: white; -fx-padding: 8px 16px;");
         saveBtn.setOnAction(e -> {
             // Apply logic here (e.g., save maxExamsSpinner value to DataManager)
-            showInfo("Settings Applied", "Settings saved successfully! Changes will take effect on next generation/restart.");
+            showInfo("Settings Applied",
+                    "Settings saved successfully! Changes will take effect on next generation/restart.");
             settingsStage.close();
         });
 
@@ -253,14 +254,12 @@ public class ExamSchedulerApp extends Application {
                 themeBox,
                 autoSaveCheck,
                 new Separator(),
-                saveBtn
-        );
+                saveBtn);
 
         Scene scene = new Scene(layout, 500, 450);
         settingsStage.setScene(scene);
         settingsStage.showAndWait();
     }
-
 
     private void showMainApplication(Stage stage) {
         stage.setTitle("📅 Exam Scheduler - Enhanced with Student Portal");
@@ -332,283 +331,289 @@ public class ExamSchedulerApp extends Application {
         stage.centerOnScreen();
         stage.show();
     }
-   private void showStudentPortal(Stage owner) {
-    if (!dataManager.isDataLoaded() || dataManager.getSchedule() == null) {
-        showError("No Schedule", "Please load data and generate schedule first.");
-        return;
-    }
 
-    Stage loginStage = new Stage();
-    loginStage.initOwner(owner);
-    loginStage.initModality(Modality.APPLICATION_MODAL);
-    loginStage.setTitle("🎓 Student Portal");
+    private void showStudentPortal(Stage owner) {
+        if (!dataManager.isDataLoaded() || dataManager.getSchedule() == null) {
+            showError("No Schedule", "Please load data and generate schedule first.");
+            return;
+        }
 
-    // Modern, gradient arka plan
-    BorderPane root = new BorderPane();
-    root.setStyle("-fx-background-color: linear-gradient(135deg, #667eea 0%, #764ba2 100%);");
+        Stage loginStage = new Stage();
+        loginStage.initOwner(owner);
+        loginStage.initModality(Modality.APPLICATION_MODAL);
+        loginStage.setTitle("🎓 Student Portal");
 
-    // Üst banner
-    VBox header = new VBox(5);
-    header.setAlignment(Pos.CENTER);
-    header.setPadding(new Insets(30, 20, 20, 20));
-    
-    Label brandLabel = new Label("🎓");
-    brandLabel.setStyle("-fx-font-size: 48px;");
-    
-    Label titleLabel = new Label("STUDENT PORTAL");
-    titleLabel.setStyle("-fx-font-size: 32px; -fx-font-weight: bold; -fx-text-fill: white; " +
-                       "-fx-effect: dropshadow(gaussian, rgba(0,0,0,0.3), 8, 0, 0, 2);");
-    
-    Label subtitleLabel = new Label("Secure Access to Your Exam Schedule");
-    subtitleLabel.setStyle("-fx-font-size: 14px; -fx-text-fill: rgba(255,255,255,0.9);");
-    
-    header.getChildren().addAll(brandLabel, titleLabel, subtitleLabel);
-    root.setTop(header);
+        // Modern, gradient arka plan
+        BorderPane root = new BorderPane();
+        root.setStyle("-fx-background-color: linear-gradient(135deg, #667eea 0%, #764ba2 100%);");
 
-    // Ana login kartı
-    VBox centerBox = new VBox(25);
-    centerBox.setAlignment(Pos.CENTER);
-    centerBox.setPadding(new Insets(0, 40, 40, 40));
-    
-    VBox loginCard = new VBox(20);
-    loginCard.setAlignment(Pos.CENTER);
-    loginCard.setPadding(new Insets(40, 50, 40, 50));
-    loginCard.setMaxWidth(500);
-    loginCard.setStyle("-fx-background-color: white; " +
-                      "-fx-background-radius: 15; " +
-                      "-fx-effect: dropshadow(gaussian, rgba(0,0,0,0.25), 20, 0, 0, 5);");
+        // Üst banner
+        VBox header = new VBox(5);
+        header.setAlignment(Pos.CENTER);
+        header.setPadding(new Insets(30, 20, 20, 20));
 
-    // Hoş geldiniz mesajı
-    Label welcomeLabel = new Label("Welcome Back");
-    welcomeLabel.setStyle("-fx-font-size: 24px; -fx-font-weight: bold; -fx-text-fill: #2d3436;");
-    
-    Label instructionLabel = new Label("Enter your student ID to view your exam schedule");
-    instructionLabel.setStyle("-fx-font-size: 13px; -fx-text-fill: #636e72;");
-    instructionLabel.setWrapText(true);
-    instructionLabel.setTextAlignment(javafx.scene.text.TextAlignment.CENTER);
-    
-    VBox welcomeBox = new VBox(8, welcomeLabel, instructionLabel);
-    welcomeBox.setAlignment(Pos.CENTER);
+        Label brandLabel = new Label("🎓");
+        brandLabel.setStyle("-fx-font-size: 48px;");
 
-    // Arama kutusu - Modern tasarım
-    VBox searchBox = new VBox(10);
-    searchBox.setAlignment(Pos.CENTER_LEFT);
-    searchBox.setPrefWidth(380);
-    
-    Label searchLabel = new Label("🔍 Student ID");
-    searchLabel.setStyle("-fx-font-size: 12px; -fx-font-weight: bold; -fx-text-fill: #636e72;");
-    
-    TextField searchField = new TextField();
-    searchField.setPromptText("Type to search...");
-    searchField.setPrefHeight(45);
-    searchField.setStyle("-fx-font-size: 14px; " +
+        Label titleLabel = new Label("STUDENT PORTAL");
+        titleLabel.setStyle("-fx-font-size: 32px; -fx-font-weight: bold; -fx-text-fill: white; " +
+                "-fx-effect: dropshadow(gaussian, rgba(0,0,0,0.3), 8, 0, 0, 2);");
+
+        Label subtitleLabel = new Label("Secure Access to Your Exam Schedule");
+        subtitleLabel.setStyle("-fx-font-size: 14px; -fx-text-fill: rgba(255,255,255,0.9);");
+
+        header.getChildren().addAll(brandLabel, titleLabel, subtitleLabel);
+        root.setTop(header);
+
+        // Ana login kartı
+        VBox centerBox = new VBox(25);
+        centerBox.setAlignment(Pos.CENTER);
+        centerBox.setPadding(new Insets(0, 40, 40, 40));
+
+        VBox loginCard = new VBox(20);
+        loginCard.setAlignment(Pos.CENTER);
+        loginCard.setPadding(new Insets(40, 50, 40, 50));
+        loginCard.setMaxWidth(500);
+        loginCard.setStyle("-fx-background-color: white; " +
+                "-fx-background-radius: 15; " +
+                "-fx-effect: dropshadow(gaussian, rgba(0,0,0,0.25), 20, 0, 0, 5);");
+
+        // Hoş geldiniz mesajı
+        Label welcomeLabel = new Label("Welcome Back");
+        welcomeLabel.setStyle("-fx-font-size: 24px; -fx-font-weight: bold; -fx-text-fill: #2d3436;");
+
+        Label instructionLabel = new Label("Enter your student ID to view your exam schedule");
+        instructionLabel.setStyle("-fx-font-size: 13px; -fx-text-fill: #636e72;");
+        instructionLabel.setWrapText(true);
+        instructionLabel.setTextAlignment(javafx.scene.text.TextAlignment.CENTER);
+
+        VBox welcomeBox = new VBox(8, welcomeLabel, instructionLabel);
+        welcomeBox.setAlignment(Pos.CENTER);
+
+        // Arama kutusu - Modern tasarım
+        VBox searchBox = new VBox(10);
+        searchBox.setAlignment(Pos.CENTER_LEFT);
+        searchBox.setPrefWidth(380);
+
+        Label searchLabel = new Label("🔍 Student ID");
+        searchLabel.setStyle("-fx-font-size: 12px; -fx-font-weight: bold; -fx-text-fill: #636e72;");
+
+        TextField searchField = new TextField();
+        searchField.setPromptText("Type to search...");
+        searchField.setPrefHeight(45);
+        searchField.setStyle("-fx-font-size: 14px; " +
+                "-fx-background-radius: 8; " +
+                "-fx-border-color: #dfe6e9; " +
+                "-fx-border-radius: 8; " +
+                "-fx-border-width: 2; " +
+                "-fx-padding: 0 15 0 15;");
+
+        // Focus efekti
+        searchField.focusedProperty().addListener((obs, oldVal, newVal) -> {
+            if (newVal) {
+                searchField.setStyle("-fx-font-size: 14px; " +
+                        "-fx-background-radius: 8; " +
+                        "-fx-border-color: #667eea; " +
+                        "-fx-border-radius: 8; " +
+                        "-fx-border-width: 2; " +
+                        "-fx-padding: 0 15 0 15;");
+            } else {
+                searchField.setStyle("-fx-font-size: 14px; " +
                         "-fx-background-radius: 8; " +
                         "-fx-border-color: #dfe6e9; " +
                         "-fx-border-radius: 8; " +
                         "-fx-border-width: 2; " +
                         "-fx-padding: 0 15 0 15;");
-    
-    // Focus efekti
-    searchField.focusedProperty().addListener((obs, oldVal, newVal) -> {
-        if (newVal) {
-            searchField.setStyle("-fx-font-size: 14px; " +
-                               "-fx-background-radius: 8; " +
-                               "-fx-border-color: #667eea; " +
-                               "-fx-border-radius: 8; " +
-                               "-fx-border-width: 2; " +
-                               "-fx-padding: 0 15 0 15;");
-        } else {
-            searchField.setStyle("-fx-font-size: 14px; " +
-                               "-fx-background-radius: 8; " +
-                               "-fx-border-color: #dfe6e9; " +
-                               "-fx-border-radius: 8; " +
-                               "-fx-border-width: 2; " +
-                               "-fx-padding: 0 15 0 15;");
-        }
-    });
-
-    // ComboBox - Dropdown listesi
-    ComboBox<String> studentCombo = new ComboBox<>();
-    studentCombo.setPromptText("Select your student ID");
-    studentCombo.setPrefHeight(45);
-    studentCombo.setPrefWidth(380);
-    studentCombo.setStyle("-fx-font-size: 14px; -fx-background-radius: 8;");
-    
-    List<String> sortedStudentIDs = dataManager.getStudents().stream()
-            .map(Student::getStudentID)
-            .sorted()
-            .collect(Collectors.toList());
-    studentCombo.getItems().addAll(sortedStudentIDs);
-
-    // Arama fonksiyonu
-    searchField.textProperty().addListener((observable, oldValue, newValue) -> {
-        if (newValue.isEmpty()) {
-            studentCombo.getItems().setAll(sortedStudentIDs);
-            studentCombo.setValue(null);
-        } else {
-            List<String> filtered = sortedStudentIDs.stream()
-                    .filter(id -> id.toLowerCase().contains(newValue.toLowerCase()))
-                    .collect(Collectors.toList());
-            studentCombo.getItems().setAll(filtered);
-            if (!filtered.isEmpty()) {
-                studentCombo.setValue(filtered.get(0));
             }
-        }
-    });
-    
-    searchBox.getChildren().addAll(searchLabel, searchField, studentCombo);
+        });
 
-    // Login butonu - Modern, gradient
-    Button loginBtn = new Button("ACCESS SCHEDULE →");
-    loginBtn.setPrefHeight(50);
-    loginBtn.setPrefWidth(380);
-    loginBtn.setStyle("-fx-background-color: linear-gradient(to right, #667eea, #764ba2); " +
-                     "-fx-text-fill: white; " +
-                     "-fx-font-size: 16px; " +
-                     "-fx-font-weight: bold; " +
-                     "-fx-background-radius: 10; " +
-                     "-fx-cursor: hand; " +
-                     "-fx-effect: dropshadow(gaussian, rgba(102,126,234,0.4), 8, 0, 0, 3);");
-    
-    // Hover efekti
-    loginBtn.setOnMouseEntered(e -> 
-        loginBtn.setStyle("-fx-background-color: linear-gradient(to right, #5a67d8, #6b3fa0); " +
-                         "-fx-text-fill: white; " +
-                         "-fx-font-size: 16px; " +
-                         "-fx-font-weight: bold; " +
-                         "-fx-background-radius: 10; " +
-                         "-fx-cursor: hand; " +
-                         "-fx-scale-x: 1.02; " +
-                         "-fx-scale-y: 1.02; " +
-                         "-fx-effect: dropshadow(gaussian, rgba(102,126,234,0.6), 12, 0, 0, 4);")
-    );
-    
-    loginBtn.setOnMouseExited(e -> 
+        // ComboBox - Dropdown listesi
+        ComboBox<String> studentCombo = new ComboBox<>();
+        studentCombo.setPromptText("Select your student ID");
+        studentCombo.setPrefHeight(45);
+        studentCombo.setPrefWidth(380);
+        studentCombo.setStyle("-fx-font-size: 14px; -fx-background-radius: 8;");
+
+        List<String> sortedStudentIDs = dataManager.getStudents().stream()
+                .map(Student::getStudentID)
+                .sorted()
+                .collect(Collectors.toList());
+        studentCombo.getItems().addAll(sortedStudentIDs);
+
+        // Arama fonksiyonu
+        searchField.textProperty().addListener((observable, oldValue, newValue) -> {
+            if (newValue.isEmpty()) {
+                studentCombo.getItems().setAll(sortedStudentIDs);
+                studentCombo.setValue(null);
+            } else {
+                List<String> filtered = sortedStudentIDs.stream()
+                        .filter(id -> id.toLowerCase().contains(newValue.toLowerCase()))
+                        .collect(Collectors.toList());
+                studentCombo.getItems().setAll(filtered);
+                if (!filtered.isEmpty()) {
+                    studentCombo.setValue(filtered.get(0));
+                }
+            }
+        });
+
+        searchBox.getChildren().addAll(searchLabel, searchField, studentCombo);
+
+        // Login butonu - Modern, gradient
+        Button loginBtn = new Button("ACCESS SCHEDULE →");
+        loginBtn.setPrefHeight(50);
+        loginBtn.setPrefWidth(380);
         loginBtn.setStyle("-fx-background-color: linear-gradient(to right, #667eea, #764ba2); " +
-                         "-fx-text-fill: white; " +
-                         "-fx-font-size: 16px; " +
-                         "-fx-font-weight: bold; " +
-                         "-fx-background-radius: 10; " +
-                         "-fx-cursor: hand; " +
-                         "-fx-effect: dropshadow(gaussian, rgba(102,126,234,0.4), 8, 0, 0, 3);")
-    );
+                "-fx-text-fill: white; " +
+                "-fx-font-size: 16px; " +
+                "-fx-font-weight: bold; " +
+                "-fx-background-radius: 10; " +
+                "-fx-cursor: hand; " +
+                "-fx-effect: dropshadow(gaussian, rgba(102,126,234,0.4), 8, 0, 0, 3);");
 
-    loginBtn.setOnAction(e -> {
-        String studentId = studentCombo.getValue();
-        if (studentId != null && !studentId.isEmpty()) {
-            Student student = dataManager.getStudentByID(studentId);
-            if (student != null) {
-                loginStage.close();
-                showStudentSchedule(owner, student);
+        // Hover efekti
+        loginBtn.setOnMouseEntered(
+                e -> loginBtn.setStyle("-fx-background-color: linear-gradient(to right, #5a67d8, #6b3fa0); " +
+                        "-fx-text-fill: white; " +
+                        "-fx-font-size: 16px; " +
+                        "-fx-font-weight: bold; " +
+                        "-fx-background-radius: 10; " +
+                        "-fx-cursor: hand; " +
+                        "-fx-scale-x: 1.02; " +
+                        "-fx-scale-y: 1.02; " +
+                        "-fx-effect: dropshadow(gaussian, rgba(102,126,234,0.6), 12, 0, 0, 4);"));
+
+        loginBtn.setOnMouseExited(
+                e -> loginBtn.setStyle("-fx-background-color: linear-gradient(to right, #667eea, #764ba2); " +
+                        "-fx-text-fill: white; " +
+                        "-fx-font-size: 16px; " +
+                        "-fx-font-weight: bold; " +
+                        "-fx-background-radius: 10; " +
+                        "-fx-cursor: hand; " +
+                        "-fx-effect: dropshadow(gaussian, rgba(102,126,234,0.4), 8, 0, 0, 3);"));
+
+        loginBtn.setOnAction(e -> {
+            String studentId = studentCombo.getValue();
+            if (studentId != null && !studentId.isEmpty()) {
+                Student student = dataManager.getStudentByID(studentId);
+                if (student != null) {
+                    loginStage.close();
+                    showStudentSchedule(owner, student);
+                }
+            } else {
+                // Hata animasyonu
+                loginCard.setStyle("-fx-background-color: white; " +
+                        "-fx-background-radius: 15; " +
+                        "-fx-effect: dropshadow(gaussian, rgba(231,76,60,0.3), 20, 0, 0, 5);");
+
+                javafx.animation.PauseTransition pause = new javafx.animation.PauseTransition(
+                        javafx.util.Duration.seconds(0.5));
+                pause.setOnFinished(ev -> loginCard.setStyle("-fx-background-color: white; " +
+                        "-fx-background-radius: 15; " +
+                        "-fx-effect: dropshadow(gaussian, rgba(0,0,0,0.25), 20, 0, 0, 5);"));
+                pause.play();
+
+                showWarning("Selection Required", "Please select a student ID from the dropdown list.");
             }
-        } else {
-            // Hata animasyonu
-            loginCard.setStyle("-fx-background-color: white; " +
-                             "-fx-background-radius: 15; " +
-                             "-fx-effect: dropshadow(gaussian, rgba(231,76,60,0.3), 20, 0, 0, 5);");
-            
-            javafx.animation.PauseTransition pause = new javafx.animation.PauseTransition(javafx.util.Duration.seconds(0.5));
-            pause.setOnFinished(ev -> loginCard.setStyle("-fx-background-color: white; " +
-                                                        "-fx-background-radius: 15; " +
-                                                        "-fx-effect: dropshadow(gaussian, rgba(0,0,0,0.25), 20, 0, 0, 5);"));
-            pause.play();
-            
-            showWarning("Selection Required", "Please select a student ID from the dropdown list.");
-        }
-    });
+        });
 
-    // Enter tuşu desteği
-    searchField.setOnAction(e -> loginBtn.fire());
-    studentCombo.setOnAction(e -> searchField.requestFocus());
+        // Enter tuşu desteği
+        searchField.setOnAction(e -> loginBtn.fire());
+        studentCombo.setOnAction(e -> searchField.requestFocus());
 
-    // İstatistik kartları
-    HBox statsBox = new HBox(15);
-    statsBox.setAlignment(Pos.CENTER);
-    statsBox.setPadding(new Insets(10, 0, 0, 0));
-    
-    VBox totalStudentsCard = createInfoCard("👥", String.valueOf(dataManager.getStudents().size()), "Total Students");
-    VBox totalExamsCard = createInfoCard("📝", String.valueOf(dataManager.getCourses().size()), "Total Exams");
-    VBox examDaysCard = createInfoCard("📅", String.valueOf(daysSpinner.getValue()), "Exam Days");
-    
-    statsBox.getChildren().addAll(totalStudentsCard, totalExamsCard, examDaysCard);
+        // İstatistik kartları
+        HBox statsBox = new HBox(15);
+        statsBox.setAlignment(Pos.CENTER);
+        statsBox.setPadding(new Insets(10, 0, 0, 0));
 
-    loginCard.getChildren().addAll(welcomeBox, new Separator(), searchBox, loginBtn, new Separator(), statsBox);
-    centerBox.getChildren().add(loginCard);
-    root.setCenter(centerBox);
+        VBox totalStudentsCard = createInfoCard("👥", String.valueOf(dataManager.getStudents().size()),
+                "Total Students");
+        VBox totalExamsCard = createInfoCard("📝", String.valueOf(dataManager.getCourses().size()), "Total Exams");
+        VBox examDaysCard = createInfoCard("📅", String.valueOf(daysSpinner.getValue()), "Exam Days");
 
-    // Alt bilgi
-    Label footerLabel = new Label("Secure Access • Data Protected • Privacy First");
-    footerLabel.setStyle("-fx-text-fill: rgba(255,255,255,0.8); -fx-font-size: 11px;");
-    
-    VBox footer = new VBox(footerLabel);
-    footer.setAlignment(Pos.CENTER);
-    footer.setPadding(new Insets(0, 0, 20, 0));
-    root.setBottom(footer);
+        statsBox.getChildren().addAll(totalStudentsCard, totalExamsCard, examDaysCard);
 
-    Scene scene = new Scene(root, 600, 700);
-    loginStage.setScene(scene);
-    loginStage.show();
-}
+        loginCard.getChildren().addAll(welcomeBox, new Separator(), searchBox, loginBtn, new Separator(), statsBox);
+        centerBox.getChildren().add(loginCard);
+        root.setCenter(centerBox);
 
-// Yardımcı metod: Bilgi kartları oluşturur
-private VBox createInfoCard(String icon, String value, String label) {
-    VBox card = new VBox(5);
-    card.setAlignment(Pos.CENTER);
-    card.setPadding(new Insets(10));
-    card.setStyle("-fx-background-color: #f8f9fa; -fx-background-radius: 8;");
-    card.setPrefWidth(100);
-    
-    Label iconLabel = new Label(icon);
-    iconLabel.setStyle("-fx-font-size: 24px;");
-    
-    Label valueLabel = new Label(value);
-    valueLabel.setStyle("-fx-font-size: 20px; -fx-font-weight: bold; -fx-text-fill: #2d3436;");
-    
-    Label textLabel = new Label(label);
-    textLabel.setStyle("-fx-font-size: 10px; -fx-text-fill: #636e72;");
-    textLabel.setWrapText(true);
-    textLabel.setTextAlignment(javafx.scene.text.TextAlignment.CENTER);
-    
-    card.getChildren().addAll(iconLabel, valueLabel, textLabel);
-    return card;
-}
+        // Alt bilgi
+        Label footerLabel = new Label("Secure Access • Data Protected • Privacy First");
+        footerLabel.setStyle("-fx-text-fill: rgba(255,255,255,0.8); -fx-font-size: 11px;");
 
-private void showStudentSchedule(Stage owner, Student student) {
+        VBox footer = new VBox(footerLabel);
+        footer.setAlignment(Pos.CENTER);
+        footer.setPadding(new Insets(0, 0, 20, 0));
+        root.setBottom(footer);
+
+        Scene scene = new Scene(root, 600, 700);
+        loginStage.setScene(scene);
+        loginStage.show();
+    }
+
+    // Yardımcı metod: Bilgi kartları oluşturur
+    private VBox createInfoCard(String icon, String value, String label) {
+        VBox card = new VBox(5);
+        card.setAlignment(Pos.CENTER);
+        card.setPadding(new Insets(10));
+        card.setStyle("-fx-background-color: #f8f9fa; -fx-background-radius: 8;");
+        card.setPrefWidth(100);
+
+        Label iconLabel = new Label(icon);
+        iconLabel.setStyle("-fx-font-size: 24px;");
+
+        Label valueLabel = new Label(value);
+        valueLabel.setStyle("-fx-font-size: 20px; -fx-font-weight: bold; -fx-text-fill: #2d3436;");
+
+        Label textLabel = new Label(label);
+        textLabel.setStyle("-fx-font-size: 10px; -fx-text-fill: #636e72;");
+        textLabel.setWrapText(true);
+        textLabel.setTextAlignment(javafx.scene.text.TextAlignment.CENTER);
+
+        card.getChildren().addAll(iconLabel, valueLabel, textLabel);
+        return card;
+    }
+
+    private void showStudentSchedule(Stage owner, Student student) {
         Stage scheduleStage = new Stage();
         scheduleStage.initOwner(owner);
         scheduleStage.setTitle("📅 My Exam Schedule");
         scheduleStage.setMaximized(false);
-        
+
         // Modern gradient background
         BorderPane root = new BorderPane();
         root.setStyle("-fx-background-color: #f4f6f8;"); // Biraz daha yumuşak gri
-        
+
         // --- 1. HEADER (AYNI KALIYOR) ---
         VBox header = new VBox(15);
         header.setPadding(new Insets(25, 30, 40, 30)); // Alt padding artırıldı (Navigasyon için yer)
         header.setStyle("-fx-background-color: linear-gradient(to right, #667eea, #764ba2); " +
-                        "-fx-effect: dropshadow(gaussian, rgba(0,0,0,0.15), 10, 0, 0, 5);");
-        
-        // ... (Header içindeki Avatar, İsim, İstatistik Kartları kodları AYNEN kalsın) ...
-        // (Buraya senin yazdığın Header kodlarını tekrar yapıştırabilirsin, veya aşağıda özet geçeyim mi?)
+                "-fx-effect: dropshadow(gaussian, rgba(0,0,0,0.15), 10, 0, 0, 5);");
+
+        // ... (Header içindeki Avatar, İsim, İstatistik Kartları kodları AYNEN kalsın)
+        // ...
+        // (Buraya senin yazdığın Header kodlarını tekrar yapıştırabilirsin, veya
+        // aşağıda özet geçeyim mi?)
         // --- SENİN KODLARININ AYNISI BAŞLANGIÇ ---
         HBox profileBox = new HBox(20);
         profileBox.setAlignment(Pos.CENTER_LEFT);
-        
+
         VBox avatarBox = new VBox();
         avatarBox.setAlignment(Pos.CENTER);
         avatarBox.setPrefSize(70, 70);
-        avatarBox.setStyle("-fx-background-color: white; -fx-background-radius: 35; -fx-effect: dropshadow(gaussian, rgba(0,0,0,0.2), 5, 0, 0, 2);");
+        avatarBox.setStyle(
+                "-fx-background-color: white; -fx-background-radius: 35; -fx-effect: dropshadow(gaussian, rgba(0,0,0,0.2), 5, 0, 0, 2);");
         Label avatarLabel = new Label("👤");
         avatarLabel.setStyle("-fx-font-size: 36px;");
         avatarBox.getChildren().add(avatarLabel);
-        
+
         VBox studentInfo = new VBox(5);
         Label studentNameLabel = new Label(student.getStudentID());
-        studentNameLabel.setStyle("-fx-font-size: 28px; -fx-font-weight: bold; -fx-text-fill: white; -fx-effect: dropshadow(gaussian, rgba(0,0,0,0.3), 3, 0, 0, 1);");
-        
-        LocalDate startDate = examStartDatePicker != null && examStartDatePicker.getValue() != null ? 
-                             examStartDatePicker.getValue() : LocalDate.now();
+        studentNameLabel.setStyle(
+                "-fx-font-size: 28px; -fx-font-weight: bold; -fx-text-fill: white; -fx-effect: dropshadow(gaussian, rgba(0,0,0,0.3), 3, 0, 0, 1);");
+
+        LocalDate startDate = examStartDatePicker != null && examStartDatePicker.getValue() != null
+                ? examStartDatePicker.getValue()
+                : LocalDate.now();
         LocalDate endDate = startDate.plusDays(daysSpinner.getValue() - 1);
         Label dateLabel = new Label("📅 " + startDate.toString() + " - " + endDate.toString());
         dateLabel.setStyle("-fx-font-size: 13px; -fx-text-fill: rgba(255,255,255,0.9);");
@@ -624,33 +629,33 @@ private void showStudentSchedule(Stage owner, Student student) {
         statsBox.setAlignment(Pos.CENTER_RIGHT);
         // Kart renklerini biraz şeffaflaştırdım ki background üzerinde sırııtmasın
         statsBox.getChildren().addAll(
-            createModernStatCard("📝", String.valueOf(totalExams), "Total Exams", "rgba(255,255,255,0.2)"), 
-            createModernStatCard("📅", String.valueOf(busyDays), "Busy Days", "rgba(255,255,255,0.2)"),
-            createModernStatCard("📊", String.format("%.1f", avgExamsPerDay), "Avg/Day", "rgba(255,255,255,0.2)")
-        );
+                createModernStatCard("📝", String.valueOf(totalExams), "Total Exams", "rgba(255,255,255,0.2)"),
+                createModernStatCard("📅", String.valueOf(busyDays), "Busy Days", "rgba(255,255,255,0.2)"),
+                createModernStatCard("📊", String.format("%.1f", avgExamsPerDay), "Avg/Day", "rgba(255,255,255,0.2)"));
 
         Region spacer = new Region();
         HBox.setHgrow(spacer, Priority.ALWAYS);
         profileBox.getChildren().addAll(avatarBox, studentInfo, spacer, statsBox);
         header.getChildren().add(profileBox);
-        
+
         // --- Header'ı Root'a ekle ---
-        // Ancak navigasyonu header'ın içine değil, hemen altına bindireceğiz (Overlay etkisi)
+        // Ancak navigasyonu header'ın içine değil, hemen altına bindireceğiz (Overlay
+        // etkisi)
         root.setTop(header);
-        
+
         // --- 2. MODERN NAVİGASYON (TAB YERİNE) ---
-        
+
         // İçerik Alanı (Değişken Kısım)
         StackPane contentArea = new StackPane();
         contentArea.setPadding(new Insets(30, 20, 20, 20));
-        
+
         // Görünümleri Hazırla
         VBox dashboardView = createDashboardView(studentExams);
-        
+
         ScrollPane calendarScroll = new ScrollPane(createEnhancedCalendarView(studentExams));
         calendarScroll.setFitToWidth(true);
         calendarScroll.setStyle("-fx-background: transparent; -fx-background-color: transparent;");
-        
+
         // Buradaki scrollPane mantığına dikkat (Önceki sorudaki düzeltme)
         Node analyticsView = createStatisticsView(student, studentExams); // VBox değil Node dönüyor artık
 
@@ -660,37 +665,39 @@ private void showStudentSchedule(Stage owner, Student student) {
         navBar.setPadding(new Insets(10, 20, 10, 20));
         // Yüzen Menü Stili (Floating Pill Design)
         navBar.setStyle("-fx-background-color: white; " +
-                        "-fx-background-radius: 30; " +
-                        "-fx-effect: dropshadow(gaussian, rgba(0,0,0,0.1), 10, 0, 0, 4); " +
-                        "-fx-max-width: 500;"); // Genişliği sınırla
-        
+                "-fx-background-radius: 30; " +
+                "-fx-effect: dropshadow(gaussian, rgba(0,0,0,0.1), 10, 0, 0, 4); " +
+                "-fx-max-width: 500;"); // Genişliği sınırla
+
         // Toggle Grubu (Sadece biri seçili olsun diye)
         ToggleGroup navGroup = new ToggleGroup();
-        
+
         ToggleButton btnDash = createNavButton("📊 Dashboard", navGroup);
         ToggleButton btnCal = createNavButton("📅 Calendar", navGroup);
         ToggleButton btnStats = createNavButton("📈 Analytics", navGroup);
-        
+
         // Aksiyonlar
         btnDash.setOnAction(e -> contentArea.getChildren().setAll(dashboardView));
         btnCal.setOnAction(e -> contentArea.getChildren().setAll(calendarScroll));
         btnStats.setOnAction(e -> contentArea.getChildren().setAll(analyticsView));
-        
+
         // Varsayılan Seçim
         btnDash.setSelected(true);
         contentArea.getChildren().setAll(dashboardView);
-        
+
         navBar.getChildren().addAll(btnDash, btnCal, btnStats);
-        
+
         // Header ile İçeriği Birleştiren Layout
-        // Navigasyon çubuğunu header'ın bittiği yere "yarı yarıya" bindirmek için StackPane kullanabiliriz
-        // Ama şimdilik basit olması için Header'ın altına VBox ile ekleyelim, fakat negatif margin verelim.
-        
+        // Navigasyon çubuğunu header'ın bittiği yere "yarı yarıya" bindirmek için
+        // StackPane kullanabiliriz
+        // Ama şimdilik basit olması için Header'ın altına VBox ile ekleyelim, fakat
+        // negatif margin verelim.
+
         VBox mainContent = new VBox();
         mainContent.getChildren().addAll(navBar, contentArea);
         VBox.setMargin(navBar, new Insets(-25, 0, 0, 0)); // YUKARI KAYDIR (Header'ın üstüne binsin)
         mainContent.setAlignment(Pos.TOP_CENTER);
-        
+
         root.setCenter(mainContent);
 
         // --- 3. FOOTER (EXPORT) ---
@@ -698,29 +705,30 @@ private void showStudentSchedule(Stage owner, Student student) {
         bottomBox.setPadding(new Insets(20, 30, 20, 30));
         bottomBox.setAlignment(Pos.CENTER);
         bottomBox.setStyle("-fx-background-color: white; -fx-border-color: #e0e0e0; -fx-border-width: 1 0 0 0;");
-        
+
         Label exportLabel = new Label("Export Options:");
         exportLabel.setStyle("-fx-font-size: 14px; -fx-font-weight: bold; -fx-text-fill: #2d3436;");
-        
+
         Button textBtn = createModernExportButton("📄", "Text File", "#3498db");
         textBtn.setOnAction(e -> exportStudentSchedule(scheduleStage, student, studentExams));
-        
+
         Button icalBtn = createModernExportButton("📅", "Calendar", "#2ecc71");
         icalBtn.setOnAction(e -> exportAsICalendar(scheduleStage, student, studentExams));
-        
+
         Button printBtn = createModernExportButton("🖨", "Print (PDF)", "#9e0d0d");
         printBtn.setOnAction(e -> exportAsPDF(scheduleStage, student, studentExams));
-        
+
         Region bottomSpacer = new Region();
         HBox.setHgrow(bottomSpacer, Priority.ALWAYS);
-        
+
         Button closeBtn = new Button("Close");
-        closeBtn.setStyle("-fx-background-color: transparent; -fx-text-fill: #636e72; -fx-font-size: 13px; -fx-cursor: hand;");
+        closeBtn.setStyle(
+                "-fx-background-color: transparent; -fx-text-fill: #636e72; -fx-font-size: 13px; -fx-cursor: hand;");
         closeBtn.setOnAction(e -> scheduleStage.close());
-        
+
         bottomBox.getChildren().addAll(exportLabel, textBtn, icalBtn, printBtn, bottomSpacer, closeBtn);
         root.setBottom(bottomBox);
-        
+
         Scene scene = new Scene(root, 950, 700);
         scheduleStage.setScene(scene);
         scheduleStage.setMinWidth(900);
@@ -734,228 +742,230 @@ private void showStudentSchedule(Stage owner, Student student) {
         btn.setPrefWidth(140);
         btn.setPrefHeight(35);
         btn.setCursor(javafx.scene.Cursor.HAND);
-        
+
         // CSS STİLİ (Normal ve Seçili Hali)
         // Seçili değilken: Beyaz arka plan, Gri yazı, Kenarlık yok
         // Seçiliyken: Mor/Mavi arka plan, Beyaz yazı, Yuvarlak köşe
         String baseStyle = "-fx-background-radius: 20; -fx-font-weight: bold; -fx-font-size: 13px; -fx-background-insets: 0;";
-        
+
         btn.styleProperty().bind(javafx.beans.binding.Bindings.when(btn.selectedProperty())
-            .then(baseStyle + "-fx-background-color: #667eea; -fx-text-fill: white;") // Seçili
-            .otherwise(baseStyle + "-fx-background-color: transparent; -fx-text-fill: #7f8c8d; -fx-border-color: transparent;") // Normal
+                .then(baseStyle + "-fx-background-color: #667eea; -fx-text-fill: white;") // Seçili
+                .otherwise(baseStyle
+                        + "-fx-background-color: transparent; -fx-text-fill: #7f8c8d; -fx-border-color: transparent;") // Normal
         );
-        
+
         // Hover Efekti (Opsiyonel)
         btn.setOnMouseEntered(e -> {
-            if (!btn.isSelected()) btn.setStyle(baseStyle + "-fx-background-color: #f0f2f5; -fx-text-fill: #2d3436;");
+            if (!btn.isSelected())
+                btn.setStyle(baseStyle + "-fx-background-color: #f0f2f5; -fx-text-fill: #2d3436;");
         });
         btn.setOnMouseExited(e -> {
-            if (!btn.isSelected()) btn.setStyle(baseStyle + "-fx-background-color: transparent; -fx-text-fill: #7f8c8d;");
+            if (!btn.isSelected())
+                btn.setStyle(baseStyle + "-fx-background-color: transparent; -fx-text-fill: #7f8c8d;");
         });
 
         return btn;
     }
 
+    // --- HEADER İÇİN KART METODU (Yazılar Beyaz) ---
+    private VBox createModernStatCard(String icon, String value, String label, String bgColor) {
+        VBox card = new VBox(5);
+        card.setPadding(new Insets(10, 15, 10, 15));
+        card.setAlignment(Pos.CENTER);
 
-// --- HEADER İÇİN KART METODU (Yazılar Beyaz) ---
-private VBox createModernStatCard(String icon, String value, String label, String bgColor) {
-    VBox card = new VBox(5);
-    card.setPadding(new Insets(10, 15, 10, 15));
-    card.setAlignment(Pos.CENTER);
+        card.setStyle("-fx-background-color: " + bgColor + "; " +
+                "-fx-background-radius: 15;");
 
-    card.setStyle("-fx-background-color: " + bgColor + "; " +
-                  "-fx-background-radius: 15;");
+        Label iconLbl = new Label(icon);
+        iconLbl.setStyle("-fx-font-size: 20px; -fx-text-fill: rgba(255,255,255,0.9);");
 
-    Label iconLbl = new Label(icon);
-    iconLbl.setStyle("-fx-font-size: 20px; -fx-text-fill: rgba(255,255,255,0.9);");
+        Label valueLbl = new Label(value);
+        valueLbl.setStyle("-fx-font-size: 24px; -fx-font-weight: bold; -fx-text-fill: white;");
 
-    Label valueLbl = new Label(value);
-    valueLbl.setStyle("-fx-font-size: 24px; -fx-font-weight: bold; -fx-text-fill: white;");
+        Label labelLbl = new Label(label);
+        labelLbl.setStyle("-fx-font-size: 10px; -fx-text-fill: rgba(255,255,255,0.8);");
 
-    Label labelLbl = new Label(label);
-    labelLbl.setStyle("-fx-font-size: 10px; -fx-text-fill: rgba(255,255,255,0.8);");
-
-    card.getChildren().addAll(iconLbl, valueLbl, labelLbl);
-    return card;
-}
-
-// Dashboard görünümü oluşturucu
-private VBox createDashboardView(List<Exam> studentExams) {
-    VBox dashboard = new VBox(20);
-    dashboard.setPadding(new Insets(20));
-    
-    // Yaklaşan sınavlar bölümü
-    VBox upcomingSection = new VBox(15);
-    Label upcomingTitle = new Label("📌 Upcoming Exams");
-    upcomingTitle.setStyle("-fx-font-size: 20px; -fx-font-weight: bold; -fx-text-fill: #2d3436;");
-    
-    VBox upcomingExams = new VBox(10);
-    LocalDate today = LocalDate.now();
-    LocalDate startDate = examStartDatePicker != null && examStartDatePicker.getValue() != null ? 
-                         examStartDatePicker.getValue() : today;
-    
-    studentExams.stream()
-        .sorted(Comparator.comparing((Exam e) -> e.getTimeSlot().getDay())
-                .thenComparing(e -> e.getTimeSlot().getSlotNumber()))
-        .limit(5)
-        .forEach(exam -> upcomingExams.getChildren().add(createUpcomingExamCard(exam, startDate)));
-    
-    if (upcomingExams.getChildren().isEmpty()) {
-        Label noExams = new Label("🎉 No exams scheduled");
-        noExams.setStyle("-fx-font-size: 14px; -fx-text-fill: #95a5a6; -fx-font-style: italic;");
-        upcomingExams.getChildren().add(noExams);
+        card.getChildren().addAll(iconLbl, valueLbl, labelLbl);
+        return card;
     }
-    
-    upcomingSection.getChildren().addAll(upcomingTitle, upcomingExams);
-    
-    // Hızlı istatistikler bölümü
-    VBox quickStatsSection = new VBox(15);
-    Label statsTitle = new Label("📊 Quick Statistics");
-    statsTitle.setStyle("-fx-font-size: 20px; -fx-font-weight: bold; -fx-text-fill: #2d3436;");
-    
-    GridPane quickStats = createQuickStatsGrid(studentExams);
-    quickStatsSection.getChildren().addAll(statsTitle, quickStats);
-    
-    dashboard.getChildren().addAll(upcomingSection, new Separator(), quickStatsSection);
-    
-    ScrollPane scrollPane = new ScrollPane(dashboard);
-    scrollPane.setFitToWidth(true);
-    scrollPane.setStyle("-fx-background-color: transparent;");
-    
-    return new VBox(scrollPane);
-}
 
-// Yaklaşan sınav kartı
-private HBox createUpcomingExamCard(Exam exam, LocalDate startDate) {
-    HBox card = new HBox(20);
-    card.setAlignment(Pos.CENTER_LEFT);
-    card.setPadding(new Insets(15));
-    card.setStyle("-fx-background-color: white; " +
-                 "-fx-background-radius: 10; " +
-                 "-fx-border-color: #e0e0e0; " +
-                 "-fx-border-width: 1; " +
-                 "-fx-border-radius: 10; " +
-                 "-fx-effect: dropshadow(gaussian, rgba(0,0,0,0.05), 3, 0, 0, 1);");
-    
-    LocalDate examDate = startDate.plusDays(exam.getTimeSlot().getDay() - 1);
-    
-    // Tarih kutusu
-    VBox dateBox = new VBox(2);
-    dateBox.setAlignment(Pos.CENTER);
-    dateBox.setPrefWidth(70);
-    dateBox.setStyle("-fx-background-color: #667eea; " +
-                    "-fx-background-radius: 8; " +
-                    "-fx-padding: 10;");
-    
-    Label monthLabel = new Label(examDate.getMonth().toString().substring(0, 3));
-    monthLabel.setStyle("-fx-font-size: 11px; -fx-text-fill: rgba(255,255,255,0.9); -fx-font-weight: bold;");
-    
-    Label dayLabel = new Label(String.valueOf(examDate.getDayOfMonth()));
-    dayLabel.setStyle("-fx-font-size: 24px; -fx-text-fill: white; -fx-font-weight: bold;");
-    
-    dateBox.getChildren().addAll(monthLabel, dayLabel);
-    
-    // Sınav detayları
-    VBox detailsBox = new VBox(5);
-    VBox.setVgrow(detailsBox, Priority.ALWAYS);
-    
-    Label courseLabel = new Label(exam.getCourse().getCourseCode());
-    courseLabel.setStyle("-fx-font-size: 16px; -fx-font-weight: bold; -fx-text-fill: #2d3436;");
-    
-    Label nameLabel = new Label(exam.getCourse().getCourseName());
-    nameLabel.setStyle("-fx-font-size: 13px; -fx-text-fill: #636e72;");
-    nameLabel.setWrapText(true);
-    
-    List<String> timeSlots = getTimeSlotsFromUI.get();
-    String timeSlot = "";
-    try {
-        timeSlot = timeSlots.get(exam.getTimeSlot().getSlotNumber() - 1);
-    } catch (Exception e) {
-        timeSlot = "Slot " + exam.getTimeSlot().getSlotNumber();
+    // Dashboard görünümü oluşturucu
+    private VBox createDashboardView(List<Exam> studentExams) {
+        VBox dashboard = new VBox(20);
+        dashboard.setPadding(new Insets(20));
+
+        // Yaklaşan sınavlar bölümü
+        VBox upcomingSection = new VBox(15);
+        Label upcomingTitle = new Label("📌 Upcoming Exams");
+        upcomingTitle.setStyle("-fx-font-size: 20px; -fx-font-weight: bold; -fx-text-fill: #2d3436;");
+
+        VBox upcomingExams = new VBox(10);
+        LocalDate today = LocalDate.now();
+        LocalDate startDate = examStartDatePicker != null && examStartDatePicker.getValue() != null
+                ? examStartDatePicker.getValue()
+                : today;
+
+        studentExams.stream()
+                .sorted(Comparator.comparing((Exam e) -> e.getTimeSlot().getDay())
+                        .thenComparing(e -> e.getTimeSlot().getSlotNumber()))
+                .limit(5)
+                .forEach(exam -> upcomingExams.getChildren().add(createUpcomingExamCard(exam, startDate)));
+
+        if (upcomingExams.getChildren().isEmpty()) {
+            Label noExams = new Label("🎉 No exams scheduled");
+            noExams.setStyle("-fx-font-size: 14px; -fx-text-fill: #95a5a6; -fx-font-style: italic;");
+            upcomingExams.getChildren().add(noExams);
+        }
+
+        upcomingSection.getChildren().addAll(upcomingTitle, upcomingExams);
+
+        // Hızlı istatistikler bölümü
+        VBox quickStatsSection = new VBox(15);
+        Label statsTitle = new Label("📊 Quick Statistics");
+        statsTitle.setStyle("-fx-font-size: 20px; -fx-font-weight: bold; -fx-text-fill: #2d3436;");
+
+        GridPane quickStats = createQuickStatsGrid(studentExams);
+        quickStatsSection.getChildren().addAll(statsTitle, quickStats);
+
+        dashboard.getChildren().addAll(upcomingSection, new Separator(), quickStatsSection);
+
+        ScrollPane scrollPane = new ScrollPane(dashboard);
+        scrollPane.setFitToWidth(true);
+        scrollPane.setStyle("-fx-background-color: transparent;");
+
+        return new VBox(scrollPane);
     }
-    
-    Label timeLabel = new Label("⏰ " + timeSlot + "  •  📍 Room " + exam.getClassroom().getClassroomID());
-    timeLabel.setStyle("-fx-font-size: 12px; -fx-text-fill: #95a5a6;");
-    
-    detailsBox.getChildren().addAll(courseLabel, nameLabel, timeLabel);
-    
-    card.getChildren().addAll(dateBox, detailsBox);
-    return card;
-}
 
-// Hızlı istatistikler grid'i
-private GridPane createQuickStatsGrid(List<Exam> studentExams) {
-    GridPane grid = new GridPane();
-    grid.setHgap(15);
-    grid.setVgap(15);
-    
-    Map<Integer, Long> examsPerDay = studentExams.stream()
-            .collect(Collectors.groupingBy(e -> e.getTimeSlot().getDay(), Collectors.counting()));
-    
-    int busiestDayNum = examsPerDay.entrySet().stream()
-            .max(Map.Entry.comparingByValue())
-            .map(Map.Entry::getKey)
-            .orElse(1);
-    
-    long maxExamsInDay = examsPerDay.values().stream().max(Long::compare).orElse(0L);
-    
-    grid.add(createQuickStatItem("🏆", "Busiest Day", "Day " + busiestDayNum), 0, 0);
-    grid.add(createQuickStatItem("📚", "Max Exams/Day", String.valueOf(maxExamsInDay)), 1, 0);
-    grid.add(createQuickStatItem("✅", "Completion", "0/" + studentExams.size()), 2, 0);
-    
-    return grid;
-}
+    // Yaklaşan sınav kartı
+    private HBox createUpcomingExamCard(Exam exam, LocalDate startDate) {
+        HBox card = new HBox(20);
+        card.setAlignment(Pos.CENTER_LEFT);
+        card.setPadding(new Insets(15));
+        card.setStyle("-fx-background-color: white; " +
+                "-fx-background-radius: 10; " +
+                "-fx-border-color: #e0e0e0; " +
+                "-fx-border-width: 1; " +
+                "-fx-border-radius: 10; " +
+                "-fx-effect: dropshadow(gaussian, rgba(0,0,0,0.05), 3, 0, 0, 1);");
 
-// Hızlı stat item
-private VBox createQuickStatItem(String icon, String label, String value) {
-    VBox item = new VBox(8);
-    item.setPadding(new Insets(15));
-    item.setAlignment(Pos.CENTER_LEFT);
-    item.setStyle("-fx-background-color: #f8f9fa; " +
-                 "-fx-background-radius: 8; " +
-                 "-fx-min-width: 180;");
-    
-    Label iconLabel = new Label(icon);
-    iconLabel.setStyle("-fx-font-size: 20px;");
-    
-    Label textLabel = new Label(label);
-    textLabel.setStyle("-fx-font-size: 11px; -fx-text-fill: #636e72; -fx-font-weight: 600;");
-    
-    Label valueLabel = new Label(value);
-    valueLabel.setStyle("-fx-font-size: 18px; -fx-font-weight: bold; -fx-text-fill: #2d3436;");
-    
-    item.getChildren().addAll(iconLabel, textLabel, valueLabel);
-    return item;
-}
+        LocalDate examDate = startDate.plusDays(exam.getTimeSlot().getDay() - 1);
 
+        // Tarih kutusu
+        VBox dateBox = new VBox(2);
+        dateBox.setAlignment(Pos.CENTER);
+        dateBox.setPrefWidth(70);
+        dateBox.setStyle("-fx-background-color: #667eea; " +
+                "-fx-background-radius: 8; " +
+                "-fx-padding: 10;");
 
-// Detay item oluşturucu
-private HBox createDetailItem(String icon, String label, String value) {
-    HBox item = new HBox(8);
-    item.setAlignment(Pos.CENTER_LEFT);
-    
-    Label iconLabel = new Label(icon);
-    iconLabel.setStyle("-fx-font-size: 14px;");
-    iconLabel.setPrefWidth(20);
-    
-    VBox textBox = new VBox(2);
-    
-    Label labelText = new Label(label);
-    labelText.setStyle("-fx-font-size: 10px; -fx-text-fill: #95a5a6; -fx-font-weight: 600;");
-    
-    Label valueText = new Label(value);
-    valueText.setStyle("-fx-font-size: 13px; -fx-text-fill: #2d3436; -fx-font-weight: 500;");
-    
-    textBox.getChildren().addAll(labelText, valueText);
-    item.getChildren().addAll(iconLabel, textBox);
-    
-    return item;
-}
+        Label monthLabel = new Label(examDate.getMonth().toString().substring(0, 3));
+        monthLabel.setStyle("-fx-font-size: 11px; -fx-text-fill: rgba(255,255,255,0.9); -fx-font-weight: bold;");
 
-// Modern export butonu
-private Button createModernExportButton(String icon, String text, String color) {
-    Button btn = new Button(icon + " " + text);
-    btn.setStyle("-fx-background-color: " + color + "; " +
+        Label dayLabel = new Label(String.valueOf(examDate.getDayOfMonth()));
+        dayLabel.setStyle("-fx-font-size: 24px; -fx-text-fill: white; -fx-font-weight: bold;");
+
+        dateBox.getChildren().addAll(monthLabel, dayLabel);
+
+        // Sınav detayları
+        VBox detailsBox = new VBox(5);
+        VBox.setVgrow(detailsBox, Priority.ALWAYS);
+
+        Label courseLabel = new Label(exam.getCourse().getCourseCode());
+        courseLabel.setStyle("-fx-font-size: 16px; -fx-font-weight: bold; -fx-text-fill: #2d3436;");
+
+        Label nameLabel = new Label(exam.getCourse().getCourseName());
+        nameLabel.setStyle("-fx-font-size: 13px; -fx-text-fill: #636e72;");
+        nameLabel.setWrapText(true);
+
+        List<String> timeSlots = getTimeSlotsFromUI.get();
+        String timeSlot = "";
+        try {
+            timeSlot = timeSlots.get(exam.getTimeSlot().getSlotNumber() - 1);
+        } catch (Exception e) {
+            timeSlot = "Slot " + exam.getTimeSlot().getSlotNumber();
+        }
+
+        Label timeLabel = new Label("⏰ " + timeSlot + "  •  📍 Room " + exam.getClassroom().getClassroomID());
+        timeLabel.setStyle("-fx-font-size: 12px; -fx-text-fill: #95a5a6;");
+
+        detailsBox.getChildren().addAll(courseLabel, nameLabel, timeLabel);
+
+        card.getChildren().addAll(dateBox, detailsBox);
+        return card;
+    }
+
+    // Hızlı istatistikler grid'i
+    private GridPane createQuickStatsGrid(List<Exam> studentExams) {
+        GridPane grid = new GridPane();
+        grid.setHgap(15);
+        grid.setVgap(15);
+
+        Map<Integer, Long> examsPerDay = studentExams.stream()
+                .collect(Collectors.groupingBy(e -> e.getTimeSlot().getDay(), Collectors.counting()));
+
+        int busiestDayNum = examsPerDay.entrySet().stream()
+                .max(Map.Entry.comparingByValue())
+                .map(Map.Entry::getKey)
+                .orElse(1);
+
+        long maxExamsInDay = examsPerDay.values().stream().max(Long::compare).orElse(0L);
+
+        grid.add(createQuickStatItem("🏆", "Busiest Day", "Day " + busiestDayNum), 0, 0);
+        grid.add(createQuickStatItem("📚", "Max Exams/Day", String.valueOf(maxExamsInDay)), 1, 0);
+        grid.add(createQuickStatItem("✅", "Completion", "0/" + studentExams.size()), 2, 0);
+
+        return grid;
+    }
+
+    // Hızlı stat item
+    private VBox createQuickStatItem(String icon, String label, String value) {
+        VBox item = new VBox(8);
+        item.setPadding(new Insets(15));
+        item.setAlignment(Pos.CENTER_LEFT);
+        item.setStyle("-fx-background-color: #f8f9fa; " +
+                "-fx-background-radius: 8; " +
+                "-fx-min-width: 180;");
+
+        Label iconLabel = new Label(icon);
+        iconLabel.setStyle("-fx-font-size: 20px;");
+
+        Label textLabel = new Label(label);
+        textLabel.setStyle("-fx-font-size: 11px; -fx-text-fill: #636e72; -fx-font-weight: 600;");
+
+        Label valueLabel = new Label(value);
+        valueLabel.setStyle("-fx-font-size: 18px; -fx-font-weight: bold; -fx-text-fill: #2d3436;");
+
+        item.getChildren().addAll(iconLabel, textLabel, valueLabel);
+        return item;
+    }
+
+    // Detay item oluşturucu
+    private HBox createDetailItem(String icon, String label, String value) {
+        HBox item = new HBox(8);
+        item.setAlignment(Pos.CENTER_LEFT);
+
+        Label iconLabel = new Label(icon);
+        iconLabel.setStyle("-fx-font-size: 14px;");
+        iconLabel.setPrefWidth(20);
+
+        VBox textBox = new VBox(2);
+
+        Label labelText = new Label(label);
+        labelText.setStyle("-fx-font-size: 10px; -fx-text-fill: #95a5a6; -fx-font-weight: 600;");
+
+        Label valueText = new Label(value);
+        valueText.setStyle("-fx-font-size: 13px; -fx-text-fill: #2d3436; -fx-font-weight: 500;");
+
+        textBox.getChildren().addAll(labelText, valueText);
+        item.getChildren().addAll(iconLabel, textBox);
+
+        return item;
+    }
+
+    // Modern export butonu
+    private Button createModernExportButton(String icon, String text, String color) {
+        Button btn = new Button(icon + " " + text);
+        btn.setStyle("-fx-background-color: " + color + "; " +
                 "-fx-text-fill: white; " +
                 "-fx-font-weight: 600; " +
                 "-fx-font-size: 13px; " +
@@ -963,9 +973,9 @@ private Button createModernExportButton(String icon, String text, String color) 
                 "-fx-background-radius: 8; " +
                 "-fx-cursor: hand; " +
                 "-fx-effect: dropshadow(gaussian, " + color + "40, 4, 0, 0, 2);");
-    
-    btn.setOnMouseEntered(e -> {
-        btn.setStyle("-fx-background-color: derive(" + color + ", -10%); " +
+
+        btn.setOnMouseEntered(e -> {
+            btn.setStyle("-fx-background-color: derive(" + color + ", -10%); " +
                     "-fx-text-fill: white; " +
                     "-fx-font-weight: 600; " +
                     "-fx-font-size: 13px; " +
@@ -975,10 +985,10 @@ private Button createModernExportButton(String icon, String text, String color) 
                     "-fx-scale-x: 1.03; " +
                     "-fx-scale-y: 1.03; " +
                     "-fx-effect: dropshadow(gaussian, " + color + "60, 6, 0, 0, 3);");
-    });
-    
-    btn.setOnMouseExited(e -> {
-        btn.setStyle("-fx-background-color: " + color + "; " +
+        });
+
+        btn.setOnMouseExited(e -> {
+            btn.setStyle("-fx-background-color: " + color + "; " +
                     "-fx-text-fill: white; " +
                     "-fx-font-weight: 600; " +
                     "-fx-font-size: 13px; " +
@@ -986,449 +996,449 @@ private Button createModernExportButton(String icon, String text, String color) 
                     "-fx-background-radius: 8; " +
                     "-fx-cursor: hand; " +
                     "-fx-effect: dropshadow(gaussian, " + color + "40, 4, 0, 0, 2);");
-    });
-    
-    return btn;
-}
-private GridPane createEnhancedCalendarView(List<Exam> studentExams) {
-    GridPane calendar = new GridPane();
-    calendar.setHgap(1);
-    calendar.setVgap(1);
-    calendar.setPadding(new Insets(20));
-    calendar.setStyle("-fx-background-color: white; -fx-border-radius: 10;");
-    
-    int maxDay = studentExams.stream().mapToInt(e -> e.getTimeSlot().getDay()).max().orElse(5);
-    List<String> timeSlots = getTimeSlotsFromUI.get();
-    
-    LocalDate startDate = examStartDatePicker != null && examStartDatePicker.getValue() != null
-            ? examStartDatePicker.getValue()
-            : LocalDate.now();
-    
-    // Başlık satırı
-    Label cornerLabel = new Label("TIME SLOT");
-    cornerLabel.setStyle("-fx-font-weight: bold; -fx-padding: 15px; " +
-                        "-fx-background-color: #2c3e50; -fx-text-fill: white; " +
-                        "-fx-alignment: center;");
-    cornerLabel.setMinWidth(150);
-    calendar.add(cornerLabel, 0, 0);
-    
-    for (int day = 1; day <= maxDay; day++) {
-        LocalDate currentDate = startDate.plusDays(day - 1);
-        String dayLabel = "DAY " + day + "\n" + currentDate.getDayOfWeek().toString().substring(0, 3) + 
-                         " " + currentDate.getDayOfMonth();
-        
-        Label dayLabelNode = new Label(dayLabel);
-        dayLabelNode.setStyle("-fx-font-weight: bold; -fx-padding: 15px; " +
-                            "-fx-background-color: #3498db; -fx-text-fill: white; " +
-                            "-fx-alignment: center; -fx-min-height: 100;");
-        dayLabelNode.setMinWidth(200);
-        calendar.add(dayLabelNode, day, 0);
+        });
+
+        return btn;
     }
-    
-    // Zaman slotları için satırlar
-    for (int slot = 0; slot < timeSlots.size(); slot++) {
-        Label slotLabel = new Label(timeSlots.get(slot));
-        slotLabel.setStyle("-fx-font-weight: bold; -fx-padding: 15px; " +
-                          "-fx-background-color: #34495e; -fx-text-fill: white; " +
-                          "-fx-alignment: center; -fx-min-height: 120;");
-        slotLabel.setMinWidth(150);
-        calendar.add(slotLabel, 0, slot + 1);
-        
+
+    private GridPane createEnhancedCalendarView(List<Exam> studentExams) {
+        GridPane calendar = new GridPane();
+        calendar.setHgap(1);
+        calendar.setVgap(1);
+        calendar.setPadding(new Insets(20));
+        calendar.setStyle("-fx-background-color: white; -fx-border-radius: 10;");
+
+        int maxDay = studentExams.stream().mapToInt(e -> e.getTimeSlot().getDay()).max().orElse(5);
+        List<String> timeSlots = getTimeSlotsFromUI.get();
+
+        LocalDate startDate = examStartDatePicker != null && examStartDatePicker.getValue() != null
+                ? examStartDatePicker.getValue()
+                : LocalDate.now();
+
+        // Başlık satırı
+        Label cornerLabel = new Label("TIME SLOT");
+        cornerLabel.setStyle("-fx-font-weight: bold; -fx-padding: 15px; " +
+                "-fx-background-color: #2c3e50; -fx-text-fill: white; " +
+                "-fx-alignment: center;");
+        cornerLabel.setMinWidth(150);
+        calendar.add(cornerLabel, 0, 0);
+
         for (int day = 1; day <= maxDay; day++) {
-            VBox cell = new VBox(8);
-            cell.setMinWidth(200);
-            cell.setMinHeight(120);
-            cell.setPadding(new Insets(10));
-            cell.setAlignment(Pos.TOP_CENTER);
-            cell.setStyle("-fx-border-color: #ecf0f1; -fx-border-width: 1; " +
-                         "-fx-background-color: #f8f9fa;");
-            
-            // Bu gün ve slot için sınavı bul
-            final int currentDay = day;
-            final int currentSlot = slot + 1;
-            Optional<Exam> examOpt = studentExams.stream()
-                    .filter(e -> e.getTimeSlot().getDay() == currentDay && 
-                               e.getTimeSlot().getSlotNumber() == currentSlot)
-                    .findFirst();
-            
-            if (examOpt.isPresent()) {
-                Exam exam = examOpt.get();
-                
-                // Renk kodu: öğrenci sayısına göre
-                String bgColor = exam.getStudentCount() > 50 ? "#fff3cd" : 
-                                exam.getStudentCount() > 30 ? "#d4edda" : "#d1ecf1";
-                
-                cell.setStyle("-fx-border-color: #dee2e6; -fx-border-width: 2; " +
-                             "-fx-background-color: " + bgColor + "; " +
-                             "-fx-border-radius: 5; -fx-background-radius: 5;");
-                
-                Label courseCode = new Label(exam.getCourse().getCourseCode());
-                courseCode.setStyle("-fx-font-weight: bold; -fx-font-size: 16px; " +
-                                   "-fx-text-fill: #2c3e50;");
-                
-                Label courseName = new Label(exam.getCourse().getCourseName());
-                courseName.setStyle("-fx-font-size: 11px; -fx-text-fill: #495057;");
-                courseName.setWrapText(true);
-                
-                HBox details = new HBox(10);
-                details.setAlignment(Pos.CENTER);
-                
-                Label roomLabel = new Label("📍 " + exam.getClassroom().getClassroomID());
-                roomLabel.setStyle("-fx-font-size: 10px; -fx-text-fill: #6c757d;");
-                
-                Label timeLabel = new Label("⏰ " + timeSlots.get(slot));
-                timeLabel.setStyle("-fx-font-size: 10px; -fx-text-fill: #6c757d;");
-                
-                details.getChildren().addAll(roomLabel, timeLabel);
-                
-                cell.getChildren().addAll(courseCode, courseName, details);
-            } else {
-                Label freeLabel = new Label("No Exam");
-                freeLabel.setStyle("-fx-font-size: 12px; -fx-text-fill: #95a5a6; " +
-                                 "-fx-font-style: italic;");
-                cell.getChildren().add(freeLabel);
-            }
-            
-            calendar.add(cell, day, slot + 1);
+            LocalDate currentDate = startDate.plusDays(day - 1);
+            String dayLabel = "DAY " + day + "\n" + currentDate.getDayOfWeek().toString().substring(0, 3) +
+                    " " + currentDate.getDayOfMonth();
+
+            Label dayLabelNode = new Label(dayLabel);
+            dayLabelNode.setStyle("-fx-font-weight: bold; -fx-padding: 15px; " +
+                    "-fx-background-color: #3498db; -fx-text-fill: white; " +
+                    "-fx-alignment: center; -fx-min-height: 100;");
+            dayLabelNode.setMinWidth(200);
+            calendar.add(dayLabelNode, day, 0);
         }
+
+        // Zaman slotları için satırlar
+        for (int slot = 0; slot < timeSlots.size(); slot++) {
+            Label slotLabel = new Label(timeSlots.get(slot));
+            slotLabel.setStyle("-fx-font-weight: bold; -fx-padding: 15px; " +
+                    "-fx-background-color: #34495e; -fx-text-fill: white; " +
+                    "-fx-alignment: center; -fx-min-height: 120;");
+            slotLabel.setMinWidth(150);
+            calendar.add(slotLabel, 0, slot + 1);
+
+            for (int day = 1; day <= maxDay; day++) {
+                VBox cell = new VBox(8);
+                cell.setMinWidth(200);
+                cell.setMinHeight(120);
+                cell.setPadding(new Insets(10));
+                cell.setAlignment(Pos.TOP_CENTER);
+                cell.setStyle("-fx-border-color: #ecf0f1; -fx-border-width: 1; " +
+                        "-fx-background-color: #f8f9fa;");
+
+                // Bu gün ve slot için sınavı bul
+                final int currentDay = day;
+                final int currentSlot = slot + 1;
+                Optional<Exam> examOpt = studentExams.stream()
+                        .filter(e -> e.getTimeSlot().getDay() == currentDay &&
+                                e.getTimeSlot().getSlotNumber() == currentSlot)
+                        .findFirst();
+
+                if (examOpt.isPresent()) {
+                    Exam exam = examOpt.get();
+
+                    // Renk kodu: öğrenci sayısına göre
+                    String bgColor = exam.getStudentCount() > 50 ? "#fff3cd"
+                            : exam.getStudentCount() > 30 ? "#d4edda" : "#d1ecf1";
+
+                    cell.setStyle("-fx-border-color: #dee2e6; -fx-border-width: 2; " +
+                            "-fx-background-color: " + bgColor + "; " +
+                            "-fx-border-radius: 5; -fx-background-radius: 5;");
+
+                    Label courseCode = new Label(exam.getCourse().getCourseCode());
+                    courseCode.setStyle("-fx-font-weight: bold; -fx-font-size: 16px; " +
+                            "-fx-text-fill: #2c3e50;");
+
+                    Label courseName = new Label(exam.getCourse().getCourseName());
+                    courseName.setStyle("-fx-font-size: 11px; -fx-text-fill: #495057;");
+                    courseName.setWrapText(true);
+
+                    HBox details = new HBox(10);
+                    details.setAlignment(Pos.CENTER);
+
+                    Label roomLabel = new Label("📍 " + exam.getClassroom().getClassroomID());
+                    roomLabel.setStyle("-fx-font-size: 10px; -fx-text-fill: #6c757d;");
+
+                    Label timeLabel = new Label("⏰ " + timeSlots.get(slot));
+                    timeLabel.setStyle("-fx-font-size: 10px; -fx-text-fill: #6c757d;");
+
+                    details.getChildren().addAll(roomLabel, timeLabel);
+
+                    cell.getChildren().addAll(courseCode, courseName, details);
+                } else {
+                    Label freeLabel = new Label("No Exam");
+                    freeLabel.setStyle("-fx-font-size: 12px; -fx-text-fill: #95a5a6; " +
+                            "-fx-font-style: italic;");
+                    cell.getChildren().add(freeLabel);
+                }
+
+                calendar.add(cell, day, slot + 1);
+            }
+        }
+
+        return calendar;
     }
-    
-    return calendar;
-}
-private VBox createStatisticsView(Student student, List<Exam> studentExams) {
-    // 1. ANA KAPLAYICI (Return edilecek olan)
-    VBox mainLayout = new VBox();
-    mainLayout.setPadding(new Insets(20));
-    mainLayout.setStyle("-fx-background-color: white; -fx-border-radius: 10; -fx-background-radius: 10;");
 
-    // 2. İÇERİK KUTUSU (Scroll edilecek olan tüm istatistikler burada)
-    VBox contentBox = new VBox(20);
-    contentBox.setPadding(new Insets(5)); // Scrollbar ile içerik arasına mesafe
-    
-    Label title = new Label("📊 Schedule Statistics");
-    title.setStyle("-fx-font-size: 20px; -fx-font-weight: bold; -fx-text-fill: #2c3e50;");
-    
-    // --- İSTATİSTİK KARTLARI ---
-    GridPane statsGrid = new GridPane();
-    statsGrid.setHgap(15);
-    statsGrid.setVgap(15);
-    
-    int totalExams = studentExams.size();
-    Map<Integer, Long> examsPerDay = studentExams.stream()
-            .collect(Collectors.groupingBy(e -> e.getTimeSlot().getDay(), Collectors.counting()));
-    
-    int busiestDay = examsPerDay.entrySet().stream()
-            .max(Map.Entry.comparingByValue())
-            .map(Map.Entry::getKey)
-            .orElse(1);
-    
-    long busyDayCount = examsPerDay.size();
-    
-    statsGrid.add(createStatCard("Total Exams", String.valueOf(totalExams), "#3498db"), 0, 0);
-    statsGrid.add(createStatCard("Active Days", String.valueOf(busyDayCount), "#2ecc71"), 1, 0);
-    statsGrid.add(createStatCard("Heaviest Day", "Day " + busiestDay, "#e74c3c"), 2, 0);
-    
-    // --- GÜNLÜK DAĞILIM ---
-    VBox distributionBox = new VBox(10);
-    distributionBox.setPadding(new Insets(20));
-    distributionBox.setStyle("-fx-background-color: #f8f9fa; -fx-border-radius: 8; -fx-background-radius: 8;");
-    
-    Label distTitle = new Label("📈 Daily Exam Load");
-    distTitle.setStyle("-fx-font-weight: bold; -fx-font-size: 16px; -fx-text-fill: #34495e;");
-    
-    distributionBox.getChildren().add(distTitle);
+    private VBox createStatisticsView(Student student, List<Exam> studentExams) {
+        // 1. ANA KAPLAYICI (Return edilecek olan)
+        VBox mainLayout = new VBox();
+        mainLayout.setPadding(new Insets(20));
+        mainLayout.setStyle("-fx-background-color: white; -fx-border-radius: 10; -fx-background-radius: 10;");
 
-    examsPerDay.entrySet().stream()
-            .sorted(Map.Entry.comparingByKey())
-            .forEach(entry -> {
-                HBox dayBar = new HBox(10);
-                dayBar.setAlignment(Pos.CENTER_LEFT);
-                
-                Label dayLabel = new Label("Day " + entry.getKey());
-                dayLabel.setPrefWidth(60);
-                dayLabel.setStyle("-fx-font-weight: bold; -fx-text-fill: #7f8c8d;");
-                
-                double progressValue = Math.min(entry.getValue() / 5.0, 1.0);
-                ProgressBar progress = new ProgressBar(progressValue);
-                progress.setPrefWidth(250);
-                String color = entry.getValue() <= 1 ? "#2ecc71" : (entry.getValue() <= 2 ? "#f1c40f" : "#e74c3c");
-                progress.setStyle("-fx-accent: " + color + "; -fx-control-inner-background: #ecf0f1;");
-                
-                Label countLabel = new Label(entry.getValue() + " exam(s)");
-                countLabel.setStyle("-fx-font-size: 11px; -fx-text-fill: #666;");
-                
-                dayBar.getChildren().addAll(dayLabel, progress, countLabel);
-                distributionBox.getChildren().add(dayBar);
-            });
-    
-    // --- ÖNERİLER ---
-    VBox recommendationsBox = new VBox(10);
-    recommendationsBox.setPadding(new Insets(20));
-    recommendationsBox.setStyle("-fx-background-color: #fff3cd; -fx-border-color: #ffeaa7; " +
-                              "-fx-border-width: 1; -fx-border-radius: 8; -fx-background-radius: 8;");
-    
-    Label recTitle = new Label("💡 Smart Insights");
-    recTitle.setStyle("-fx-font-weight: bold; -fx-font-size: 16px; -fx-text-fill: #856404;");
-    
-    Label recText = new Label();
-    recText.setWrapText(true);
-    recText.setStyle("-fx-font-size: 13px; -fx-text-fill: #856404;");
-    
-    StringBuilder recBuilder = new StringBuilder();
-    if (totalExams == 0) {
-        recBuilder.append("• No exams found.\n");
-    } else {
-        if (examsPerDay.values().stream().anyMatch(count -> count >= 3)) {
-            recBuilder.append("⚠ Warning: You have days with 3+ exams.\n");
+        // 2. İÇERİK KUTUSU (Scroll edilecek olan tüm istatistikler burada)
+        VBox contentBox = new VBox(20);
+        contentBox.setPadding(new Insets(5)); // Scrollbar ile içerik arasına mesafe
+
+        Label title = new Label("📊 Schedule Statistics");
+        title.setStyle("-fx-font-size: 20px; -fx-font-weight: bold; -fx-text-fill: #2c3e50;");
+
+        // --- İSTATİSTİK KARTLARI ---
+        GridPane statsGrid = new GridPane();
+        statsGrid.setHgap(15);
+        statsGrid.setVgap(15);
+
+        int totalExams = studentExams.size();
+        Map<Integer, Long> examsPerDay = studentExams.stream()
+                .collect(Collectors.groupingBy(e -> e.getTimeSlot().getDay(), Collectors.counting()));
+
+        int busiestDay = examsPerDay.entrySet().stream()
+                .max(Map.Entry.comparingByValue())
+                .map(Map.Entry::getKey)
+                .orElse(1);
+
+        long busyDayCount = examsPerDay.size();
+
+        statsGrid.add(createStatCard("Total Exams", String.valueOf(totalExams), "#3498db"), 0, 0);
+        statsGrid.add(createStatCard("Active Days", String.valueOf(busyDayCount), "#2ecc71"), 1, 0);
+        statsGrid.add(createStatCard("Heaviest Day", "Day " + busiestDay, "#e74c3c"), 2, 0);
+
+        // --- GÜNLÜK DAĞILIM ---
+        VBox distributionBox = new VBox(10);
+        distributionBox.setPadding(new Insets(20));
+        distributionBox.setStyle("-fx-background-color: #f8f9fa; -fx-border-radius: 8; -fx-background-radius: 8;");
+
+        Label distTitle = new Label("📈 Daily Exam Load");
+        distTitle.setStyle("-fx-font-weight: bold; -fx-font-size: 16px; -fx-text-fill: #34495e;");
+
+        distributionBox.getChildren().add(distTitle);
+
+        examsPerDay.entrySet().stream()
+                .sorted(Map.Entry.comparingByKey())
+                .forEach(entry -> {
+                    HBox dayBar = new HBox(10);
+                    dayBar.setAlignment(Pos.CENTER_LEFT);
+
+                    Label dayLabel = new Label("Day " + entry.getKey());
+                    dayLabel.setPrefWidth(60);
+                    dayLabel.setStyle("-fx-font-weight: bold; -fx-text-fill: #7f8c8d;");
+
+                    double progressValue = Math.min(entry.getValue() / 5.0, 1.0);
+                    ProgressBar progress = new ProgressBar(progressValue);
+                    progress.setPrefWidth(250);
+                    String color = entry.getValue() <= 1 ? "#2ecc71" : (entry.getValue() <= 2 ? "#f1c40f" : "#e74c3c");
+                    progress.setStyle("-fx-accent: " + color + "; -fx-control-inner-background: #ecf0f1;");
+
+                    Label countLabel = new Label(entry.getValue() + " exam(s)");
+                    countLabel.setStyle("-fx-font-size: 11px; -fx-text-fill: #666;");
+
+                    dayBar.getChildren().addAll(dayLabel, progress, countLabel);
+                    distributionBox.getChildren().add(dayBar);
+                });
+
+        // --- ÖNERİLER ---
+        VBox recommendationsBox = new VBox(10);
+        recommendationsBox.setPadding(new Insets(20));
+        recommendationsBox.setStyle("-fx-background-color: #fff3cd; -fx-border-color: #ffeaa7; " +
+                "-fx-border-width: 1; -fx-border-radius: 8; -fx-background-radius: 8;");
+
+        Label recTitle = new Label("💡 Smart Insights");
+        recTitle.setStyle("-fx-font-weight: bold; -fx-font-size: 16px; -fx-text-fill: #856404;");
+
+        Label recText = new Label();
+        recText.setWrapText(true);
+        recText.setStyle("-fx-font-size: 13px; -fx-text-fill: #856404;");
+
+        StringBuilder recBuilder = new StringBuilder();
+        if (totalExams == 0) {
+            recBuilder.append("• No exams found.\n");
         } else {
-            recBuilder.append("✓ Balanced schedule.\n");
-        }
-    }
-    recText.setText(recBuilder.toString());
-    recommendationsBox.getChildren().addAll(recTitle, recText);
-    
-    // --- TÜM İÇERİĞİ CONTENT BOX'A EKLE ---
-    contentBox.getChildren().addAll(title, statsGrid, distributionBox, recommendationsBox);
-    
-    // --- 3. SCROLLPANE OLUŞTURMA VE BAĞLAMA ---
-    ScrollPane scrollPane = new ScrollPane(contentBox); // İçeriği ScrollPane'e koy
-    scrollPane.setFitToWidth(true); // Yatayda sığdır
-    scrollPane.setStyle("-fx-background-color: transparent; -fx-background: transparent;");
-    
-    // ScrollPane'i ana kutuya ekle ve büyüt
-    mainLayout.getChildren().add(scrollPane);
-    VBox.setVgrow(scrollPane, Priority.ALWAYS); // Ana kutu büyürse ScrollPane de büyüsün
-    
-    return mainLayout; // VBox döndürür
-}
-
-private VBox createStatCard(String title, String value, String color) {
-    VBox card = new VBox(10);
-    card.setAlignment(Pos.CENTER);
-    card.setPadding(new Insets(20));
-    card.setPrefWidth(150);
-    card.setStyle("-fx-background-color: white; -fx-border-color: " + color + "40; " +
-                 "-fx-border-width: 2; -fx-border-radius: 10; -fx-background-radius: 10; " +
-                 "-fx-effect: dropshadow(gaussian, rgba(0,0,0,0.1), 5, 0, 0, 2);");
-    
-    Label valueLabel = new Label(value);
-    valueLabel.setStyle("-fx-font-size: 28px; -fx-font-weight: bold; -fx-text-fill: " + color + ";");
-    
-    Label titleLabel = new Label(title);
-    titleLabel.setStyle("-fx-font-size: 12px; -fx-text-fill: #6c757d; -fx-font-weight: bold;");
-    
-    card.getChildren().addAll(valueLabel, titleLabel);
-    return card;
-}
-
-private void exportAsPDF(Stage owner, Student student, List<Exam> studentExams) {
-    FileChooser fileChooser = new FileChooser();
-    fileChooser.setTitle("Export as PDF");
-    fileChooser.setInitialFileName(student.getStudentID() + "_schedule.pdf");
-    fileChooser.getExtensionFilters().addAll(
-        new FileChooser.ExtensionFilter("PDF Files", "*.pdf"),
-        new FileChooser.ExtensionFilter("All Files", "*.*")
-    );
-    
-    File file = fileChooser.showSaveDialog(owner);
-    if (file != null) {
-        try {
-            // PDF oluşturma işlemi
-            createPDF(file, student, studentExams);
-            showInfo("PDF Export", "Schedule exported successfully as PDF:\n" + file.getName());
-            messages.add("📄 PDF exported for " + student.getStudentID());
-        } catch (Exception e) {
-            showError("PDF Export Failed", e.getMessage());
-        }
-    }
-}
-
-private void exportAsICalendar(Stage owner, Student student, List<Exam> studentExams) {
-    FileChooser fileChooser = new FileChooser();
-    fileChooser.setTitle("Export as iCalendar");
-    fileChooser.setInitialFileName(student.getStudentID() + "_schedule.ics");
-    fileChooser.getExtensionFilters().addAll(
-        new FileChooser.ExtensionFilter("iCalendar Files", "*.ics"),
-        new FileChooser.ExtensionFilter("All Files", "*.*")
-    );
-    
-    File file = fileChooser.showSaveDialog(owner);
-    if (file != null) {
-        try (PrintWriter pw = new PrintWriter(file, "UTF-8")) {
-            pw.println("BEGIN:VCALENDAR");
-            pw.println("VERSION:2.0");
-            pw.println("PRODID:-//Exam Scheduler//Student Schedule//EN");
-            pw.println("CALSCALE:GREGORIAN");
-            pw.println("METHOD:PUBLISH");
-            pw.println("X-WR-CALNAME:Exam Schedule - " + student.getStudentID());
-            pw.println("X-WR-TIMEZONE:Europe/Istanbul");
-            
-            List<String> timeSlots = getTimeSlotsFromUI.get();
-            LocalDate startDate = examStartDatePicker != null && examStartDatePicker.getValue() != null
-                    ? examStartDatePicker.getValue()
-                    : LocalDate.now();
-            
-            for (Exam exam : studentExams) {
-                LocalDate examDate = startDate.plusDays(exam.getTimeSlot().getDay() - 1);
-                String timeSlot = "";
-                try {
-                    timeSlot = timeSlots.get(exam.getTimeSlot().getSlotNumber() - 1);
-                } catch (Exception e) {
-                    timeSlot = "09:00-11:00";
-                }
-                
-                String[] times = timeSlot.split("-");
-                String startTime = times[0].trim().replace(":", "") + "00";
-                String endTime = times.length > 1 ? times[1].trim().replace(":", "") + "00" : "110000";
-                
-                String dateStr = examDate.toString().replace("-", "");
-                
-                pw.println("BEGIN:VEVENT");
-                pw.println("UID:" + student.getStudentID() + "-" + exam.getCourse().getCourseCode() + 
-                          "-" + dateStr + "@examscheduler.edu");
-                pw.println("DTSTAMP:" + LocalDate.now().toString().replace("-", "") + "T120000Z");
-                pw.println("DTSTART:" + dateStr + "T" + startTime);
-                pw.println("DTEND:" + dateStr + "T" + endTime);
-                pw.println("SUMMARY:Exam: " + exam.getCourse().getCourseCode());
-                pw.println("DESCRIPTION:" + exam.getCourse().getCourseName() + 
-                          "\\nInstructor: " + exam.getCourse().getInstructor() + 
-                          "\\nRoom: " + exam.getClassroom().getClassroomID());
-                pw.println("LOCATION:Room " + exam.getClassroom().getClassroomID());
-                pw.println("CATEGORIES:EXAM");
-                pw.println("STATUS:CONFIRMED");
-                pw.println("BEGIN:VALARM");
-                pw.println("TRIGGER:-P1D");
-                pw.println("ACTION:DISPLAY");
-                pw.println("DESCRIPTION:Reminder: Exam tomorrow!");
-                pw.println("END:VALARM");
-                pw.println("END:VEVENT");
-            }
-            
-            pw.println("END:VCALENDAR");
-            
-            showInfo("Calendar Export", 
-                    "iCalendar file exported successfully!\n\n" +
-                    "You can import this file to:\n" +
-                    "• Google Calendar\n• Outlook\n• Apple Calendar\n• Any calendar app");
-            messages.add("📅 iCalendar exported for " + student.getStudentID());
-            
-        } catch (Exception e) {
-            showError("Export Failed", e.getMessage());
-        }
-    }
-}
-
-private void exportStudentSchedule(Stage owner, Student student, List<Exam> studentExams) {
-    FileChooser chooser = new FileChooser();
-    chooser.setTitle("Export My Schedule");
-    chooser.setInitialFileName("my_exam_schedule_" + student.getStudentID() + ".txt");
-    chooser.getExtensionFilters().addAll(
-        new FileChooser.ExtensionFilter("Text Files", "*.txt"),
-        new FileChooser.ExtensionFilter("All Files", "*.*")
-    );
-    File file = chooser.showSaveDialog(owner);
-
-    if (file != null) {
-        try (PrintWriter pw = new PrintWriter(file, "UTF-8")) {
-            pw.println("╔══════════════════════════════════════════════════════╗");
-            pw.println("║         PERSONAL EXAM SCHEDULE - " + 
-                      String.format("%-10s", student.getStudentID()) + "        ║");
-            pw.println("╚══════════════════════════════════════════════════════╝\n");
-            
-            pw.println("Generated: " + LocalDate.now() + " " + java.time.LocalTime.now().format(
-                java.time.format.DateTimeFormatter.ofPattern("HH:mm")));
-            pw.println();
-            pw.println("═".repeat(60));
-            
-            List<String> timeSlots = getTimeSlotsFromUI.get();
-            LocalDate startDate = examStartDatePicker != null && examStartDatePicker.getValue() != null
-                    ? examStartDatePicker.getValue()
-                    : LocalDate.now();
-
-            int examNumber = 1;
-            for (Exam exam : studentExams.stream()
-                    .sorted(Comparator.comparing((Exam e) -> e.getTimeSlot().getDay())
-                            .thenComparing(e -> e.getTimeSlot().getSlotNumber()))
-                    .collect(Collectors.toList())) {
-                
-                LocalDate examDate = startDate.plusDays(exam.getTimeSlot().getDay() - 1);
-                String timeSlot = "";
-                try {
-                    timeSlot = timeSlots.get(exam.getTimeSlot().getSlotNumber() - 1);
-                } catch (Exception e) {
-                    timeSlot = "Slot " + exam.getTimeSlot().getSlotNumber();
-                }
-                
-                String dayOfWeek = examDate.getDayOfWeek().toString();
-                pw.println("EXAM #" + examNumber++);
-                pw.println("-".repeat(40));
-                pw.println("📅 DATE:      " + examDate + " (" + dayOfWeek + ")");
-                pw.println("⏰ TIME:      " + timeSlot);
-                pw.println("📚 COURSE:    " + exam.getCourse().getCourseCode() + " - " + 
-                          exam.getCourse().getCourseName());
-                pw.println("👨‍🏫 INSTRUCTOR: " + exam.getCourse().getInstructor());
-                pw.println("📍 ROOM:      " + exam.getClassroom().getClassroomID() + 
-                          " (Capacity: " + exam.getClassroom().getCapacity() + ")");
-                pw.println("👥 STUDENTS:  " + exam.getStudentCount() + " enrolled");
-                pw.println();
-            }
-
-            // Statistics section
-            pw.println("═".repeat(60));
-            pw.println("\n📊 SCHEDULE STATISTICS");
-            pw.println("-".repeat(30));
-            pw.println("Total Exams: " + studentExams.size());
-            
-            Map<Integer, Long> examsPerDay = studentExams.stream()
-                    .collect(Collectors.groupingBy(e -> e.getTimeSlot().getDay(), Collectors.counting()));
-            
-            pw.println("\nExams per Day:");
-            examsPerDay.entrySet().stream()
-                    .sorted(Map.Entry.comparingByKey())
-                    .forEach(entry -> {
-                        LocalDate dayDate = startDate.plusDays(entry.getKey() - 1);
-                        pw.println("  Day " + entry.getKey() + " (" + dayDate.getDayOfWeek() + 
-                                  "): " + entry.getValue() + " exam(s)");
-                    });
-            
-            // Recommendations
-            pw.println("\n═".repeat(60));
-            pw.println("\n💡 RECOMMENDATIONS");
-            pw.println("-".repeat(20));
-            
-            if (studentExams.isEmpty()) {
-                pw.println("✓ No exams scheduled");
+            if (examsPerDay.values().stream().anyMatch(count -> count >= 3)) {
+                recBuilder.append("⚠ Warning: You have days with 3+ exams.\n");
             } else {
-                boolean hasBusyDay = examsPerDay.values().stream().anyMatch(count -> count >= 3);
-                
-                if (hasBusyDay) {
-                    pw.println("⚠ You have days with 3+ exams. Plan your study time accordingly.");
-                }
-                
-                pw.println("✓ Total study period: " + daysSpinner.getValue() + " days");
-                pw.println("✓ Average exams per day: " + 
-                          String.format("%.1f", studentExams.size() / (double)examsPerDay.size()));
+                recBuilder.append("✓ Balanced schedule.\n");
             }
-            
-            pw.println("\n" + "═".repeat(60));
-            pw.println("Generated by Exam Scheduler v2.0 - Student Portal");
-            pw.println("© " + LocalDate.now().getYear() + " - All rights reserved");
-            
-            showInfo("Export Success", 
-                    "Your personal schedule has been exported successfully!\n\n" +
-                    "File: " + file.getName() + "\n" +
-                    "Location: " + file.getParent() + "\n\n" +
-                    "The file includes:\n" +
-                    "• All your exam details\n" +
-                    "• Schedule statistics\n" +
-                    "• Study recommendations");
-            
-        } catch (Exception e) {
-            showError("Export Failed", "Failed to export schedule:\n" + e.getMessage());
+        }
+        recText.setText(recBuilder.toString());
+        recommendationsBox.getChildren().addAll(recTitle, recText);
+
+        // --- TÜM İÇERİĞİ CONTENT BOX'A EKLE ---
+        contentBox.getChildren().addAll(title, statsGrid, distributionBox, recommendationsBox);
+
+        // --- 3. SCROLLPANE OLUŞTURMA VE BAĞLAMA ---
+        ScrollPane scrollPane = new ScrollPane(contentBox); // İçeriği ScrollPane'e koy
+        scrollPane.setFitToWidth(true); // Yatayda sığdır
+        scrollPane.setStyle("-fx-background-color: transparent; -fx-background: transparent;");
+
+        // ScrollPane'i ana kutuya ekle ve büyüt
+        mainLayout.getChildren().add(scrollPane);
+        VBox.setVgrow(scrollPane, Priority.ALWAYS); // Ana kutu büyürse ScrollPane de büyüsün
+
+        return mainLayout; // VBox döndürür
+    }
+
+    private VBox createStatCard(String title, String value, String color) {
+        VBox card = new VBox(10);
+        card.setAlignment(Pos.CENTER);
+        card.setPadding(new Insets(20));
+        card.setPrefWidth(150);
+        card.setStyle("-fx-background-color: white; -fx-border-color: " + color + "40; " +
+                "-fx-border-width: 2; -fx-border-radius: 10; -fx-background-radius: 10; " +
+                "-fx-effect: dropshadow(gaussian, rgba(0,0,0,0.1), 5, 0, 0, 2);");
+
+        Label valueLabel = new Label(value);
+        valueLabel.setStyle("-fx-font-size: 28px; -fx-font-weight: bold; -fx-text-fill: " + color + ";");
+
+        Label titleLabel = new Label(title);
+        titleLabel.setStyle("-fx-font-size: 12px; -fx-text-fill: #6c757d; -fx-font-weight: bold;");
+
+        card.getChildren().addAll(valueLabel, titleLabel);
+        return card;
+    }
+
+    private void exportAsPDF(Stage owner, Student student, List<Exam> studentExams) {
+        FileChooser fileChooser = new FileChooser();
+        fileChooser.setTitle("Export as PDF");
+        fileChooser.setInitialFileName(student.getStudentID() + "_schedule.pdf");
+        fileChooser.getExtensionFilters().addAll(
+                new FileChooser.ExtensionFilter("PDF Files", "*.pdf"),
+                new FileChooser.ExtensionFilter("All Files", "*.*"));
+
+        File file = fileChooser.showSaveDialog(owner);
+        if (file != null) {
+            try {
+                // PDF oluşturma işlemi
+                createPDF(file, student, studentExams);
+                showInfo("PDF Export", "Schedule exported successfully as PDF:\n" + file.getName());
+                messages.add("📄 PDF exported for " + student.getStudentID());
+            } catch (Exception e) {
+                showError("PDF Export Failed", e.getMessage());
+            }
         }
     }
-}
-private void createPDF(File file, Student student, List<Exam> exams) throws Exception {
+
+    private void exportAsICalendar(Stage owner, Student student, List<Exam> studentExams) {
+        FileChooser fileChooser = new FileChooser();
+        fileChooser.setTitle("Export as iCalendar");
+        fileChooser.setInitialFileName(student.getStudentID() + "_schedule.ics");
+        fileChooser.getExtensionFilters().addAll(
+                new FileChooser.ExtensionFilter("iCalendar Files", "*.ics"),
+                new FileChooser.ExtensionFilter("All Files", "*.*"));
+
+        File file = fileChooser.showSaveDialog(owner);
+        if (file != null) {
+            try (PrintWriter pw = new PrintWriter(file, "UTF-8")) {
+                pw.println("BEGIN:VCALENDAR");
+                pw.println("VERSION:2.0");
+                pw.println("PRODID:-//Exam Scheduler//Student Schedule//EN");
+                pw.println("CALSCALE:GREGORIAN");
+                pw.println("METHOD:PUBLISH");
+                pw.println("X-WR-CALNAME:Exam Schedule - " + student.getStudentID());
+                pw.println("X-WR-TIMEZONE:Europe/Istanbul");
+
+                List<String> timeSlots = getTimeSlotsFromUI.get();
+                LocalDate startDate = examStartDatePicker != null && examStartDatePicker.getValue() != null
+                        ? examStartDatePicker.getValue()
+                        : LocalDate.now();
+
+                for (Exam exam : studentExams) {
+                    LocalDate examDate = startDate.plusDays(exam.getTimeSlot().getDay() - 1);
+                    String timeSlot = "";
+                    try {
+                        timeSlot = timeSlots.get(exam.getTimeSlot().getSlotNumber() - 1);
+                    } catch (Exception e) {
+                        timeSlot = "09:00-11:00";
+                    }
+
+                    String[] times = timeSlot.split("-");
+                    String startTime = times[0].trim().replace(":", "") + "00";
+                    String endTime = times.length > 1 ? times[1].trim().replace(":", "") + "00" : "110000";
+
+                    String dateStr = examDate.toString().replace("-", "");
+
+                    pw.println("BEGIN:VEVENT");
+                    pw.println("UID:" + student.getStudentID() + "-" + exam.getCourse().getCourseCode() +
+                            "-" + dateStr + "@examscheduler.edu");
+                    pw.println("DTSTAMP:" + LocalDate.now().toString().replace("-", "") + "T120000Z");
+                    pw.println("DTSTART:" + dateStr + "T" + startTime);
+                    pw.println("DTEND:" + dateStr + "T" + endTime);
+                    pw.println("SUMMARY:Exam: " + exam.getCourse().getCourseCode());
+                    pw.println("DESCRIPTION:" + exam.getCourse().getCourseName() +
+                            "\\nInstructor: " + exam.getCourse().getInstructor() +
+                            "\\nRoom: " + exam.getClassroom().getClassroomID());
+                    pw.println("LOCATION:Room " + exam.getClassroom().getClassroomID());
+                    pw.println("CATEGORIES:EXAM");
+                    pw.println("STATUS:CONFIRMED");
+                    pw.println("BEGIN:VALARM");
+                    pw.println("TRIGGER:-P1D");
+                    pw.println("ACTION:DISPLAY");
+                    pw.println("DESCRIPTION:Reminder: Exam tomorrow!");
+                    pw.println("END:VALARM");
+                    pw.println("END:VEVENT");
+                }
+
+                pw.println("END:VCALENDAR");
+
+                showInfo("Calendar Export",
+                        "iCalendar file exported successfully!\n\n" +
+                                "You can import this file to:\n" +
+                                "• Google Calendar\n• Outlook\n• Apple Calendar\n• Any calendar app");
+                messages.add("📅 iCalendar exported for " + student.getStudentID());
+
+            } catch (Exception e) {
+                showError("Export Failed", e.getMessage());
+            }
+        }
+    }
+
+    private void exportStudentSchedule(Stage owner, Student student, List<Exam> studentExams) {
+        FileChooser chooser = new FileChooser();
+        chooser.setTitle("Export My Schedule");
+        chooser.setInitialFileName("my_exam_schedule_" + student.getStudentID() + ".txt");
+        chooser.getExtensionFilters().addAll(
+                new FileChooser.ExtensionFilter("Text Files", "*.txt"),
+                new FileChooser.ExtensionFilter("All Files", "*.*"));
+        File file = chooser.showSaveDialog(owner);
+
+        if (file != null) {
+            try (PrintWriter pw = new PrintWriter(file, "UTF-8")) {
+                pw.println("╔══════════════════════════════════════════════════════╗");
+                pw.println("║         PERSONAL EXAM SCHEDULE - " +
+                        String.format("%-10s", student.getStudentID()) + "        ║");
+                pw.println("╚══════════════════════════════════════════════════════╝\n");
+
+                pw.println("Generated: " + LocalDate.now() + " " + java.time.LocalTime.now().format(
+                        java.time.format.DateTimeFormatter.ofPattern("HH:mm")));
+                pw.println();
+                pw.println("═".repeat(60));
+
+                List<String> timeSlots = getTimeSlotsFromUI.get();
+                LocalDate startDate = examStartDatePicker != null && examStartDatePicker.getValue() != null
+                        ? examStartDatePicker.getValue()
+                        : LocalDate.now();
+
+                int examNumber = 1;
+                for (Exam exam : studentExams.stream()
+                        .sorted(Comparator.comparing((Exam e) -> e.getTimeSlot().getDay())
+                                .thenComparing(e -> e.getTimeSlot().getSlotNumber()))
+                        .collect(Collectors.toList())) {
+
+                    LocalDate examDate = startDate.plusDays(exam.getTimeSlot().getDay() - 1);
+                    String timeSlot = "";
+                    try {
+                        timeSlot = timeSlots.get(exam.getTimeSlot().getSlotNumber() - 1);
+                    } catch (Exception e) {
+                        timeSlot = "Slot " + exam.getTimeSlot().getSlotNumber();
+                    }
+
+                    String dayOfWeek = examDate.getDayOfWeek().toString();
+                    pw.println("EXAM #" + examNumber++);
+                    pw.println("-".repeat(40));
+                    pw.println("📅 DATE:      " + examDate + " (" + dayOfWeek + ")");
+                    pw.println("⏰ TIME:      " + timeSlot);
+                    pw.println("📚 COURSE:    " + exam.getCourse().getCourseCode() + " - " +
+                            exam.getCourse().getCourseName());
+                    pw.println("👨‍🏫 INSTRUCTOR: " + exam.getCourse().getInstructor());
+                    pw.println("📍 ROOM:      " + exam.getClassroom().getClassroomID() +
+                            " (Capacity: " + exam.getClassroom().getCapacity() + ")");
+                    pw.println("👥 STUDENTS:  " + exam.getStudentCount() + " enrolled");
+                    pw.println();
+                }
+
+                // Statistics section
+                pw.println("═".repeat(60));
+                pw.println("\n📊 SCHEDULE STATISTICS");
+                pw.println("-".repeat(30));
+                pw.println("Total Exams: " + studentExams.size());
+
+                Map<Integer, Long> examsPerDay = studentExams.stream()
+                        .collect(Collectors.groupingBy(e -> e.getTimeSlot().getDay(), Collectors.counting()));
+
+                pw.println("\nExams per Day:");
+                examsPerDay.entrySet().stream()
+                        .sorted(Map.Entry.comparingByKey())
+                        .forEach(entry -> {
+                            LocalDate dayDate = startDate.plusDays(entry.getKey() - 1);
+                            pw.println("  Day " + entry.getKey() + " (" + dayDate.getDayOfWeek() +
+                                    "): " + entry.getValue() + " exam(s)");
+                        });
+
+                // Recommendations
+                pw.println("\n═".repeat(60));
+                pw.println("\n💡 RECOMMENDATIONS");
+                pw.println("-".repeat(20));
+
+                if (studentExams.isEmpty()) {
+                    pw.println("✓ No exams scheduled");
+                } else {
+                    boolean hasBusyDay = examsPerDay.values().stream().anyMatch(count -> count >= 3);
+
+                    if (hasBusyDay) {
+                        pw.println("⚠ You have days with 3+ exams. Plan your study time accordingly.");
+                    }
+
+                    pw.println("✓ Total study period: " + daysSpinner.getValue() + " days");
+                    pw.println("✓ Average exams per day: " +
+                            String.format("%.1f", studentExams.size() / (double) examsPerDay.size()));
+                }
+
+                pw.println("\n" + "═".repeat(60));
+                pw.println("Generated by Exam Scheduler v2.0 - Student Portal");
+                pw.println("© " + LocalDate.now().getYear() + " - All rights reserved");
+
+                showInfo("Export Success",
+                        "Your personal schedule has been exported successfully!\n\n" +
+                                "File: " + file.getName() + "\n" +
+                                "Location: " + file.getParent() + "\n\n" +
+                                "The file includes:\n" +
+                                "• All your exam details\n" +
+                                "• Schedule statistics\n" +
+                                "• Study recommendations");
+
+            } catch (Exception e) {
+                showError("Export Failed", "Failed to export schedule:\n" + e.getMessage());
+            }
+        }
+    }
+
+    private void createPDF(File file, Student student, List<Exam> exams) throws Exception {
         Document document = new Document();
         PdfWriter.getInstance(document, new FileOutputStream(file));
         document.open();
@@ -1443,7 +1453,7 @@ private void createPDF(File file, Student student, List<Exam> exams) throws Exce
         Paragraph title = new Paragraph("Student Exam Schedule", titleFont);
         title.setAlignment(Element.ALIGN_CENTER);
         document.add(title);
-        
+
         Font subTitleFont = FontFactory.getFont(FontFactory.HELVETICA, 12, BaseColor.GRAY);
         Paragraph subTitle = new Paragraph("Student ID: " + student.getStudentID(), subTitleFont);
         subTitle.setAlignment(Element.ALIGN_CENTER);
@@ -1451,15 +1461,16 @@ private void createPDF(File file, Student student, List<Exam> exams) throws Exce
         document.add(subTitle);
 
         // --- TABLO OLUŞTURMA (4 Sütun) ---
-        PdfPTable table = new PdfPTable(new float[]{2, 2, 4, 2}); // Sütun genişlik oranları
+        PdfPTable table = new PdfPTable(new float[] { 2, 2, 4, 2 }); // Sütun genişlik oranları
         table.setWidthPercentage(100);
         table.setSpacingBefore(10f);
         table.setSpacingAfter(10f);
 
         // --- TABLO BAŞLIKLARI ---
-        String[] headers = {"Day / Date", "Time", "Course Info", "Location"};
+        String[] headers = { "Day / Date", "Time", "Course Info", "Location" };
         for (String headerTitle : headers) {
-            PdfPCell header = new PdfPCell(new Phrase(headerTitle, FontFactory.getFont(FontFactory.HELVETICA_BOLD, 12, BaseColor.WHITE)));
+            PdfPCell header = new PdfPCell(
+                    new Phrase(headerTitle, FontFactory.getFont(FontFactory.HELVETICA_BOLD, 12, BaseColor.WHITE)));
             header.setBackgroundColor(HEADER_COLOR);
             header.setHorizontalAlignment(Element.ALIGN_CENTER);
             header.setVerticalAlignment(Element.ALIGN_MIDDLE);
@@ -1479,7 +1490,7 @@ private void createPDF(File file, Student student, List<Exam> exams) throws Exce
         boolean isOdd = true;
         for (Exam exam : exams) {
             BaseColor rowColor = isOdd ? ROW_COLOR_ODD : ROW_COLOR_EVEN;
-            
+
             // Tarih ve Saat Hesapla
             LocalDate date = startDate.plusDays(exam.getTimeSlot().getDay() - 1);
             String timeSlotStr;
@@ -1491,16 +1502,16 @@ private void createPDF(File file, Student student, List<Exam> exams) throws Exce
 
             // 1. Hücre: Tarih
             addStyledCell(table, "Day " + exam.getTimeSlot().getDay() + "\n" + date.toString(), rowColor, true);
-            
+
             // 2. Hücre: Saat
             addStyledCell(table, timeSlotStr, rowColor, true);
-            
+
             // 3. Hücre: Ders Bilgisi (Ders Kodu kalın, adı normal)
             PdfPCell courseCell = new PdfPCell();
-            
+
             // Ders Kodu Paragrafı
-            Paragraph pCode = new Paragraph(exam.getCourse().getCourseCode(), 
-                                          FontFactory.getFont(FontFactory.HELVETICA_BOLD, 11));
+            Paragraph pCode = new Paragraph(exam.getCourse().getCourseCode(),
+                    FontFactory.getFont(FontFactory.HELVETICA_BOLD, 11));
             pCode.setAlignment(Element.ALIGN_CENTER); // <--- İŞTE BU SATIR ORTALIYOR
             courseCell.addElement(pCode);
 
@@ -1511,7 +1522,8 @@ private void createPDF(File file, Student student, List<Exam> exams) throws Exce
             table.addCell(courseCell);
 
             // 4. Hücre: Oda
-            PdfPCell roomCell = new PdfPCell(new Phrase(exam.getClassroom().getClassroomID(), FontFactory.getFont(FontFactory.HELVETICA, 12)));
+            PdfPCell roomCell = new PdfPCell(
+                    new Phrase(exam.getClassroom().getClassroomID(), FontFactory.getFont(FontFactory.HELVETICA, 12)));
             roomCell.setBackgroundColor(rowColor);
             roomCell.setHorizontalAlignment(Element.ALIGN_CENTER);
             roomCell.setVerticalAlignment(Element.ALIGN_MIDDLE);
@@ -1524,7 +1536,8 @@ private void createPDF(File file, Student student, List<Exam> exams) throws Exce
         document.add(table);
 
         // --- ALT BİLGİ ---
-        Paragraph footer = new Paragraph("Generated by Exam Scheduler v2.0", FontFactory.getFont(FontFactory.COURIER, 8, BaseColor.GRAY));
+        Paragraph footer = new Paragraph("Generated by Exam Scheduler v2.0",
+                FontFactory.getFont(FontFactory.COURIER, 8, BaseColor.GRAY));
         footer.setAlignment(Element.ALIGN_RIGHT);
         document.add(footer);
 
@@ -1537,12 +1550,11 @@ private void createPDF(File file, Student student, List<Exam> exams) throws Exce
         cell.setBackgroundColor(bgColor);
         cell.setPadding(8);
         cell.setVerticalAlignment(Element.ALIGN_MIDDLE);
-        if (center) cell.setHorizontalAlignment(Element.ALIGN_CENTER);
+        if (center)
+            cell.setHorizontalAlignment(Element.ALIGN_CENTER);
         table.addCell(cell);
     }
 
-
-    
     private List<Exam> getStudentExams(Student student) {
         List<Exam> studentExams = new ArrayList<>();
 
@@ -1797,7 +1809,7 @@ private void createPDF(File file, Student student, List<Exam> exams) throws Exce
         VBox option1 = createLoadOption(
                 "📂 Load from Folder",
                 "Load CSV files from a directory",
-                "• students.csv\n• courses.csv\n• classrooms.csv\n• attendance.csv (optional)",
+                "• students.csv\n• courses.csv\n• classrooms.csv\n• attendance.csv",
                 "#4CAF50");
 
         Button loadFolderBtn = new Button("Select Folder");
@@ -1962,12 +1974,13 @@ private void createPDF(File file, Student student, List<Exam> exams) throws Exce
                     log.append("  Students: ").append(studentsPath != null ? "✓ Found" : "✗ Missing").append("\n");
                     log.append("  Courses: ").append(coursesPath != null ? "✓ Found" : "✗ Missing").append("\n");
                     log.append("  Classrooms: ").append(classroomsPath != null ? "✓ Found" : "✗ Missing").append("\n");
-                    log.append("  Attendance: ").append(attendancePath != null ? "✓ Found" : "⚠ Optional")
+                    log.append("  Attendance: ").append(attendancePath != null ? "✓ Found" : "✗ Missing")
                             .append("\n\n");
 
-                    if (studentsPath == null || coursesPath == null || classroomsPath == null) {
+                    if (studentsPath == null || coursesPath == null || classroomsPath == null
+                            || attendancePath == null) {
                         result.success = false;
-                        result.error = "Missing required CSV files (students, courses, classrooms)";
+                        result.error = "Missing required CSV files (students, courses, classrooms, attendance)";
                         log.append("❌ ERROR: Missing required files\n");
                         result.log = log.toString();
                         return result;
@@ -2002,22 +2015,18 @@ private void createPDF(File file, Student student, List<Exam> exams) throws Exce
                     log.append("✓ Loaded ").append(loadedClassrooms.size()).append(" classrooms\n\n");
                     result.classroomsCount = loadedClassrooms.size();
 
-                    if (attendancePath != null) {
-                        updateMessage("Loading attendance lists...");
-                        updateProgress(85, 100);
-                        log.append("Loading attendance lists...\n");
-                        CSVParser.parseAttendanceLists(attendancePath, dataManager.getStudents(),
-                                dataManager.getCourses());
+                    updateMessage("Loading attendance lists...");
+                    updateProgress(85, 100);
+                    log.append("Loading attendance lists...\n");
+                    CSVParser.parseAttendanceLists(attendancePath, dataManager.getStudents(),
+                            dataManager.getCourses());
 
-                        int totalEnrollments = dataManager.getCourses().stream()
-                                .mapToInt(c -> c.getEnrolledStudents().size())
-                                .sum();
-                        log.append("✓ Loaded attendance data (").append(totalEnrollments)
-                                .append(" total enrollments)\n\n");
-                        result.attendanceCount = totalEnrollments;
-                    } else {
-                        log.append("⚠ No attendance file found - courses have no enrolled students\n\n");
-                    }
+                    int totalEnrollments = dataManager.getCourses().stream()
+                            .mapToInt(c -> c.getEnrolledStudents().size())
+                            .sum();
+                    log.append("✓ Loaded attendance data (").append(totalEnrollments)
+                            .append(" total enrollments)\n\n");
+                    result.attendanceCount = totalEnrollments;
 
                     dataManager.setSourceFiles(
                             new File(studentsPath),
@@ -2145,7 +2154,7 @@ private void createPDF(File file, Student student, List<Exam> exams) throws Exce
         classroomsField.setPrefWidth(300);
 
         TextField attendanceField = new TextField();
-        attendanceField.setPromptText("No file selected (optional)");
+        attendanceField.setPromptText("No file selected");
         attendanceField.setEditable(false);
         attendanceField.setPrefWidth(300);
 
@@ -2157,28 +2166,53 @@ private void createPDF(File file, Student student, List<Exam> exams) throws Exce
         FileChooser fileChooser = new FileChooser();
         fileChooser.getExtensionFilters().add(new FileChooser.ExtensionFilter("CSV Files", "*.csv"));
 
+        // Set initial directory to last selected folder if available
+        if (lastSelectedDirectory != null && lastSelectedDirectory.exists()) {
+            fileChooser.setInitialDirectory(lastSelectedDirectory);
+        }
+
         studentsBtn.setOnAction(e -> {
+            if (lastSelectedDirectory != null && lastSelectedDirectory.exists()) {
+                fileChooser.setInitialDirectory(lastSelectedDirectory);
+            }
             File file = fileChooser.showOpenDialog(fileSelectionStage);
-            if (file != null)
+            if (file != null) {
                 studentsField.setText(file.getAbsolutePath());
+                lastSelectedDirectory = file.getParentFile();
+            }
         });
 
         coursesBtn.setOnAction(e -> {
+            if (lastSelectedDirectory != null && lastSelectedDirectory.exists()) {
+                fileChooser.setInitialDirectory(lastSelectedDirectory);
+            }
             File file = fileChooser.showOpenDialog(fileSelectionStage);
-            if (file != null)
+            if (file != null) {
                 coursesField.setText(file.getAbsolutePath());
+                lastSelectedDirectory = file.getParentFile();
+            }
         });
 
         classroomsBtn.setOnAction(e -> {
+            if (lastSelectedDirectory != null && lastSelectedDirectory.exists()) {
+                fileChooser.setInitialDirectory(lastSelectedDirectory);
+            }
             File file = fileChooser.showOpenDialog(fileSelectionStage);
-            if (file != null)
+            if (file != null) {
                 classroomsField.setText(file.getAbsolutePath());
+                lastSelectedDirectory = file.getParentFile();
+            }
         });
 
         attendanceBtn.setOnAction(e -> {
+            if (lastSelectedDirectory != null && lastSelectedDirectory.exists()) {
+                fileChooser.setInitialDirectory(lastSelectedDirectory);
+            }
             File file = fileChooser.showOpenDialog(fileSelectionStage);
-            if (file != null)
+            if (file != null) {
                 attendanceField.setText(file.getAbsolutePath());
+                lastSelectedDirectory = file.getParentFile();
+            }
         });
 
         grid.add(new Label("Students CSV: *"), 0, 1);
@@ -2193,7 +2227,7 @@ private void createPDF(File file, Student student, List<Exam> exams) throws Exce
         grid.add(classroomsField, 1, 3);
         grid.add(classroomsBtn, 2, 3);
 
-        grid.add(new Label("Attendance CSV:"), 0, 4);
+        grid.add(new Label("Attendance CSV: *"), 0, 4);
         grid.add(attendanceField, 1, 4);
         grid.add(attendanceBtn, 2, 4);
 
@@ -2217,14 +2251,16 @@ private void createPDF(File file, Student student, List<Exam> exams) throws Exce
             String classroomsPath = classroomsField.getText();
             String attendancePath = attendanceField.getText();
 
-            if (studentsPath.isEmpty() || coursesPath.isEmpty() || classroomsPath.isEmpty()) {
-                showWarning("Missing Files", "Please select all required files (Students, Courses, Classrooms).");
+            if (studentsPath.isEmpty() || coursesPath.isEmpty() || classroomsPath.isEmpty()
+                    || attendancePath.isEmpty()) {
+                showWarning("Missing Files",
+                        "Please select all required files (Students, Courses, Classrooms, Attendance).");
                 return;
             }
 
             fileSelectionStage.close();
             loadFilesWithPaths(owner, studentsPath, coursesPath, classroomsPath,
-                    attendancePath.isEmpty() ? null : attendancePath);
+                    attendancePath);
         });
 
         cancelBtn.setOnAction(e -> fileSelectionStage.close());
@@ -2248,16 +2284,14 @@ private void createPDF(File file, Student student, List<Exam> exams) throws Exce
             dataManager.setCourses(courses);
             dataManager.setClassrooms(classrooms);
 
-            if (attendancePath != null) {
-                CSVParser.parseAttendanceLists(attendancePath, students, courses);
-                messages.add("✓ Attendance lists loaded");
-            }
+            CSVParser.parseAttendanceLists(attendancePath, students, courses);
+            messages.add("✓ Attendance lists loaded");
 
             dataManager.setSourceFiles(
                     new File(studentsPath),
                     new File(coursesPath),
                     new File(classroomsPath),
-                    attendancePath != null ? new File(attendancePath) : null);
+                    new File(attendancePath));
 
             updateClassroomsView();
 
@@ -2494,7 +2528,7 @@ private void createPDF(File file, Student student, List<Exam> exams) throws Exce
                             "• Students\n" +
                             "• Courses\n" +
                             "• Classrooms\n" +
-                            "• Attendance (optional but recommended)");
+                            "• Attendance");
             return;
         }
 
@@ -3362,33 +3396,33 @@ private void createPDF(File file, Student student, List<Exam> exams) throws Exce
             showError("No Data", "Please load data first.");
             return;
         }
-    
+
         Stage dialog = new Stage();
         dialog.initOwner(owner);
         dialog.initModality(Modality.APPLICATION_MODAL);
         dialog.setTitle("Manage Courses");
-    
+
         ListView<String> listView = new ListView<>();
-    
+
         // --- DÜZELTME 1: LİSTE DOLDURMA ---
         // Sadece '[' ile başlamayan, geçerli dersleri listeye ekle
         dataManager.getCourses().stream()
-    .filter(c -> {
-        String code = c.getCourseCode();
-        // Null değilse, boş değilse VE köşeli parantez ile başlamıyorsa ekle
-        return code != null && !code.trim().isEmpty() && !code.trim().startsWith("[");
-    })
-    .forEach(c -> listView.getItems().add(c.getCourseCode()));
+                .filter(c -> {
+                    String code = c.getCourseCode();
+                    // Null değilse, boş değilse VE köşeli parantez ile başlamıyorsa ekle
+                    return code != null && !code.trim().isEmpty() && !code.trim().startsWith("[");
+                })
+                .forEach(c -> listView.getItems().add(c.getCourseCode()));
         // ----------------------------------
-    
+
         TextField codeField = new TextField();
         codeField.setPromptText("Course Code");
         TextField nameField = new TextField();
         nameField.setPromptText("Course Name");
-    
+
         Button addBtn = new Button("Add");
         Button remBtn = new Button("Remove");
-    
+
         addBtn.setOnAction(e -> {
             String code = codeField.getText().trim();
             if (!code.isEmpty()) {
@@ -3401,19 +3435,19 @@ private void createPDF(File file, Student student, List<Exam> exams) throws Exce
                 nameField.clear();
             }
         });
-    
+
         // --- DÜZELTME 2: SİLME İŞLEMİ (GÜVENLİ) ---
         remBtn.setOnAction(e -> {
             // İndeks yerine seçilen yazıyı (String) alıyoruz
             String selectedCode = listView.getSelectionModel().getSelectedItem();
-            
+
             if (selectedCode != null) {
                 // DataManager içinden bu koda sahip olan dersi buluyoruz
                 Course toRemove = dataManager.getCourses().stream()
-                    .filter(c -> c.getCourseCode().equals(selectedCode))
-                    .findFirst()
-                    .orElse(null);
-    
+                        .filter(c -> c.getCourseCode().equals(selectedCode))
+                        .findFirst()
+                        .orElse(null);
+
                 if (toRemove != null) {
                     dataManager.removeCourse(toRemove); // Hafızadan sil
                     listView.getItems().remove(selectedCode); // Listeden sil
@@ -3422,7 +3456,7 @@ private void createPDF(File file, Student student, List<Exam> exams) throws Exce
             }
         });
         // ------------------------------------------
-    
+
         VBox inputs = new VBox(5, codeField, nameField);
         VBox root = new VBox(10, new Label("Courses"), listView, inputs, new HBox(5, addBtn, remBtn));
         root.setPadding(new Insets(10));
@@ -3468,7 +3502,7 @@ private void createPDF(File file, Student student, List<Exam> exams) throws Exce
             if (idx >= 0) {
                 Classroom roomToRemove = dataManager.getClassrooms().get(idx);
                 dataManager.removeClassroom(roomToRemove);
-                classroomList.getItems().remove(idx);            
+                classroomList.getItems().remove(idx);
                 updateClassroomsView();
                 messages.add("Classroom removed: " + roomToRemove.getClassroomID());
             }
@@ -3506,8 +3540,8 @@ private void createPDF(File file, Student student, List<Exam> exams) throws Exce
         Label courseLabel = new Label("Select Course:");
         ComboBox<Course> courseCombo = new ComboBox<>();
         List<Course> validCourses = dataManager.getCourses().stream()
-                                    .filter(c -> c.getCourseCode() != null && !c.getCourseCode().trim().startsWith("["))
-                                    .collect(Collectors.toList());
+                .filter(c -> c.getCourseCode() != null && !c.getCourseCode().trim().startsWith("["))
+                .collect(Collectors.toList());
         courseCombo.setItems(FXCollections.observableArrayList(validCourses));
         courseCombo.setPrefWidth(300);
 
@@ -5084,22 +5118,22 @@ private void createPDF(File file, Student student, List<Exam> exams) throws Exce
         resultArea.setWrapText(true);
 
         StringBuilder sb = new StringBuilder();
-        
+
         sb.append("╔══════════════════════════════════════════════════════════════════╗\n");
         sb.append("║                    VALIDATION REPORT                             ║\n");
         sb.append("╚══════════════════════════════════════════════════════════════════╝\n\n");
-        
+
         sb.append("Generated: ").append(LocalDate.now()).append(" ").append(java.time.LocalTime.now()).append("\n");
         sb.append("Total Exams: ").append(dataManager.getSchedule().getExams().size()).append("\n");
         sb.append("Placed Exams: ").append(exams.size()).append("\n");
         sb.append("Unplaced Courses: ").append(unplacedCourses.size()).append("\n\n");
-        
+
         sb.append("═══ SUMMARY ═══════════════════════════════════════════════════════\n");
         sb.append(String.format("❌ Critical Issues: %d\n", result.getCriticalCount()));
         sb.append(String.format("⚠️  Warnings: %d\n", result.getWarningCount()));
         sb.append(String.format("ℹ️  Info: %d\n", result.info.size()));
         sb.append(String.format("📊 Analysis Items: %d\n\n", result.analysis.size()));
-        
+
         if (result.getCriticalCount() == 0 && unplacedCourses.isEmpty()) {
             sb.append("✅ VALIDATION PASSED - Schedule is valid!\n\n");
             messages.add("✅ Validation PASSED: No critical issues found");
@@ -5107,7 +5141,7 @@ private void createPDF(File file, Student student, List<Exam> exams) throws Exce
             sb.append("❌ VALIDATION FAILED - Critical issues found!\n\n");
             messages.add("❌ Validation FAILED: " + result.getCriticalCount() + " critical issues");
         }
-        
+
         if (!result.critical.isEmpty()) {
             sb.append("═══ CRITICAL ISSUES (MUST FIX) ════════════════════════════════════\n");
             for (int i = 0; i < result.critical.size(); i++) {
@@ -5115,7 +5149,7 @@ private void createPDF(File file, Student student, List<Exam> exams) throws Exce
             }
             sb.append("\n");
         }
-        
+
         if (!result.warnings.isEmpty()) {
             sb.append("═══ WARNINGS (SHOULD FIX) ═════════════════════════════════════════\n");
             for (int i = 0; i < Math.min(result.warnings.size(), 50); i++) {
@@ -5126,19 +5160,19 @@ private void createPDF(File file, Student student, List<Exam> exams) throws Exce
             }
             sb.append("\n");
         }
-        
+
         if (!result.info.isEmpty()) {
             sb.append("═══ INFORMATION ═══════════════════════════════════════════════════\n");
             result.info.forEach(info -> sb.append("ℹ️  ").append(info).append("\n"));
             sb.append("\n");
         }
-        
+
         if (!result.analysis.isEmpty()) {
             sb.append("═══ DETAILED ANALYSIS ═════════════════════════════════════════════\n");
             result.analysis.forEach(analysis -> sb.append(analysis).append("\n"));
             sb.append("\n");
         }
-        
+
         sb.append("═══ RECOMMENDATIONS ═══════════════════════════════════════════════\n");
         if (result.getCriticalCount() > 0) {
             sb.append("• Fix all critical issues before finalizing the schedule\n");
@@ -5146,12 +5180,13 @@ private void createPDF(File file, Student student, List<Exam> exams) throws Exce
         if (result.getCriticalCount() == 0 && result.getWarningCount() == 0) {
             sb.append("• Schedule is optimal! Ready to export and distribute\n");
         }
-        
+
         resultArea.setText(sb.toString());
         resultArea.setScrollTop(0);
-        
+
         Button exportBtn = new Button("📄 Export Report");
-        exportBtn.setStyle("-fx-background-color: #2196F3; -fx-text-fill: white; -fx-padding: 8px 16px; -fx-cursor: hand;");
+        exportBtn.setStyle(
+                "-fx-background-color: #2196F3; -fx-text-fill: white; -fx-padding: 8px 16px; -fx-cursor: hand;");
         exportBtn.setOnAction(e -> exportValidationReport(resultStage, sb.toString()));
 
         Button closeBtn = new Button("Close");
@@ -5164,17 +5199,17 @@ private void createPDF(File file, Student student, List<Exam> exams) throws Exce
 
         BorderPane root = new BorderPane();
         root.setPadding(new Insets(15));
-        
+
         Label headerLabel = new Label("Validation & Analysis Report");
         headerLabel.setStyle("-fx-font-size: 16px; -fx-font-weight: bold; -fx-padding: 0 0 10 0;");
-        
+
         root.setTop(headerLabel);
         root.setCenter(resultArea);
-        root.setBottom(buttonBox); 
+        root.setBottom(buttonBox);
 
         Scene scene = new Scene(root, 900, 600);
         resultStage.setScene(scene);
-        
+
         resultStage.show();
         if (result.getCriticalCount() == 0 && unplacedCourses.isEmpty()) {
             if (result.getWarningCount() == 0) {
@@ -5184,8 +5219,8 @@ private void createPDF(File file, Student student, List<Exam> exams) throws Exce
                 alert.setHeaderText("Perfect Schedule!");
                 alert.setContentText("No critical issues or warnings found.\nThe schedule is fully optimized.");
                 alert.showAndWait();
-            } 
-        
+            }
+
         }
     }
 
