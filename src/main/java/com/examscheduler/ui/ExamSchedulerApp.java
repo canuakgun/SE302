@@ -56,7 +56,7 @@ import javafx.scene.control.CheckBox;
 import javafx.scene.control.ComboBox;
 import javafx.scene.control.DatePicker;
 import javafx.scene.control.Label;
-import javafx.scene.control.ListCell;
+
 import javafx.scene.control.ListView;
 import javafx.scene.control.Menu;
 import javafx.scene.control.MenuBar;
@@ -66,9 +66,7 @@ import javafx.scene.control.ScrollPane;
 import javafx.scene.control.Separator;
 import javafx.scene.control.SeparatorMenuItem;
 import javafx.scene.control.Spinner;
-import javafx.scene.control.SplitPane;
-import javafx.scene.control.Tab;
-import javafx.scene.control.TabPane;
+
 import javafx.scene.control.TableCell;
 import javafx.scene.control.TableColumn;
 import javafx.scene.control.TableView;
@@ -79,7 +77,7 @@ import javafx.scene.control.ToggleGroup;
 import javafx.scene.control.ToolBar;
 import javafx.scene.control.cell.PropertyValueFactory;
 import javafx.scene.control.cell.TextFieldListCell;
-import javafx.scene.image.WritableImage;
+
 import javafx.scene.layout.BorderPane;
 import javafx.scene.layout.GridPane;
 import javafx.scene.layout.HBox;
@@ -238,8 +236,6 @@ public class ExamSchedulerApp extends Application {
         ComboBox<String> themeCombo = new ComboBox<>(
                 FXCollections.observableArrayList("Light", "Dark (Not Implemented)", "Default"));
         themeCombo.setValue("Default");
-        HBox themeBox = new HBox(10, new Label("Application Theme:"), themeCombo);
-        themeBox.setAlignment(Pos.CENTER_LEFT);
 
         // --- 3. Auto-Save Setting Example ---
         CheckBox autoSaveCheck = new CheckBox("Enable Auto-Save (Every 5 mins)");
@@ -548,12 +544,6 @@ public class ExamSchedulerApp extends Application {
         VBox totalExamsCard = createInfoCard("📝", String.valueOf(dataManager.getCourses().size()), "Total Exams");
         VBox examDaysCard = createInfoCard("📅", String.valueOf(daysSpinner.getValue()), "Exam Days");
 
-
-        VBox totalStudentsCard = createInfoCard("👥", String.valueOf(dataManager.getStudents().size()),
-                "Total Students");
-        VBox totalExamsCard = createInfoCard("📝", String.valueOf(dataManager.getCourses().size()), "Total Exams");
-        VBox examDaysCard = createInfoCard("📅", String.valueOf(daysSpinner.getValue()), "Exam Days");
-
         statsBox.getChildren().addAll(totalStudentsCard, totalExamsCard, examDaysCard);
 
         loginCard.getChildren().addAll(welcomeBox, new Separator(), searchBox, loginBtn, new Separator(), statsBox);
@@ -856,10 +846,6 @@ public class ExamSchedulerApp extends Application {
         GridPane quickStats = createQuickStatsGrid(studentExams);
         quickStatsSection.getChildren().addAll(statsTitle, quickStats);
 
-
-        GridPane quickStats = createQuickStatsGrid(studentExams);
-        quickStatsSection.getChildren().addAll(statsTitle, quickStats);
-
         dashboard.getChildren().addAll(upcomingSection, new Separator(), quickStatsSection);
 
         ScrollPane scrollPane = new ScrollPane(dashboard);
@@ -973,58 +959,6 @@ public class ExamSchedulerApp extends Application {
     }
 
     // Detay item oluşturucu
-    private HBox createDetailItem(String icon, String label, String value) {
-        HBox item = new HBox(8);
-        item.setAlignment(Pos.CENTER_LEFT);
-
-        Label iconLabel = new Label(icon);
-        iconLabel.setStyle("-fx-font-size: 14px;");
-        iconLabel.setPrefWidth(20);
-
-        VBox textBox = new VBox(2);
-
-        Label labelText = new Label(label);
-        labelText.setStyle("-fx-font-size: 10px; -fx-text-fill: #95a5a6; -fx-font-weight: 600;");
-
-        Label valueText = new Label(value);
-        valueText.setStyle("-fx-font-size: 13px; -fx-text-fill: #2d3436; -fx-font-weight: 500;");
-
-
-        Label iconLabel = new Label(icon);
-        iconLabel.setStyle("-fx-font-size: 20px;");
-
-        Label textLabel = new Label(label);
-        textLabel.setStyle("-fx-font-size: 11px; -fx-text-fill: #636e72; -fx-font-weight: 600;");
-
-        Label valueLabel = new Label(value);
-        valueLabel.setStyle("-fx-font-size: 18px; -fx-font-weight: bold; -fx-text-fill: #2d3436;");
-
-        item.getChildren().addAll(iconLabel, textLabel, valueLabel);
-        return item;
-    }
-
-    // Detay item oluşturucu
-    private HBox createDetailItem(String icon, String label, String value) {
-        HBox item = new HBox(8);
-        item.setAlignment(Pos.CENTER_LEFT);
-
-        Label iconLabel = new Label(icon);
-        iconLabel.setStyle("-fx-font-size: 14px;");
-        iconLabel.setPrefWidth(20);
-
-        VBox textBox = new VBox(2);
-
-        Label labelText = new Label(label);
-        labelText.setStyle("-fx-font-size: 10px; -fx-text-fill: #95a5a6; -fx-font-weight: 600;");
-
-        Label valueText = new Label(value);
-        valueText.setStyle("-fx-font-size: 13px; -fx-text-fill: #2d3436; -fx-font-weight: 500;");
-
-        textBox.getChildren().addAll(labelText, valueText);
-        item.getChildren().addAll(iconLabel, textBox);
-
-        return item;
-    }
 
     // Modern export butonu
     private Button createModernExportButton(String icon, String text, String color) {
@@ -1482,58 +1416,6 @@ public class ExamSchedulerApp extends Application {
                     pw.println("✓ Average exams per day: " +
                             String.format("%.1f", studentExams.size() / (double) examsPerDay.size()));
                 }
-
-                }
-
-                // Statistics section
-                pw.println("═".repeat(60));
-                pw.println("\n📊 SCHEDULE STATISTICS");
-                pw.println("-".repeat(30));
-                pw.println("Total Exams: " + studentExams.size());
-
-                Map<Integer, Long> examsPerDay = studentExams.stream()
-                        .collect(Collectors.groupingBy(e -> e.getTimeSlot().getDay(), Collectors.counting()));
-
-                pw.println("\nExams per Day:");
-                examsPerDay.entrySet().stream()
-                        .sorted(Map.Entry.comparingByKey())
-                        .forEach(entry -> {
-                            LocalDate dayDate = startDate.plusDays(entry.getKey() - 1);
-                            pw.println("  Day " + entry.getKey() + " (" + dayDate.getDayOfWeek() +
-                                    "): " + entry.getValue() + " exam(s)");
-                        });
-
-                // Recommendations
-                pw.println("\n═".repeat(60));
-                pw.println("\n💡 RECOMMENDATIONS");
-                pw.println("-".repeat(20));
-
-                if (studentExams.isEmpty()) {
-                    pw.println("✓ No exams scheduled");
-                } else {
-                    boolean hasBusyDay = examsPerDay.values().stream().anyMatch(count -> count >= 3);
-
-                    if (hasBusyDay) {
-                        pw.println("⚠ You have days with 3+ exams. Plan your study time accordingly.");
-                    }
-
-                    pw.println("✓ Total study period: " + daysSpinner.getValue() + " days");
-                    pw.println("✓ Average exams per day: " +
-                            String.format("%.1f", studentExams.size() / (double) examsPerDay.size()));
-                }
-
-                pw.println("\n" + "═".repeat(60));
-                pw.println("Generated by Exam Scheduler v2.0 - Student Portal");
-                pw.println("© " + LocalDate.now().getYear() + " - All rights reserved");
-
-                showInfo("Export Success",
-                        "Your personal schedule has been exported successfully!\n\n" +
-                                "File: " + file.getName() + "\n" +
-                                "Location: " + file.getParent() + "\n\n" +
-                                "The file includes:\n" +
-                                "• All your exam details\n" +
-                                "• Schedule statistics\n" +
-                                "• Study recommendations");
 
             } catch (Exception e) {
                 showError("Export Failed", "Failed to export schedule:\n" + e.getMessage());
@@ -3654,7 +3536,6 @@ public class ExamSchedulerApp extends Application {
         dialog.initModality(Modality.APPLICATION_MODAL);
         dialog.setTitle("Manage Attendance");
 
-        Label courseLabel = new Label("Select Course:");
         ComboBox<Course> courseCombo = new ComboBox<>();
         List<Course> validCourses = dataManager.getCourses().stream()
                 .filter(c -> c.getCourseCode() != null && !c.getCourseCode().trim().startsWith("["))
@@ -5115,9 +4996,6 @@ public class ExamSchedulerApp extends Application {
             return warnings.size();
         }
 
-        int getTotalIssues() {
-            return critical.size() + warnings.size();
-        }
     }
 
     private void analyzeStudentLoad(ValidationResult result, Map<Student, Set<TimeSlot>> studentScheduledSlots) {
@@ -5373,16 +5251,6 @@ public class ExamSchedulerApp extends Application {
         }
 
         messages.add("📄 Generating comprehensive conflict report...");
-
-        ValidationOptions options = new ValidationOptions(
-                true,
-                true,
-                true,
-                true,
-                true,
-                true,
-                true,
-                true);
 
         ValidationResult result = new ValidationResult();
         List<Exam> placedExams = dataManager.getSchedule().getExams().stream()
