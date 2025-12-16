@@ -295,6 +295,7 @@ public class ExamSchedulerApp extends Application {
         Button exportBtn = new Button("📤 Export Schedule");
         Button importScheduleBtn = new Button("📥 Import Schedule");
         Button studentPortalBtn = new Button("👤 Student Portal");
+        Button returnHomeBtn = new Button("🏠 Return Home");
         loadBtn.setStyle(buttonStyle);
         generateBtn.setStyle(buttonStyle);
         saveBtn.setStyle(buttonStyle);
@@ -303,10 +304,14 @@ public class ExamSchedulerApp extends Application {
         importScheduleBtn.setStyle(buttonStyle);
         studentPortalBtn.setStyle(
                 "-fx-background-color: #4CAF50; -fx-text-fill: white; -fx-padding: 8px 16px; -fx-font-weight: bold; -fx-cursor: hand;");
+        returnHomeBtn.setStyle(
+                "-fx-background-color: #FF9800; -fx-text-fill: white; -fx-padding: 8px 16px; -fx-font-weight: bold; -fx-cursor: hand;");
         toolBar.setStyle(toolBarStyle);
 
+        Region spacer = new Region();
+        HBox.setHgrow(spacer, Priority.ALWAYS);
         toolBar.getItems().addAll(loadBtn, new Separator(), generateBtn, validateBtn, new Separator(),
-                saveBtn, exportBtn, importScheduleBtn, new Separator(), studentPortalBtn);
+                saveBtn, exportBtn, importScheduleBtn, new Separator(), studentPortalBtn, spacer, returnHomeBtn);
 
         loadBtn.setOnAction(e -> handleLoad(stage));
         generateBtn.setOnAction(e -> handleGenerateSchedule());
@@ -315,6 +320,7 @@ public class ExamSchedulerApp extends Application {
         exportBtn.setOnAction(e -> handleExport(stage));
         importScheduleBtn.setOnAction(e -> handleImportSchedule(stage));
         studentPortalBtn.setOnAction(e -> showStudentPortal(stage));
+        returnHomeBtn.setOnAction(e -> handleReturnToWelcome(stage));
 
         VBox leftPane = createConfigurationPanel(buttonStyle);
         table = createExamTable(stage);
@@ -1562,14 +1568,16 @@ public class ExamSchedulerApp extends Application {
         MenuItem loadItem = new MenuItem("Load Data...");
         MenuItem saveItem = new MenuItem("Save Schedule");
         MenuItem exportItem = new MenuItem("Export...");
+        MenuItem returnHomeItem = new MenuItem("🏠 Return to Welcome Screen");
         MenuItem exitItem = new MenuItem("Exit");
 
         loadItem.setOnAction(e -> handleLoad(stage));
         saveItem.setOnAction(e -> handleSave(stage));
         exportItem.setOnAction(e -> handleExport(stage));
+        returnHomeItem.setOnAction(e -> handleReturnToWelcome(stage));
         exitItem.setOnAction(e -> stage.close());
 
-        fileMenu.getItems().addAll(loadItem, saveItem, exportItem, new SeparatorMenuItem(), exitItem);
+        fileMenu.getItems().addAll(loadItem, saveItem, exportItem, new SeparatorMenuItem(), returnHomeItem, exitItem);
 
         Menu editMenu = new Menu("Edit");
         MenuItem manageCourses = new MenuItem("Manage Courses...");
@@ -2261,7 +2269,7 @@ public class ExamSchedulerApp extends Application {
     }
 
     private void loadFilesWithPaths(Stage owner, String studentsPath, String coursesPath,
-                                    String classroomsPath, String attendancePath) {
+            String classroomsPath, String attendancePath) {
         messages.add("📄 Loading individual files...");
 
         try {
@@ -3268,8 +3276,8 @@ public class ExamSchedulerApp extends Application {
 
                         String suffix = (forcedSlot != null || examsToPlace.stream()
                                 .filter(e -> e.getCourse().getCourseCode().equals(courseCode)).count() > 1)
-                                ? " [Part]"
-                                : "";
+                                        ? " [Part]"
+                                        : "";
 
                         messages.add("  ✓ " + courseCode + suffix +
                                 " → Day " + day + ", Slot " + slotNum +
@@ -4994,8 +5002,8 @@ public class ExamSchedulerApp extends Application {
         boolean checkTimeDistribution;
 
         ValidationOptions(boolean studentConflicts, boolean consecutive, boolean roomConflicts,
-                          boolean instructorConflicts, boolean capacity, boolean studentLoad,
-                          boolean roomUtilization, boolean timeDistribution) {
+                boolean instructorConflicts, boolean capacity, boolean studentLoad,
+                boolean roomUtilization, boolean timeDistribution) {
             this.checkStudentConflicts = studentConflicts;
             this.checkConsecutive = consecutive;
             this.checkRoomConflicts = roomConflicts;
@@ -6272,6 +6280,77 @@ public class ExamSchedulerApp extends Application {
         alert.setContentText(message);
         ThemeManager.getInstance().styleAlert(alert);
         alert.showAndWait();
+    }
+
+    /**
+     * Handles returning to the welcome screen with save confirmation.
+     * Asks user if they want to save before leaving.
+     */
+    private void handleReturnToWelcome(Stage stage) {
+        // Check if there's any data to potentially save
+        boolean hasUnsavedData = dataManager.isDataLoaded() &&
+                (dataManager.getSchedule() != null || !exams.isEmpty());
+
+        if (hasUnsavedData) {
+            // Create confirmation dialog with three options
+            Alert confirmDialog = new Alert(Alert.AlertType.CONFIRMATION);
+            confirmDialog.setTitle("Return to Welcome Screen");
+            confirmDialog.setHeaderText("Do you want to save before leaving?");
+            confirmDialog.setContentText(
+                    "You have unsaved changes. Would you like to save your schedule before returning to the welcome screen?");
+
+            // Custom buttons
+            ButtonType saveAndReturn = new ButtonType("💾 Save and Return");
+            ButtonType returnWithoutSave = new ButtonType("🚪 Return without Saving");
+            ButtonType cancel = new ButtonType("Cancel", ButtonType.CANCEL.getButtonData());
+
+            confirmDialog.getButtonTypes().setAll(saveAndReturn, returnWithoutSave, cancel);
+            ThemeManager.getInstance().styleAlert(confirmDialog);
+
+            Optional<ButtonType> result = confirmDialog.showAndWait();
+
+            if (result.isPresent()) {
+                if (result.get() == saveAndReturn) {
+                    // Save first, then return
+                    handleSave(stage);
+                    // Clear data and show welcome
+                    clearCurrentSession();
+                    showWelcomeScreen(stage);
+                    messages.add("✓ Returned to welcome screen (data saved)");
+                } else if (result.get() == returnWithoutSave) {
+                    // Just return without saving
+                    clearCurrentSession();
+                    showWelcomeScreen(stage);
+                    messages.add("ℹ Returned to welcome screen (changes discarded)");
+                }
+                // If cancel, do nothing
+            }
+        } else {
+            // No data to save, just return
+            clearCurrentSession();
+            showWelcomeScreen(stage);
+            messages.add("✓ Returned to welcome screen");
+        }
+    }
+
+    /**
+     * Clears the current session data to prepare for a fresh start.
+     */
+    private void clearCurrentSession() {
+        exams.clear();
+        messages.clear();
+        unplacedCourses.clear();
+        if (statsArea != null) {
+            statsArea.clear();
+        }
+        if (crView != null) {
+            crView.getItems().clear();
+        }
+        if (tsView != null) {
+            tsView.getItems().clear();
+        }
+        // Reset DataManager
+        dataManager.clearAllData();
     }
 
     public static class ExamEntry {
