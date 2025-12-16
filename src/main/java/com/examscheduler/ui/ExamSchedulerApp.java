@@ -1842,20 +1842,6 @@ public class ExamSchedulerApp extends Application {
         });
         option3.getChildren().add(loadBackupBtn);
 
-        VBox option4 = createLoadOption(
-                "🎲 Generate Sample Data",
-                "Create demo data for testing",
-                "Quickly test the application with sample data",
-                "#9C27B0");
-
-        Button generateSampleBtn = new Button("Generate Sample");
-        generateSampleBtn.setStyle("-fx-background-color: #9C27B0; -fx-text-fill: white; -fx-padding: 8px 20px;");
-        generateSampleBtn.setOnAction(e -> {
-            loadDialog.close();
-            generateSampleData(owner);
-        });
-        option4.getChildren().add(generateSampleBtn);
-
         Button cancelBtn = new Button("Cancel");
         cancelBtn.setStyle("-fx-padding: 8px 20px;");
         cancelBtn.setOnAction(e -> loadDialog.close());
@@ -1869,8 +1855,6 @@ public class ExamSchedulerApp extends Application {
                 option2,
                 new Separator(),
                 option3,
-                new Separator(),
-                option4,
                 new Separator(),
                 cancelBtn);
 
@@ -2269,7 +2253,7 @@ public class ExamSchedulerApp extends Application {
     }
 
     private void loadFilesWithPaths(Stage owner, String studentsPath, String coursesPath,
-            String classroomsPath, String attendancePath) {
+                                    String classroomsPath, String attendancePath) {
         messages.add("📄 Loading individual files...");
 
         try {
@@ -2406,104 +2390,6 @@ public class ExamSchedulerApp extends Application {
             messages.add("❌ Backup restore failed: " + e.getMessage());
             showError("Backup Failed", "Failed to restore backup:\n" + e.getMessage());
             dataManager.clearAllData();
-        }
-    }
-
-    private void generateSampleData(Stage owner) {
-        Alert confirm = new Alert(Alert.AlertType.CONFIRMATION);
-        confirm.setTitle("Generate Sample Data");
-        confirm.setHeaderText("Create demo data for testing");
-        confirm.setContentText(
-                "This will create sample data with:\n\n" +
-                        "• 50 students\n" +
-                        "• 10 courses\n" +
-                        "• 5 classrooms\n" +
-                        "• Random course enrollments\n\n" +
-                        "Continue?");
-
-        Optional<ButtonType> result = confirm.showAndWait();
-        if (result.isPresent() && result.get() == ButtonType.OK) {
-            messages.add("🎲 Generating sample data...");
-
-            try {
-                dataManager.clearAllData();
-
-                List<Student> students = new ArrayList<>();
-                for (int i = 1; i <= 50; i++) {
-                    students.add(new Student(String.format("S%03d", i)));
-                }
-
-                List<Course> courses = new ArrayList<>();
-                String[] courseNames = {
-                        "Introduction to Computer Science",
-                        "Data Structures and Algorithms",
-                        "Database Management Systems",
-                        "Operating Systems",
-                        "Computer Networks",
-                        "Software Engineering",
-                        "Artificial Intelligence",
-                        "Machine Learning",
-                        "Web Development",
-                        "Mobile Application Development"
-                };
-                String[] instructors = {
-                        "Dr. Smith", "Dr. Johnson", "Dr. Williams", "Dr. Brown", "Dr. Jones"
-                };
-
-                for (int i = 0; i < 10; i++) {
-                    Course course = new Course(
-                            "CS" + (101 + i),
-                            courseNames[i],
-                            instructors[i % instructors.length],
-                            40);
-                    courses.add(course);
-                }
-
-                List<Classroom> classrooms = new ArrayList<>();
-                int[] capacities = { 30, 40, 50, 60, 80 };
-                for (int i = 0; i < 5; i++) {
-                    classrooms.add(new Classroom("Room_" + (i + 1), capacities[i]));
-                }
-
-                Random random = new Random();
-                for (Course course : courses) {
-                    int enrollmentCount = 20 + random.nextInt(21);
-                    Set<Student> enrolled = new HashSet<>();
-
-                    while (enrolled.size() < enrollmentCount) {
-                        Student student = students.get(random.nextInt(students.size()));
-                        if (!enrolled.contains(student)) {
-                            course.addStudent(student);
-                            student.addCourse(course);
-                            enrolled.add(student);
-                        }
-                    }
-                }
-
-                dataManager.setStudents(students);
-                dataManager.setCourses(courses);
-                dataManager.setClassrooms(classrooms);
-                updateClassroomsView();
-
-                messages.add("✓ Sample data generated successfully:");
-                messages.add("  • Students: 50");
-                messages.add("  • Courses: 10");
-                messages.add("  • Classrooms: 5");
-                messages.add("  • Random enrollments assigned");
-                messages.add("🚀 Ready to generate schedule!");
-
-                showInfo("Sample Data Generated",
-                        "Sample data created successfully!\n\n" +
-                                "Students: 50\n" +
-                                "Courses: 10\n" +
-                                "Classrooms: 5\n\n" +
-                                "You can now test schedule generation.");
-
-            } catch (Exception e) {
-                messages.add("❌ Sample data generation failed: " + e.getMessage());
-                showError("Generation Failed", "Failed to generate sample data:\n" + e.getMessage());
-                dataManager.clearAllData();
-            }
         }
     }
 
@@ -3276,8 +3162,8 @@ public class ExamSchedulerApp extends Application {
 
                         String suffix = (forcedSlot != null || examsToPlace.stream()
                                 .filter(e -> e.getCourse().getCourseCode().equals(courseCode)).count() > 1)
-                                        ? " [Part]"
-                                        : "";
+                                ? " [Part]"
+                                : "";
 
                         messages.add("  ✓ " + courseCode + suffix +
                                 " → Day " + day + ", Slot " + slotNum +
@@ -5002,8 +4888,8 @@ public class ExamSchedulerApp extends Application {
         boolean checkTimeDistribution;
 
         ValidationOptions(boolean studentConflicts, boolean consecutive, boolean roomConflicts,
-                boolean instructorConflicts, boolean capacity, boolean studentLoad,
-                boolean roomUtilization, boolean timeDistribution) {
+                          boolean instructorConflicts, boolean capacity, boolean studentLoad,
+                          boolean roomUtilization, boolean timeDistribution) {
             this.checkStudentConflicts = studentConflicts;
             this.checkConsecutive = consecutive;
             this.checkRoomConflicts = roomConflicts;
