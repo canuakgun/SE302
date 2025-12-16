@@ -3734,6 +3734,112 @@ public class ExamSchedulerApp extends Application {
 
         Button save = new Button("💾 Save");
         save.setOnAction(ev -> {
+            int newDay = day.getValue();
+            int newSlotIdx = slot.getSelectionModel().getSelectedIndex() + 1;
+            String newRoomId = room.getText();
+            int newEnrollment = enroll.getValue();
+
+            List<String> errors = new ArrayList<>();
+            List<String> warnings = new ArrayList<>();
+
+            // --- VALIDATION LOGIC ---
+            if (e.getExam() != null && dataManager.getSchedule() != null) {
+                // 1. Check Room Capacity
+                Classroom targetRoom = dataManager.getClassroomByID(newRoomId);
+                if (targetRoom == null) {
+                    errors.add("Invalid Room ID: " + newRoomId);
+                } else if (newEnrollment > targetRoom.getCapacity()) {
+                    warnings.add(
+                            "Class Capacity Exceeded: " + newEnrollment + " students > " + targetRoom.getCapacity());
+                }
+
+                // 2. Check Room Double Booking
+                boolean roomOccupied = dataManager.getSchedule().getExams().stream()
+                        .filter(ex -> ex != e.getExam()) // Skip current exam
+                        .filter(Exam::isScheduled)
+                        .anyMatch(ex -> ex.getTimeSlot().getDay() == newDay &&
+                                ex.getTimeSlot().getSlotNumber() == newSlotIdx &&
+                                ex.getClassroom().getClassroomID().equals(newRoomId));
+
+                if (roomOccupied) {
+                    errors.add("Room Conflict: " + newRoomId + " is already booked at Day " + newDay + " Slot "
+                            + newSlotIdx);
+                }
+
+                // 3. Check Student Conflicts
+                List<Student> students = e.getExam().getEnrolledStudents();
+                int studentConflictCount = 0;
+                List<String> overloadedStudents = new ArrayList<>();
+
+                for (Student s : students) {
+                    long examsAtSameTime = dataManager.getSchedule().getExams().stream()
+                            .filter(ex -> ex != e.getExam())
+                            .filter(Exam::isScheduled)
+                            .filter(ex -> ex.getEnrolledStudents().contains(s))
+                            .filter(ex -> ex.getTimeSlot().getDay() == newDay &&
+                                    ex.getTimeSlot().getSlotNumber() == newSlotIdx)
+                            .count();
+
+                    if (examsAtSameTime > 0) {
+                        studentConflictCount++;
+                    }
+
+                    long examsOnSameDay = dataManager.getSchedule().getExams().stream()
+                            .filter(ex -> ex != e.getExam())
+                            .filter(Exam::isScheduled)
+                            .filter(ex -> ex.getEnrolledStudents().contains(s))
+                            .filter(ex -> ex.getTimeSlot().getDay() == newDay)
+                            .count();
+
+                    // If they already have 2 or more exams on this day, adding one more makes it >
+                    // 2
+                    if (examsOnSameDay >= 2) {
+                        overloadedStudents.add(s.getStudentID());
+                    }
+                }
+
+                if (studentConflictCount > 0) {
+                    errors.add("Student Time Conflict: " + studentConflictCount
+                            + " students are already taking an exam at this time.");
+                }
+
+                if (!overloadedStudents.isEmpty()) {
+                    String affectedIds = String.join(", ", overloadedStudents);
+                    // Limit output length if too many students
+                    if (overloadedStudents.size() > 5) {
+                        affectedIds = overloadedStudents.subList(0, 5).stream().collect(Collectors.joining(", "))
+                                + ", ... (+" + (overloadedStudents.size() - 5) + " more)";
+                    }
+                    errors.add("Student Overload: " + affectedIds
+                            + " will have more than 2 exams on Day " + newDay);
+                }
+            }
+
+            // --- SHOW ALERTS ---
+            if (!errors.isEmpty()) {
+                Alert alert = new Alert(Alert.AlertType.ERROR);
+                alert.setTitle("Validation Error");
+                alert.setHeaderText("Cannot Save Changes");
+                alert.setContentText(String.join("\n", errors));
+                ThemeManager.getInstance().styleAlert(alert);
+                alert.showAndWait();
+                return; // Stop save
+            }
+
+            if (!warnings.isEmpty()) {
+                Alert confirm = new Alert(Alert.AlertType.CONFIRMATION);
+                confirm.setTitle("Validation Warnings");
+                confirm.setHeaderText("Warning: Potential Issues");
+                confirm.setContentText(String.join("\n", warnings) + "\n\nDo you want to proceed?");
+                ThemeManager.getInstance().styleAlert(confirm);
+                Optional<ButtonType> res = confirm.showAndWait();
+                if (res.isEmpty() || res.get() != ButtonType.OK) {
+                    return; // Stop save
+                }
+            }
+
+            // --- PROCEED WITH SAVE ---
+
             // Update ExamEntry (View)
             e.setDay(day.getValue());
             e.setTimeSlot(slot.getValue());
@@ -3742,8 +3848,6 @@ public class ExamSchedulerApp extends Application {
 
             // Update Real Exam Model (Logic)
             if (e.getExam() != null) {
-                int newDay = day.getValue();
-                int newSlotIdx = slot.getSelectionModel().getSelectedIndex() + 1; // 1-based index
                 if (newSlotIdx > 0) {
                     TimeSlot newTimeSlot = new TimeSlot(newDay, newSlotIdx);
                     e.getExam().setTimeSlot(newTimeSlot);
