@@ -1006,7 +1006,8 @@ public class ExamSchedulerApp extends Application {
         calendar.setPadding(new Insets(20));
         calendar.setStyle("-fx-background-color: white; -fx-border-radius: 10;");
 
-        int maxDay = studentExams.stream().mapToInt(e -> e.getTimeSlot().getDay()).max().orElse(5);
+        int maxDay = Math.max(daysSpinner.getValue(),
+                studentExams.stream().mapToInt(e -> e.getTimeSlot().getDay()).max().orElse(0));
         List<String> timeSlots = getTimeSlotsFromUI.get();
 
         LocalDate startDate = examStartDatePicker != null && examStartDatePicker.getValue() != null
@@ -2260,7 +2261,7 @@ public class ExamSchedulerApp extends Application {
     }
 
     private void loadFilesWithPaths(Stage owner, String studentsPath, String coursesPath,
-            String classroomsPath, String attendancePath) {
+                                    String classroomsPath, String attendancePath) {
         messages.add("📄 Loading individual files...");
 
         try {
@@ -3267,8 +3268,8 @@ public class ExamSchedulerApp extends Application {
 
                         String suffix = (forcedSlot != null || examsToPlace.stream()
                                 .filter(e -> e.getCourse().getCourseCode().equals(courseCode)).count() > 1)
-                                        ? " [Part]"
-                                        : "";
+                                ? " [Part]"
+                                : "";
 
                         messages.add("  ✓ " + courseCode + suffix +
                                 " → Day " + day + ", Slot " + slotNum +
@@ -3326,6 +3327,7 @@ public class ExamSchedulerApp extends Application {
                     String eid = String.format("EX%03d", idCounter++);
 
                     exams.add(new ExamEntry(
+                            exam,
                             eid,
                             exam.getCourse().getCourseCode(),
                             exam.getTimeSlot().getDay(),
@@ -3717,20 +3719,43 @@ public class ExamSchedulerApp extends Application {
         d.setTitle("Edit Exam: " + e.getId());
 
         TextField course = new TextField(e.getCourseId());
+        course.setEditable(false); // Course code should not be changed directly on exam instance
+
         Spinner<Integer> day = new Spinner<>(1, 30, e.getDay());
-        TextField slot = new TextField(e.getTimeSlot());
+        day.setEditable(true);
+
+        // Use ComboBox for Time Slot to ensure validity
+        ComboBox<String> slot = new ComboBox<>(FXCollections.observableArrayList(getTimeSlotsFromUI.get()));
+        slot.setValue(e.getTimeSlot());
+
         TextField room = new TextField(e.getRoomId());
         Spinner<Integer> enroll = new Spinner<>(0, 1000, e.getEnrolled());
-        day.setEditable(true);
         enroll.setEditable(true);
 
         Button save = new Button("💾 Save");
         save.setOnAction(ev -> {
-            e.setCourseId(course.getText());
+            // Update ExamEntry (View)
             e.setDay(day.getValue());
-            e.setTimeSlot(slot.getText());
+            e.setTimeSlot(slot.getValue());
             e.setRoomId(room.getText());
             e.setEnrolled(enroll.getValue());
+
+            // Update Real Exam Model (Logic)
+            if (e.getExam() != null) {
+                int newDay = day.getValue();
+                int newSlotIdx = slot.getSelectionModel().getSelectedIndex() + 1; // 1-based index
+                if (newSlotIdx > 0) {
+                    TimeSlot newTimeSlot = new TimeSlot(newDay, newSlotIdx);
+                    e.getExam().setTimeSlot(newTimeSlot);
+                }
+
+                Classroom newRoom = dataManager.getClassroomByID(room.getText());
+                if (newRoom != null) {
+                    e.getExam().setClassroom(newRoom);
+                }
+
+                e.getExam().setStudentCount(enroll.getValue());
+            }
 
             if (dataManager.getSchedule() != null) {
                 dataManager.getSchedule().rebuildTimeSlotMap();
@@ -3769,6 +3794,12 @@ public class ExamSchedulerApp extends Application {
         confirm.setContentText("Delete " + e.getId() + "?");
         Optional<ButtonType> result = confirm.showAndWait();
         if (result.isPresent() && result.get() == ButtonType.OK) {
+            // Remove from DataModel (Logic)
+            if (e.getExam() != null && dataManager.getSchedule() != null) {
+                dataManager.getSchedule().removeExam(e.getExam());
+            }
+
+            // Remove from View
             exams.remove(e);
             table.refresh();
             messages.add("🗑 Deleted: " + e.getId());
@@ -4859,8 +4890,8 @@ public class ExamSchedulerApp extends Application {
         boolean checkTimeDistribution;
 
         ValidationOptions(boolean studentConflicts, boolean consecutive, boolean roomConflicts,
-                boolean instructorConflicts, boolean capacity, boolean studentLoad,
-                boolean roomUtilization, boolean timeDistribution) {
+                          boolean instructorConflicts, boolean capacity, boolean studentLoad,
+                          boolean roomUtilization, boolean timeDistribution) {
             this.checkStudentConflicts = studentConflicts;
             this.checkConsecutive = consecutive;
             this.checkRoomConflicts = roomConflicts;
@@ -6142,14 +6173,20 @@ public class ExamSchedulerApp extends Application {
     public static class ExamEntry {
         private final SimpleStringProperty id, courseId, timeSlot, roomId;
         private final SimpleIntegerProperty day, enrolled;
+        private final Exam exam;
 
-        public ExamEntry(String id, String courseId, int day, String timeSlot, String roomId, int enrolled) {
+        public ExamEntry(Exam exam, String id, String courseId, int day, String timeSlot, String roomId, int enrolled) {
+            this.exam = exam;
             this.id = new SimpleStringProperty(id);
             this.courseId = new SimpleStringProperty(courseId);
             this.day = new SimpleIntegerProperty(day);
             this.timeSlot = new SimpleStringProperty(timeSlot);
             this.roomId = new SimpleStringProperty(roomId);
             this.enrolled = new SimpleIntegerProperty(enrolled);
+        }
+
+        public Exam getExam() {
+            return exam;
         }
 
         public String getId() {
