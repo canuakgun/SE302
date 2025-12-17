@@ -5,27 +5,24 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
 
-
 public class Course implements Serializable {
     private static final long serialVersionUID = 1L;
-    
+
     private String courseCode;
     private String courseName;
-    private String instructor;
-    private int examDurationSlots; 
+    private int examDurationSlots;
     private List<Student> enrolledStudents;
 
     public Course(String courseCode) {
-        this(courseCode, "", "", 1);
+        this(courseCode, "", 1);
     }
 
-    public Course(String courseCode, String courseName, String instructor, int examDurationSlots) {
+    public Course(String courseCode, String courseName, int examDurationSlots) {
         if (courseCode == null || courseCode.trim().isEmpty()) {
             throw new IllegalArgumentException("Course code cannot be null or empty");
         }
         this.courseCode = courseCode;
         this.courseName = courseName != null ? courseName : "";
-        this.instructor = instructor != null ? instructor : "";
         this.examDurationSlots = Math.max(1, examDurationSlots);
         this.enrolledStudents = new ArrayList<>();
     }
@@ -36,10 +33,6 @@ public class Course implements Serializable {
 
     public String getCourseName() {
         return courseName;
-    }
-
-    public String getInstructor() {
-        return instructor;
     }
 
     public List<Student> getEnrolledStudents() {
@@ -59,8 +52,9 @@ public class Course implements Serializable {
     }
 
     public boolean removeStudent(Student student) {
-        if (student == null) return false;
-        
+        if (student == null)
+            return false;
+
         // Doğrudan ID eşleşmesi yaparak sil
         return enrolledStudents.removeIf(s -> s.getStudentID().equals(student.getStudentID()));
     }
@@ -71,8 +65,10 @@ public class Course implements Serializable {
 
     @Override
     public boolean equals(Object o) {
-        if (this == o) return true;
-        if (o == null || getClass() != o.getClass()) return false;
+        if (this == o)
+            return true;
+        if (o == null || getClass() != o.getClass())
+            return false;
         Course course = (Course) o;
         return Objects.equals(courseCode, course.courseCode);
     }
