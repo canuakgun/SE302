@@ -295,7 +295,7 @@ public class ExamSchedulerApp extends Application {
         Button exportBtn = new Button("📤 Export Schedule");
         Button importScheduleBtn = new Button("📥 Import Schedule");
         Button studentPortalBtn = new Button("👤 Student Portal");
-        Button returnHomeBtn = new Button("🏠 Return Home");
+        Button resetBtn = new Button("🔄 Reset");
         loadBtn.setStyle(buttonStyle);
         generateBtn.setStyle(buttonStyle);
         saveBtn.setStyle(buttonStyle);
@@ -304,14 +304,14 @@ public class ExamSchedulerApp extends Application {
         importScheduleBtn.setStyle(buttonStyle);
         studentPortalBtn.setStyle(
                 "-fx-background-color: #4CAF50; -fx-text-fill: white; -fx-padding: 8px 16px; -fx-font-weight: bold; -fx-cursor: hand;");
-        returnHomeBtn.setStyle(
-                "-fx-background-color: #FF9800; -fx-text-fill: white; -fx-padding: 8px 16px; -fx-font-weight: bold; -fx-cursor: hand;");
+        resetBtn.setStyle(
+                "-fx-background-color: #E53935; -fx-text-fill: white; -fx-padding: 8px 16px; -fx-font-weight: bold; -fx-cursor: hand;");
         toolBar.setStyle(toolBarStyle);
 
         Region spacer = new Region();
         HBox.setHgrow(spacer, Priority.ALWAYS);
         toolBar.getItems().addAll(loadBtn, new Separator(), generateBtn, validateBtn, new Separator(),
-                saveBtn, exportBtn, importScheduleBtn, new Separator(), studentPortalBtn, spacer, returnHomeBtn);
+                saveBtn, exportBtn, importScheduleBtn, new Separator(), studentPortalBtn, spacer, resetBtn);
 
         loadBtn.setOnAction(e -> handleLoad(stage));
         generateBtn.setOnAction(e -> handleGenerateSchedule());
@@ -320,7 +320,7 @@ public class ExamSchedulerApp extends Application {
         exportBtn.setOnAction(e -> handleExport(stage));
         importScheduleBtn.setOnAction(e -> handleImportSchedule(stage));
         studentPortalBtn.setOnAction(e -> showStudentPortal(stage));
-        returnHomeBtn.setOnAction(e -> handleReturnToWelcome(stage));
+        resetBtn.setOnAction(e -> handleReset(stage));
 
         VBox leftPane = createConfigurationPanel(buttonStyle);
         table = createExamTable(stage);
@@ -2252,7 +2252,7 @@ public class ExamSchedulerApp extends Application {
     }
 
     private void loadFilesWithPaths(Stage owner, String studentsPath, String coursesPath,
-                                    String classroomsPath, String attendancePath) {
+            String classroomsPath, String attendancePath) {
         messages.add("📄 Loading individual files...");
 
         try {
@@ -3142,8 +3142,8 @@ public class ExamSchedulerApp extends Application {
 
                         String suffix = (forcedSlot != null || examsToPlace.stream()
                                 .filter(e -> e.getCourse().getCourseCode().equals(courseCode)).count() > 1)
-                                ? " [Part]"
-                                : "";
+                                        ? " [Part]"
+                                        : "";
 
                         messages.add("  ✓ " + courseCode + suffix +
                                 " → Day " + day + ", Slot " + slotNum +
@@ -4866,8 +4866,8 @@ public class ExamSchedulerApp extends Application {
         boolean checkTimeDistribution;
 
         ValidationOptions(boolean studentConflicts, boolean consecutive, boolean roomConflicts,
-                          boolean capacity, boolean studentLoad,
-                          boolean roomUtilization, boolean timeDistribution) {
+                boolean capacity, boolean studentLoad,
+                boolean roomUtilization, boolean timeDistribution) {
             this.checkStudentConflicts = studentConflicts;
             this.checkConsecutive = consecutive;
             this.checkRoomConflicts = roomConflicts;
@@ -6175,7 +6175,70 @@ public class ExamSchedulerApp extends Application {
     }
 
     /**
+     * Handles the reset action - resets the program in place without navigating
+     * away.
+     * Shows a confirmation dialog if there's data to save.
+     */
+    private void handleReset(Stage stage) {
+        // Check if there's any data that could be saved
+        boolean hasData = dataManager.isDataLoaded() &&
+                (dataManager.getSchedule() != null || !exams.isEmpty());
+
+        if (hasData) {
+            // Create confirmation dialog with three options
+            Alert confirmDialog = new Alert(Alert.AlertType.CONFIRMATION);
+            confirmDialog.setTitle("Reset Program");
+            confirmDialog.setHeaderText("Program will be reset");
+            confirmDialog.setContentText(
+                    "All current data will be cleared. Do you want to save your schedule before resetting?");
+
+            // Custom buttons
+            ButtonType saveAndReset = new ButtonType("💾 Save and Reset");
+            ButtonType resetWithoutSave = new ButtonType("🔄 Reset without Saving");
+            ButtonType cancel = new ButtonType("Cancel", ButtonType.CANCEL.getButtonData());
+
+            confirmDialog.getButtonTypes().setAll(saveAndReset, resetWithoutSave, cancel);
+            ThemeManager.getInstance().styleAlert(confirmDialog);
+
+            Optional<ButtonType> result = confirmDialog.showAndWait();
+
+            if (result.isPresent()) {
+                if (result.get() == saveAndReset) {
+                    // Save first, then reset
+                    handleSave(stage);
+                    // Clear data but stay on main screen
+                    clearCurrentSession();
+                    messages.add("✓ The system is reset.");
+                    messages.add("✓ System is ready. Click 'Load Data' to import CSV files.");
+                } else if (result.get() == resetWithoutSave) {
+                    // Just reset without saving
+                    clearCurrentSession();
+                    messages.add("✓ The system is reset.");
+                    messages.add("✓ System is ready. Click 'Load Data' to import CSV files.");
+                }
+                // If cancel, do nothing
+            }
+        } else {
+            // No data, just confirm reset
+            Alert confirmDialog = new Alert(Alert.AlertType.CONFIRMATION);
+            confirmDialog.setTitle("Reset Program");
+            confirmDialog.setHeaderText("Reset Program?");
+            confirmDialog.setContentText("Are you sure you want to reset the program?");
+            ThemeManager.getInstance().styleAlert(confirmDialog);
+
+            Optional<ButtonType> result = confirmDialog.showAndWait();
+            if (result.isPresent() && result.get() == ButtonType.OK) {
+                clearCurrentSession();
+                messages.add("✓ The system is reset.");
+                messages.add("✓ System is ready. Click 'Load Data' to import CSV files.");
+            }
+        }
+    }
+
+    /**
      * Clears the current session data to prepare for a fresh start.
+     * Note: Time slots (tsView) are preserved to maintain user's schedule
+     * configuration.
      */
     private void clearCurrentSession() {
         exams.clear();
@@ -6187,9 +6250,7 @@ public class ExamSchedulerApp extends Application {
         if (crView != null) {
             crView.getItems().clear();
         }
-        if (tsView != null) {
-            tsView.getItems().clear();
-        }
+        // Note: tsView (time slots) intentionally not cleared to preserve configuration
         // Reset DataManager
         dataManager.clearAllData();
     }
