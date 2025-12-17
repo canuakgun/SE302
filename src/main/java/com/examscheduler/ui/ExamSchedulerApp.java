@@ -216,13 +216,6 @@ public class ExamSchedulerApp extends Application {
         Label title = new Label("Global Preferences");
         title.setStyle("-fx-font-size: 20px; -fx-font-weight: bold; -fx-text-fill: #0078D4;");
 
-        // --- 1. Scheduling Constraint Setting Example ---
-        Spinner<Integer> maxExamsSpinner = new Spinner<>(1, 5, 2);
-        maxExamsSpinner.setEditable(true);
-        maxExamsSpinner.setPrefWidth(80);
-        HBox maxExamsBox = new HBox(10, new Label("Max Exams Per Day (Student):"), maxExamsSpinner);
-        maxExamsBox.setAlignment(Pos.CENTER_LEFT);
-
         // --- 2. Dark Mode Toggle ---
         CheckBox darkModeCheck = new CheckBox("🌙 Enable Dark Mode");
         darkModeCheck.setSelected(ThemeManager.getInstance().isDarkMode());
@@ -250,7 +243,7 @@ public class ExamSchedulerApp extends Application {
             showInfo("Settings Applied", "Settings saved successfully!" +
                     (darkModeCheck.isSelected() ? "\n\n🌙 Dark mode is now enabled."
                             : "\n\n☀ Light mode is now enabled."));
-            // Apply logic here (e.g., save maxExamsSpinner value to DataManager)
+            // Apply logic here
             showInfo("Settings Applied",
                     "Settings saved successfully! Changes will take effect on next generation/restart.");
             settingsStage.close();
@@ -258,9 +251,7 @@ public class ExamSchedulerApp extends Application {
 
         layout.getChildren().addAll(
                 title,
-                new Separator(),
-                new Label("Scheduling Constraints"),
-                maxExamsBox,
+
                 new Separator(),
                 new Label("Appearance & Automation"),
                 themeBox,
@@ -2252,7 +2243,7 @@ public class ExamSchedulerApp extends Application {
     }
 
     private void loadFilesWithPaths(Stage owner, String studentsPath, String coursesPath,
-                                    String classroomsPath, String attendancePath) {
+            String classroomsPath, String attendancePath) {
         messages.add("📄 Loading individual files...");
 
         try {
@@ -3142,8 +3133,8 @@ public class ExamSchedulerApp extends Application {
 
                         String suffix = (forcedSlot != null || examsToPlace.stream()
                                 .filter(e -> e.getCourse().getCourseCode().equals(courseCode)).count() > 1)
-                                ? " [Part]"
-                                : "";
+                                        ? " [Part]"
+                                        : "";
 
                         messages.add("  ✓ " + courseCode + suffix +
                                 " → Day " + day + ", Slot " + slotNum +
@@ -4866,8 +4857,8 @@ public class ExamSchedulerApp extends Application {
         boolean checkTimeDistribution;
 
         ValidationOptions(boolean studentConflicts, boolean consecutive, boolean roomConflicts,
-                          boolean capacity, boolean studentLoad,
-                          boolean roomUtilization, boolean timeDistribution) {
+                boolean capacity, boolean studentLoad,
+                boolean roomUtilization, boolean timeDistribution) {
             this.checkStudentConflicts = studentConflicts;
             this.checkConsecutive = consecutive;
             this.checkRoomConflicts = roomConflicts;
