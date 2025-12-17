@@ -1306,7 +1306,6 @@ public class ExamSchedulerApp extends Application {
                     pw.println("DTEND:" + dateStr + "T" + endTime);
                     pw.println("SUMMARY:Exam: " + exam.getCourse().getCourseCode());
                     pw.println("DESCRIPTION:" + exam.getCourse().getCourseName() +
-                            "\\nInstructor: " + exam.getCourse().getInstructor() +
                             "\\nRoom: " + exam.getClassroom().getClassroomID());
                     pw.println("LOCATION:Room " + exam.getClassroom().getClassroomID());
                     pw.println("CATEGORIES:EXAM");
@@ -1380,7 +1379,7 @@ public class ExamSchedulerApp extends Application {
                     pw.println("⏰ TIME:      " + timeSlot);
                     pw.println("📚 COURSE:    " + exam.getCourse().getCourseCode() + " - " +
                             exam.getCourse().getCourseName());
-                    pw.println("👨‍🏫 INSTRUCTOR: " + exam.getCourse().getInstructor());
+
                     pw.println("📍 ROOM:      " + exam.getClassroom().getClassroomID() +
                             " (Capacity: " + exam.getClassroom().getCapacity() + ")");
                     pw.println("👥 STUDENTS:  " + exam.getStudentCount() + " enrolled");
@@ -3047,7 +3046,6 @@ public class ExamSchedulerApp extends Application {
         // Takip Map'leri
         Map<Student, Set<TimeSlot>> studentScheduledSlots = new HashMap<>();
         Map<TimeSlot, Set<String>> roomOccupancy = new HashMap<>();
-        Map<TimeSlot, Map<String, String>> instructorOccupancy = new HashMap<>();
 
         // DERS İÇİN KİLİTLENMİŞ ZAMAN (Aynı dersin parçaları aynı saate gelsin diye)
         Map<String, TimeSlot> courseLockedSlots = new HashMap<>();
@@ -3060,7 +3058,6 @@ public class ExamSchedulerApp extends Application {
             boolean placed = false;
             List<Student> studentsOfCourse = exam.getEnrolledStudents();
             int enrolledCount = exam.getStudentCount();
-            String instructor = exam.getCourse().getInstructor();
             String courseCode = exam.getCourse().getCourseCode();
 
             // Eğer bu dersin bir parçası daha önce yerleştiyse, ZORUNLU olarak o saati al
@@ -3114,18 +3111,6 @@ public class ExamSchedulerApp extends Application {
                     if (studentConflict)
                         continue;
 
-                    // 2. EĞİTMEN KONTROLÜ (Aynı dersin parçaları için izin ver)
-                    if (instructor != null && !instructor.isEmpty()) {
-                        Map<String, String> slotInstructors = instructorOccupancy.getOrDefault(currentSlot,
-                                new HashMap<>());
-                        if (slotInstructors.containsKey(instructor)) {
-                            String existingCourse = slotInstructors.get(instructor);
-                            if (!existingCourse.equals(courseCode)) {
-                                continue; // Farklı ders ise çakışma var
-                            }
-                        }
-                    }
-
                     // 3. ODA SEÇİMİ
                     for (Classroom room : availableClassrooms) {
                         if (!room.canAccommodate(enrolledCount))
@@ -3142,11 +3127,6 @@ public class ExamSchedulerApp extends Application {
 
                         // Kayıtları güncelle
                         roomOccupancy.get(currentSlot).add(room.getClassroomID());
-
-                        if (instructor != null && !instructor.isEmpty()) {
-                            instructorOccupancy.computeIfAbsent(currentSlot, k -> new HashMap<>())
-                                    .put(instructor, courseCode);
-                        }
 
                         for (Student student : studentsOfCourse) {
                             studentScheduledSlots.computeIfAbsent(student, k -> new HashSet<>()).add(currentSlot);
@@ -3318,7 +3298,7 @@ public class ExamSchedulerApp extends Application {
             String code = codeField.getText().trim();
             if (!code.isEmpty()) {
                 // Yeni eklenen derslerde sorun yok, doğrudan ekle
-                Course c = new Course(code, nameField.getText(), "", 1);
+                Course c = new Course(code, nameField.getText(), 1);
                 dataManager.addCourse(c);
                 listView.getItems().add(code);
                 messages.add("Course added: " + code);
@@ -3662,8 +3642,9 @@ public class ExamSchedulerApp extends Application {
 
                 // 3. Check Student Conflicts
                 List<Student> students = e.getExam().getEnrolledStudents();
-                int studentConflictCount = 0;
+
                 List<String> overloadedStudents = new ArrayList<>();
+                List<String> conflictingStudents = new ArrayList<>();
 
                 for (Student s : students) {
                     long examsAtSameTime = dataManager.getSchedule().getExams().stream()
@@ -3675,7 +3656,8 @@ public class ExamSchedulerApp extends Application {
                             .count();
 
                     if (examsAtSameTime > 0) {
-                        studentConflictCount++;
+
+                        conflictingStudents.add(s.getStudentID());
                     }
 
                     long examsOnSameDay = dataManager.getSchedule().getExams().stream()
@@ -3692,9 +3674,14 @@ public class ExamSchedulerApp extends Application {
                     }
                 }
 
-                if (studentConflictCount > 0) {
-                    errors.add("Student Time Conflict: " + studentConflictCount
-                            + " students are already taking an exam at this time.");
+                if (!conflictingStudents.isEmpty()) {
+                    String affectedIds = String.join(", ", conflictingStudents);
+                    if (conflictingStudents.size() > 5) {
+                        affectedIds = conflictingStudents.subList(0, 5).stream().collect(Collectors.joining(", "))
+                                + ", ... (+" + (conflictingStudents.size() - 5) + " more)";
+                    }
+                    errors.add("Student Time Conflict: " + affectedIds
+                            + " are already taking an exam at this time.");
                 }
 
                 if (!overloadedStudents.isEmpty()) {
@@ -3902,7 +3889,7 @@ public class ExamSchedulerApp extends Application {
                     "✓ Lightweight and fast\n" +
                     "✓ Compatible with older versions";
         } else if (format.contains("Detailed CSV")) {
-            return "✓ Complete information including course names, instructors, dates\n" +
+            return "✓ Complete information including course names, dates\n" +
                     "✓ Better for sharing and documentation\n" +
                     "✓ Excel/Google Sheets friendly\n" +
                     "✓ Includes capacity utilization\n" +
@@ -3976,7 +3963,7 @@ public class ExamSchedulerApp extends Application {
                 pw.write('\ufeff');
 
                 pw.println(
-                        "Exam ID,Course Code,Course Name,Instructor,Day,Date,Day of Week,Time Slot,Room ID,Room Capacity,Enrolled Students,Utilization %,Status");
+                        "Exam ID,Course Code,Course Name,Day,Date,Day of Week,Time Slot,Room ID,Room Capacity,Enrolled Students,Utilization %,Status");
 
                 LocalDate startDate = examStartDatePicker != null && examStartDatePicker.getValue() != null
                         ? examStartDatePicker.getValue()
@@ -4001,11 +3988,10 @@ public class ExamSchedulerApp extends Application {
                         double utilization = (enrolled * 100.0) / capacity;
                         String status = utilization > 100 ? "OVERCAPACITY" : (utilization > 90 ? "FULL" : "OK");
 
-                        pw.printf("%s,%s,\"%s\",\"%s\",%d,%s,%s,\"%s\",%s,%d,%d,%.1f%%,%s%n",
+                        pw.printf("%s,%s,\"%s\",%d,%s,%s,\"%s\",%s,%d,%d,%.1f%%,%s%n",
                                 "EX" + String.format("%03d", Math.abs(exam.hashCode() % 1000)),
                                 exam.getCourse().getCourseCode(),
                                 exam.getCourse().getCourseName(),
-                                exam.getCourse().getInstructor(),
                                 exam.getTimeSlot().getDay(),
                                 examDate.toString(),
                                 dayOfWeek,
@@ -4092,12 +4078,11 @@ public class ExamSchedulerApp extends Application {
 
                 File coursesFile = new File(backupDir, "courses.csv");
                 try (PrintWriter pw = new PrintWriter(coursesFile, "UTF-8")) {
-                    pw.println("CourseCode,CourseName,Instructor");
+                    pw.println("CourseCode,CourseName");
                     for (Course c : dataManager.getCourses()) {
-                        pw.printf("%s,%s,%s%n",
+                        pw.printf("%s,%s%n",
                                 c.getCourseCode(),
-                                c.getCourseName(),
-                                c.getInstructor());
+                                c.getCourseName());
                     }
                     savedFiles++;
                     report.append("✓ courses.csv - ").append(dataManager.getCourses().size()).append(" courses\n");
@@ -4211,6 +4196,7 @@ public class ExamSchedulerApp extends Application {
                 messages.add("❌ Backup failed: " + e.getMessage());
             }
         }
+
     }
 
     private void handleExport(Stage owner) {
@@ -4311,7 +4297,7 @@ public class ExamSchedulerApp extends Application {
     private String getExportDescription(String format) {
         if (format.contains("Excel-Compatible")) {
             return "Exports a detailed CSV file with all exam information including:\n" +
-                    "• Course details and instructors\n" +
+                    "• Course details\n" +
                     "• Date, time, and room assignments\n" +
                     "• Student counts and capacity utilization\n" +
                     "• Directly importable to Excel/Google Sheets";
@@ -4364,10 +4350,10 @@ public class ExamSchedulerApp extends Application {
         if (file != null) {
             try (PrintWriter pw = new PrintWriter(file, "UTF-8")) {
 
-                pw.write('\ufeff');
+                pw.write('\ufeff'); // BOM for Excel
 
                 pw.println(
-                        "Exam ID,Course Code,Course Name,Instructor,Day,Date,Time Slot,Room ID,Room Capacity,Enrolled Students,Capacity Utilization %");
+                        "Exam ID,Course Code,Course Name,Day,Date,Time Slot,Room ID,Room Capacity,Enrolled Students,Capacity Utilization %");
 
                 LocalDate startDate = examStartDatePicker != null && examStartDatePicker.getValue() != null
                         ? examStartDatePicker.getValue()
@@ -4389,11 +4375,10 @@ public class ExamSchedulerApp extends Application {
                         int capacity = exam.getClassroom().getCapacity();
                         double utilization = (enrolled * 100.0) / capacity;
 
-                        pw.printf("%s,%s,%s,%s,%d,%s,%s,%s,%d,%d,%.1f%%%n",
+                        pw.printf("%s,%s,%s,%d,%s,%s,%s,%d,%d,%.1f%%%n",
                                 "EX" + String.format("%03d", exam.hashCode() % 1000),
                                 exam.getCourse().getCourseCode(),
                                 "\"" + exam.getCourse().getCourseName() + "\"",
-                                "\"" + exam.getCourse().getInstructor() + "\"",
                                 exam.getTimeSlot().getDay(),
                                 examDate.toString(),
                                 "\"" + timeSlot + "\"",
@@ -4403,9 +4388,9 @@ public class ExamSchedulerApp extends Application {
                                 utilization);
                     }
                 }
-
                 showInfo("Export Success", "Detailed CSV exported to:\n" + file.getName());
                 messages.add("✓ Detailed CSV exported successfully");
+
             } catch (Exception e) {
                 showError("Export Failed", e.getMessage());
             }
@@ -4457,8 +4442,7 @@ public class ExamSchedulerApp extends Application {
                         pw.println("DTSTART:" + dateStr + "T" + startTime + "Z");
                         pw.println("DTEND:" + dateStr + "T" + endTime + "Z");
                         pw.println("SUMMARY:Exam: " + exam.getCourse().getCourseCode());
-                        pw.println("DESCRIPTION:" + exam.getCourse().getCourseName() + " - "
-                                + exam.getCourse().getInstructor());
+                        pw.println("DESCRIPTION:" + exam.getCourse().getCourseName());
                         pw.println("LOCATION:Room " + exam.getClassroom().getClassroomID());
                         pw.println("STATUS:CONFIRMED");
                         pw.println("BEGIN:VALARM");
@@ -4521,7 +4505,7 @@ public class ExamSchedulerApp extends Application {
                                         pw.println("⏰ " + timeSlot);
                                         pw.println("📚 " + exam.getCourse().getCourseCode() + " - "
                                                 + exam.getCourse().getCourseName());
-                                        pw.println("👨‍🏫 " + exam.getCourse().getInstructor());
+
                                         pw.println("📍 Room " + exam.getClassroom().getClassroomID());
                                         pw.println("----------------------------------------------\n");
                                     });
@@ -4717,7 +4701,7 @@ public class ExamSchedulerApp extends Application {
                             exam.getCourse().getCourseName(),
                             exam.getClassroom().getClassroomID(),
                             exam.getStudentCount());
-                    pw.println("Instructor: " + exam.getCourse().getInstructor());
+
                 }
 
                 pw.println("\n" + "=".repeat(60));
@@ -4766,10 +4750,6 @@ public class ExamSchedulerApp extends Application {
         checkRoomConflicts.setSelected(true);
         checkRoomConflicts.setStyle("-fx-font-size: 13px;");
 
-        CheckBox checkInstructorConflicts = new CheckBox("Instructor Conflicts");
-        checkInstructorConflicts.setSelected(true);
-        checkInstructorConflicts.setStyle("-fx-font-size: 13px;");
-
         CheckBox checkCapacity = new CheckBox("Room Capacity Violations");
         checkCapacity.setSelected(true);
         checkCapacity.setStyle("-fx-font-size: 13px;");
@@ -4793,7 +4773,7 @@ public class ExamSchedulerApp extends Application {
                 criticalLabel,
                 checkStudentConflicts,
                 checkRoomConflicts,
-                checkInstructorConflicts,
+
                 checkCapacity);
 
         VBox warningChecks = new VBox(5);
@@ -4829,7 +4809,6 @@ public class ExamSchedulerApp extends Application {
                     checkStudentConflicts.isSelected(),
                     checkConsecutive.isSelected(),
                     checkRoomConflicts.isSelected(),
-                    checkInstructorConflicts.isSelected(),
                     checkCapacity.isSelected(),
                     checkStudentLoad.isSelected(),
                     checkRoomUtilization.isSelected(),
@@ -4839,7 +4818,7 @@ public class ExamSchedulerApp extends Application {
 
         quickValidateBtn.setOnAction(e -> {
             validationDialog.close();
-            ValidationOptions options = new ValidationOptions(true, false, true, true, true, false, false, false);
+            ValidationOptions options = new ValidationOptions(true, false, true, true, false, false, false);
             performValidation(options);
         });
 
@@ -4881,19 +4860,17 @@ public class ExamSchedulerApp extends Application {
         boolean checkStudentConflicts;
         boolean checkConsecutive;
         boolean checkRoomConflicts;
-        boolean checkInstructorConflicts;
         boolean checkCapacity;
         boolean checkStudentLoad;
         boolean checkRoomUtilization;
         boolean checkTimeDistribution;
 
         ValidationOptions(boolean studentConflicts, boolean consecutive, boolean roomConflicts,
-                          boolean instructorConflicts, boolean capacity, boolean studentLoad,
+                          boolean capacity, boolean studentLoad,
                           boolean roomUtilization, boolean timeDistribution) {
             this.checkStudentConflicts = studentConflicts;
             this.checkConsecutive = consecutive;
             this.checkRoomConflicts = roomConflicts;
-            this.checkInstructorConflicts = instructorConflicts;
             this.checkCapacity = capacity;
             this.checkStudentLoad = studentLoad;
             this.checkRoomUtilization = roomUtilization;
@@ -4916,12 +4893,9 @@ public class ExamSchedulerApp extends Application {
 
         Map<Student, Set<TimeSlot>> studentScheduledSlots = new HashMap<>();
         Map<TimeSlot, Set<String>> roomOccupancy = new HashMap<>();
-        Map<TimeSlot, Set<String>> instructorOccupancy = new HashMap<>();
-
         for (Exam exam : placedExams) {
             TimeSlot currentSlot = exam.getTimeSlot();
             String roomID = exam.getClassroom().getClassroomID();
-            String instructor = exam.getCourse().getInstructor();
             String courseCode = exam.getCourse().getCourseCode();
             List<Student> students = exam.getEnrolledStudents();
 
@@ -4931,15 +4905,6 @@ public class ExamSchedulerApp extends Application {
                             currentSlot.getDay() + ", Slot " + currentSlot.getSlotNumber() + " in Room " + roomID);
                 }
                 roomOccupancy.computeIfAbsent(currentSlot, k -> new HashSet<>()).add(roomID);
-            }
-
-            if (options.checkInstructorConflicts && instructor != null && !instructor.isEmpty()) {
-                if (instructorOccupancy.getOrDefault(currentSlot, new HashSet<>()).contains(instructor)) {
-                    result.addCritical("Instructor Conflict: " + instructor + " has multiple exams at Day " +
-                            currentSlot.getDay() + ", Slot " + currentSlot.getSlotNumber() + " (Course: " + courseCode
-                            + ")");
-                }
-                instructorOccupancy.computeIfAbsent(currentSlot, k -> new HashSet<>()).add(instructor);
             }
 
             if (options.checkCapacity) {
@@ -5288,12 +5253,10 @@ public class ExamSchedulerApp extends Application {
 
         Map<Student, Set<TimeSlot>> studentScheduledSlots = new HashMap<>();
         Map<TimeSlot, Set<String>> roomOccupancy = new HashMap<>();
-        Map<TimeSlot, Set<String>> instructorOccupancy = new HashMap<>();
 
         for (Exam exam : placedExams) {
             TimeSlot currentSlot = exam.getTimeSlot();
             String roomID = exam.getClassroom().getClassroomID();
-            String instructor = exam.getCourse().getInstructor();
             String courseCode = exam.getCourse().getCourseCode();
             List<Student> students = exam.getEnrolledStudents();
 
@@ -5302,14 +5265,6 @@ public class ExamSchedulerApp extends Application {
                         currentSlot.getDay() + ", Slot " + currentSlot.getSlotNumber() + " in Room " + roomID);
             }
             roomOccupancy.computeIfAbsent(currentSlot, k -> new HashSet<>()).add(roomID);
-
-            if (instructor != null && !instructor.isEmpty()) {
-                if (instructorOccupancy.getOrDefault(currentSlot, new HashSet<>()).contains(instructor)) {
-                    result.addCritical("Instructor Conflict: " + instructor + " at Day " +
-                            currentSlot.getDay() + ", Slot " + currentSlot.getSlotNumber());
-                }
-                instructorOccupancy.computeIfAbsent(currentSlot, k -> new HashSet<>()).add(instructor);
-            }
 
             int enrolled = exam.getStudentCount();
             int capacity = exam.getClassroom().getCapacity();
@@ -5554,7 +5509,7 @@ public class ExamSchedulerApp extends Application {
                 "✓ Generate Optimal Schedules\n" +
                 "✓ Student Conflict Prevention\n" +
                 "✓ Room Capacity Management\n" +
-                "✓ Instructor Scheduling\n" +
+
                 "✓ Student Portal Access\n" +
                 "✓ Export Multiple Formats\n" +
                 "✓ Detailed Validation Reports\n\n" +
@@ -5586,7 +5541,7 @@ public class ExamSchedulerApp extends Application {
                 "1. Launch the application\n" +
                 "2. Prepare your CSV files:\n" +
                 "   - students.csv: StudentID,Name\n" +
-                "   - courses.csv: CourseCode,CourseName,Instructor,MaxCapacity\n" +
+                "   - courses.csv: CourseCode,CourseName,MaxCapacity\n" +
                 "   - classrooms.csv: ClassroomID,Capacity\n" +
                 "   - attendance.csv: CourseCode,StudentID (optional)\n" +
                 "3. Click 'Load Data' and select folder containing CSV files\n\n" +
@@ -5646,7 +5601,7 @@ public class ExamSchedulerApp extends Application {
                 "• Greedy algorithm with randomization\n" +
                 "• Student conflict prevention\n" +
                 "• Room capacity optimization\n" +
-                "• Instructor scheduling\n" +
+
                 "• Consecutive exam avoidance\n\n" +
                 "GENERATION STEPS:\n" +
                 "1. Sort courses by enrollment (largest first)\n" +
@@ -5654,7 +5609,7 @@ public class ExamSchedulerApp extends Application {
                 "3. Check all constraints:\n" +
                 "   - Student availability\n" +
                 "   - Room capacity\n" +
-                "   - Instructor schedule\n" +
+
                 "   - No consecutive exams\n" +
                 "4. Assign or mark as unplaced\n\n" +
                 "POST-GENERATION:\n" +
@@ -5689,7 +5644,7 @@ public class ExamSchedulerApp extends Application {
                 "CHECKED CONSTRAINTS:\n" +
                 "1. Student Conflicts (Critical)\n" +
                 "2. Room Double-booking (Critical)\n" +
-                "3. Instructor Conflicts (Critical)\n" +
+
                 "4. Consecutive Exams (Warning)\n" +
                 "5. Unplaced Courses (Critical)\n\n" +
                 "CONFLICT REPORT CONTENTS:\n" +
@@ -5743,7 +5698,7 @@ public class ExamSchedulerApp extends Application {
                 "• Real-time validation updates\n\n" +
                 "CUSTOM CONSTRAINTS:\n" +
                 "• Adjust consecutive exam policy\n" +
-                "• Set instructor preferences\n" +
+
                 "• Define room preferences\n\n" +
                 "STATISTICAL ANALYSIS:\n" +
                 "• Placement rate calculation\n" +
@@ -5775,7 +5730,7 @@ public class ExamSchedulerApp extends Application {
                 "A1: Exam Scheduler is designed to automatically generate optimal \n" +
                 "    exam schedules for educational institutions, considering \n" +
                 "    multiple constraints like room capacity, student availability, \n" +
-                "    and instructor schedules.\n\n" +
+                "    schedules.\n\n" +
                 "Q2: Is there a limit to the number of students or courses?\n" +
                 "A2: Theoretically no, but performance is optimized for:\n" +
                 "    • Up to 10,000 students\n" +
@@ -5795,7 +5750,7 @@ public class ExamSchedulerApp extends Application {
                 "S001,John Doe,john@edu.edu\n" +
                 "S002,Jane Smith,jane@edu.edu\n\n" +
                 "courses.csv:\n" +
-                "CourseCode,CourseName,Instructor,MaxCapacity\n" +
+                "CourseCode,CourseName,MaxCapacity\n" +
                 "CS101,Intro to CS,Dr. Smith,100\n" +
                 "MATH201,Calculus I,Dr. Johnson,80\n\n" +
                 "classrooms.csv:\n" +
@@ -5835,7 +5790,7 @@ public class ExamSchedulerApp extends Application {
                 "     1. Not enough exam days\n" +
                 "     2. Classroom capacity too small\n" +
                 "     3. Time slot conflicts with student schedules\n" +
-                "     4. Instructor unavailable\n" +
+
                 "     \n" +
                 "     Solutions:\n" +
                 "     • Increase exam period\n" +
@@ -5846,7 +5801,7 @@ public class ExamSchedulerApp extends Application {
                 "A11: By default:\n" +
                 "     1. Courses with most students first\n" +
                 "     2. Courses with specialized room requirements\n" +
-                "     3. Instructor availability\n" +
+
                 "     4. Time preferences\n\n" +
                 "Q12: Can I manually override the schedule?\n" +
                 "A12: Yes! After generation:\n" +
@@ -5876,7 +5831,7 @@ public class ExamSchedulerApp extends Application {
                 "A16: Critical conflicts prevent scheduling:\n" +
                 "     • Student double-booked in same slot\n" +
                 "     • Room double-booked\n" +
-                "     • Instructor teaching two courses simultaneously\n" +
+
                 "     • Course cannot be placed at all\n\n" +
                 "Q17: What's considered a \"warning\"?\n" +
                 "A17: Warnings don't prevent scheduling but are suboptimal:\n" +
@@ -5981,7 +5936,7 @@ public class ExamSchedulerApp extends Application {
                 "   \n" +
                 "2. courses.csv\n" +
                 "   -------------\n" +
-                "   CourseCode,CourseName,Instructor,Capacity\n" +
+                "   CourseCode,CourseName,Capacity\n" +
                 "   CS101,Computer Science,Dr. Adams,50\n" +
                 "   MATH201,Calculus,Dr. Brown,40\n" +
                 "   \n" +
