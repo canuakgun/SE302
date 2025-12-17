@@ -56,17 +56,11 @@ public class CSVParser {
                 line = line.trim();
                 if (line.isEmpty())
                     continue;
-                if (line.startsWith("[")) continue;
-                if (Character.isDigit(line.charAt(0))) continue;
                 String[] parts = line.split(",");
-                if (parts.length >= 2) {
+                if (parts.length >= 3) {
                     courses.add(new Course(parts[0].trim(), parts[1].trim(), 1));
-                } else if (parts.length == 1) {
-                    String potentialCode = parts[0].trim();
-
-                    if (potentialCode.length() < 10 && !Character.isDigit(potentialCode.charAt(0))) {
-                        courses.add(new Course(potentialCode));
-                    }
+                } else if (parts.length >= 1) {
+                    courses.add(new Course(parts[0].trim()));
                 }
             }
         } catch (IOException e) {
