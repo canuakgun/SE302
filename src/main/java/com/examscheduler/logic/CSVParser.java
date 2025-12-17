@@ -58,7 +58,7 @@ public class CSVParser {
                     continue;
                 String[] parts = line.split(",");
                 if (parts.length >= 3) {
-                    courses.add(new Course(parts[0].trim(), parts[1].trim(), parts[2].trim(), 1));
+                    courses.add(new Course(parts[0].trim(), parts[1].trim(), 1));
                 } else if (parts.length >= 1) {
                     courses.add(new Course(parts[0].trim()));
                 }
@@ -275,10 +275,10 @@ public class CSVParser {
         if (file == null)
             return;
         try (BufferedWriter writer = new BufferedWriter(new FileWriter(file))) {
-            writer.write("CourseCode,CourseName,Instructor");
+            writer.write("CourseCode,CourseName");
             writer.newLine();
             for (Course c : courses) {
-                String line = String.format("%s,%s,%s", c.getCourseCode(), c.getCourseName(), c.getInstructor());
+                String line = String.format("%s,%s", c.getCourseCode(), c.getCourseName());
                 writer.write(line);
                 writer.newLine();
             }
@@ -303,18 +303,19 @@ public class CSVParser {
     }
 
     public static void updateAttendanceFile(File file, List<Course> courses) {
-        if (file == null) return;
-        
+        if (file == null)
+            return;
+
         try (BufferedWriter writer = new BufferedWriter(new FileWriter(file))) {
             for (Course course : courses) {
                 writer.write(course.getCourseCode());
                 writer.newLine();
-                
+
                 List<String> studentIds = new ArrayList<>();
                 for (Student s : course.getEnrolledStudents()) {
                     studentIds.add("'" + s.getStudentID() + "'"); // Tek tırnak ekle
                 }
-                
+
                 writer.write("[" + String.join(", ", studentIds) + "]");
                 writer.newLine();
                 // Bloklar arası boşluk (Okunabilirlik için)
