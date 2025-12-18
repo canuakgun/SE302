@@ -65,6 +65,7 @@ import javafx.scene.control.ProgressBar;
 import javafx.scene.control.ScrollPane;
 import javafx.scene.control.Separator;
 import javafx.scene.control.SeparatorMenuItem;
+import javafx.scene.control.SelectionMode;
 import javafx.scene.control.Spinner;
 
 import javafx.scene.control.TableCell;
@@ -1540,10 +1541,17 @@ public class ExamSchedulerApp extends Application {
     private List<Exam> getStudentExams(Student student) {
         List<Exam> studentExams = new ArrayList<>();
 
-        if (dataManager.getSchedule() != null) {
+        if (dataManager.getSchedule() != null && student != null) {
+            String studentId = student.getStudentID();
             for (Exam exam : dataManager.getSchedule().getExams()) {
-                if (exam.isScheduled() && exam.getEnrolledStudents().contains(student)) {
-                    studentExams.add(exam);
+                if (exam.isScheduled()) {
+                    // Use studentID comparison instead of object reference
+                    // This ensures newly added students are found
+                    boolean isEnrolled = exam.getEnrolledStudents().stream()
+                            .anyMatch(s -> s.getStudentID().equals(studentId));
+                    if (isEnrolled) {
+                        studentExams.add(exam);
+                    }
                 }
             }
         }
@@ -3594,15 +3602,19 @@ public class ExamSchedulerApp extends Application {
         slot.setValue(e.getTimeSlot());
 
         TextField room = new TextField(e.getRoomId());
-        Spinner<Integer> enroll = new Spinner<>(0, 1000, e.getEnrolled());
-        enroll.setEditable(true);
+
+        // Enrolled count as label (editable via Manage Students button)
+        Label enrolledLabel = new Label(String.valueOf(e.getEnrolled()));
+        enrolledLabel.setStyle("-fx-font-weight: bold; -fx-font-size: 14px;");
 
         Button save = new Button("💾 Save");
         save.setOnAction(ev -> {
             int newDay = day.getValue();
             int newSlotIdx = slot.getSelectionModel().getSelectedIndex() + 1;
             String newRoomId = room.getText();
-            int newEnrollment = enroll.getValue();
+            // Enrollment is now managed via Manage Students button, get current count from
+            // course
+            int newEnrollment = e.getExam() != null ? e.getExam().getCourse().getStudentCount() : e.getEnrolled();
 
             List<String> errors = new ArrayList<>();
             List<String> warnings = new ArrayList<>();
@@ -3614,8 +3626,9 @@ public class ExamSchedulerApp extends Application {
                 if (targetRoom == null) {
                     errors.add("Invalid Room ID: " + newRoomId);
                 } else if (newEnrollment > targetRoom.getCapacity()) {
-                    warnings.add(
-                            "Class Capacity Exceeded: " + newEnrollment + " students > " + targetRoom.getCapacity());
+                    errors.add(
+                            "Classroom Capacity Exceeded: " + newEnrollment + " students > " + targetRoom.getCapacity()
+                                    + " capacity. Change room or reduce enrollment.");
                 }
 
                 // 2. Check Room Double Booking
@@ -3716,7 +3729,11 @@ public class ExamSchedulerApp extends Application {
             e.setDay(day.getValue());
             e.setTimeSlot(slot.getValue());
             e.setRoomId(room.getText());
-            e.setEnrolled(enroll.getValue());
+            // Enrollment is now managed via Manage Students, use current course student
+            // count
+            if (e.getExam() != null) {
+                e.setEnrolled(e.getExam().getCourse().getStudentCount());
+            }
 
             // Update Real Exam Model (Logic)
             if (e.getExam() != null) {
@@ -3730,7 +3747,7 @@ public class ExamSchedulerApp extends Application {
                     e.getExam().setClassroom(newRoom);
                 }
 
-                e.getExam().setStudentCount(enroll.getValue());
+                // Student count is now managed via Manage Students, no need to set manually
             }
 
             if (dataManager.getSchedule() != null) {
@@ -3740,6 +3757,13 @@ public class ExamSchedulerApp extends Application {
             table.refresh();
             messages.add("✓ Exam " + e.getId() + " updated");
             d.close();
+        });
+
+        // Manage Students button
+        Button manageStudentsBtn = new Button("👥 Manage Students");
+        manageStudentsBtn.setStyle("-fx-background-color: #2196F3; -fx-text-fill: white;");
+        manageStudentsBtn.setOnAction(ev -> {
+            showManageExamStudents(d, e, enrolledLabel);
         });
 
         GridPane grid = new GridPane();
@@ -3755,13 +3779,262 @@ public class ExamSchedulerApp extends Application {
         grid.add(new Label("Room ID:"), 0, 3);
         grid.add(room, 1, 3);
         grid.add(new Label("Enrolled:"), 0, 4);
-        grid.add(enroll, 1, 4);
+        HBox enrollBox = new HBox(10, enrolledLabel, manageStudentsBtn);
+        enrollBox.setAlignment(Pos.CENTER_LEFT);
+        grid.add(enrollBox, 1, 4);
         grid.add(save, 1, 5);
 
-        Scene dialogScene = new Scene(grid, 350, 350);
+        Scene dialogScene = new Scene(grid, 450, 350);
         ThemeManager.getInstance().registerScene(dialogScene);
         d.setScene(dialogScene);
         d.showAndWait();
+    }
+
+    /**
+     * Shows a dialog to manage students enrolled in a specific exam.
+     * Allows adding students (not in course) and removing students (already
+     * enrolled).
+     */
+    private void showManageExamStudents(Stage owner, ExamEntry examEntry, Label enrolledLabel) {
+        if (examEntry.getExam() == null || examEntry.getExam().getCourse() == null) {
+            showError("Error", "Cannot manage students for this exam.");
+            return;
+        }
+
+        Course course = examEntry.getExam().getCourse();
+        Exam exam = examEntry.getExam();
+
+        Stage dialog = new Stage();
+        dialog.initOwner(owner);
+        dialog.initModality(Modality.APPLICATION_MODAL);
+        dialog.setTitle("Manage Students - " + course.getCourseCode());
+
+        // Get current classroom capacity for validation
+        Classroom currentRoom = exam.getClassroom();
+        int roomCapacity = currentRoom != null ? currentRoom.getCapacity() : Integer.MAX_VALUE;
+
+        // Left list: Enrolled students
+        ListView<String> enrolledList = new ListView<>();
+        enrolledList.setPrefSize(200, 300);
+        enrolledList.getSelectionModel().setSelectionMode(SelectionMode.MULTIPLE);
+
+        // Right list: Available students (not enrolled in this course)
+        ListView<String> availableList = new ListView<>();
+        availableList.setPrefSize(200, 300);
+        availableList.getSelectionModel().setSelectionMode(SelectionMode.MULTIPLE);
+
+        // Populate lists
+        Runnable refreshLists = () -> {
+            enrolledList.getItems().clear();
+            availableList.getItems().clear();
+
+            List<Student> enrolledStudents = course.getEnrolledStudents();
+            Set<String> enrolledIds = enrolledStudents.stream()
+                    .map(Student::getStudentID)
+                    .collect(Collectors.toSet());
+
+            enrolledStudents.forEach(s -> enrolledList.getItems().add(s.getStudentID()));
+
+            dataManager.getStudents().stream()
+                    .filter(s -> !enrolledIds.contains(s.getStudentID()))
+                    .forEach(s -> availableList.getItems().add(s.getStudentID()));
+        };
+        refreshLists.run();
+
+        // Search fields
+        TextField enrolledSearch = new TextField();
+        enrolledSearch.setPromptText("🔍 Search enrolled...");
+        enrolledSearch.textProperty().addListener((obs, oldVal, newVal) -> {
+            enrolledList.getItems().clear();
+            String filter = newVal.toLowerCase();
+            course.getEnrolledStudents().stream()
+                    .filter(s -> s.getStudentID().toLowerCase().contains(filter))
+                    .forEach(s -> enrolledList.getItems().add(s.getStudentID()));
+        });
+
+        TextField availableSearch = new TextField();
+        availableSearch.setPromptText("🔍 Search available...");
+        availableSearch.textProperty().addListener((obs, oldVal, newVal) -> {
+            availableList.getItems().clear();
+            String filter = newVal.toLowerCase();
+            Set<String> enrolledIds = course.getEnrolledStudents().stream()
+                    .map(Student::getStudentID)
+                    .collect(Collectors.toSet());
+            dataManager.getStudents().stream()
+                    .filter(s -> !enrolledIds.contains(s.getStudentID()))
+                    .filter(s -> s.getStudentID().toLowerCase().contains(filter))
+                    .forEach(s -> availableList.getItems().add(s.getStudentID()));
+        });
+
+        // Capacity label
+        Label capacityLabel = new Label();
+        Runnable updateCapacityLabel = () -> {
+            int enrolled = course.getStudentCount();
+            String text = "Enrolled: " + enrolled + " / " + roomCapacity;
+            capacityLabel.setText(text);
+            if (enrolled > roomCapacity) {
+                capacityLabel.setStyle("-fx-text-fill: red; -fx-font-weight: bold;");
+            } else if (enrolled >= roomCapacity * 0.9) {
+                capacityLabel.setStyle("-fx-text-fill: orange; -fx-font-weight: bold;");
+            } else {
+                capacityLabel.setStyle("-fx-text-fill: green;");
+            }
+        };
+        updateCapacityLabel.run();
+
+        // Add button (Available → Enrolled)
+        Button addBtn = new Button("Add →");
+        addBtn.setStyle("-fx-background-color: #4CAF50; -fx-text-fill: white;");
+        addBtn.setOnAction(ev -> {
+            List<String> selectedIds = new ArrayList<>(availableList.getSelectionModel().getSelectedItems());
+            if (selectedIds.isEmpty()) {
+                showWarning("No Selection", "Please select student(s) to add.");
+                return;
+            }
+
+            int addedCount = 0;
+            List<String> skippedStudents = new ArrayList<>();
+
+            for (String selectedId : selectedIds) {
+                Student student = dataManager.getStudentByID(selectedId);
+                if (student == null)
+                    continue;
+
+                // Check capacity
+                if (course.getStudentCount() >= roomCapacity) {
+                    skippedStudents.add(selectedId + " (capacity exceeded)");
+                    continue;
+                }
+
+                // Check for conflicts at exam time
+                boolean hasConflict = false;
+                if (exam.isScheduled()) {
+                    TimeSlot examSlot = exam.getTimeSlot();
+                    int examDay = examSlot.getDay();
+                    int examSlotNum = examSlot.getSlotNumber();
+
+                    // Check time conflict
+                    boolean hasTimeConflict = dataManager.getSchedule().getExams().stream()
+                            .filter(ex -> ex != exam)
+                            .filter(Exam::isScheduled)
+                            .filter(ex -> ex.getTimeSlot().getDay() == examDay &&
+                                    ex.getTimeSlot().getSlotNumber() == examSlotNum)
+                            .anyMatch(ex -> ex.getEnrolledStudents().contains(student));
+
+                    if (hasTimeConflict) {
+                        skippedStudents.add(selectedId + " (time conflict)");
+                        hasConflict = true;
+                    }
+                }
+
+                if (!hasConflict) {
+                    // Enroll student (memory only)
+                    course.addStudent(student);
+                    student.addCourse(course);
+                    addedCount++;
+                }
+            }
+
+            // Refresh UI
+            refreshLists.run();
+            enrolledSearch.clear();
+            availableSearch.clear();
+            updateCapacityLabel.run();
+            enrolledLabel.setText(String.valueOf(course.getStudentCount()));
+
+            // Show result message
+            if (addedCount > 0) {
+                messages.add("✓ Added " + addedCount + " student(s) to " + course.getCourseCode());
+            }
+            if (!skippedStudents.isEmpty()) {
+                showWarning("Some Students Skipped",
+                        "The following students could not be added:\n" +
+                                String.join("\n", skippedStudents));
+            }
+        });
+
+        // Remove button (Enrolled → Available)
+        Button removeBtn = new Button("← Remove");
+        removeBtn.setStyle("-fx-background-color: #f44336; -fx-text-fill: white;");
+        removeBtn.setOnAction(ev -> {
+            List<String> selectedIds = new ArrayList<>(enrolledList.getSelectionModel().getSelectedItems());
+            if (selectedIds.isEmpty()) {
+                showWarning("No Selection", "Please select student(s) to remove.");
+                return;
+            }
+
+            // Confirm removal
+            Alert confirm = new Alert(Alert.AlertType.CONFIRMATION);
+            confirm.setTitle("Confirm Removal");
+            confirm.setHeaderText("Remove " + selectedIds.size() + " student(s) from course?");
+            confirm.setContentText("Remove selected students from " + course.getCourseCode() + "?\n\n" +
+                    "This will also remove them from this exam.");
+            ThemeManager.getInstance().styleAlert(confirm);
+            Optional<ButtonType> res = confirm.showAndWait();
+            if (res.isEmpty() || res.get() != ButtonType.OK) {
+                return;
+            }
+
+            int removedCount = 0;
+            for (String selectedId : selectedIds) {
+                Student student = dataManager.getStudentByID(selectedId);
+                if (student == null)
+                    continue;
+
+                // Unenroll student (memory only)
+                course.removeStudent(student);
+                if (student.getCourses() != null) {
+                    student.getCourses().removeIf(c -> c.getCourseCode().equals(course.getCourseCode()));
+                }
+                removedCount++;
+            }
+
+            // Refresh UI
+            refreshLists.run();
+            enrolledSearch.clear();
+            availableSearch.clear();
+            updateCapacityLabel.run();
+            enrolledLabel.setText(String.valueOf(course.getStudentCount()));
+
+            messages.add("✓ Removed " + removedCount + " student(s) from " + course.getCourseCode());
+        });
+
+        // Close button
+        Button closeBtn = new Button("Close");
+        closeBtn.setOnAction(ev -> dialog.close());
+
+        // Layout
+        VBox enrolledBox = new VBox(5,
+                new Label("📚 Enrolled Students"),
+                enrolledSearch,
+                enrolledList);
+
+        VBox availableBox = new VBox(5,
+                new Label("👤 Available Students"),
+                availableSearch,
+                availableList);
+
+        VBox buttonBox = new VBox(10, addBtn, removeBtn);
+        buttonBox.setAlignment(Pos.CENTER);
+        buttonBox.setPadding(new Insets(50, 10, 50, 10));
+
+        HBox listsBox = new HBox(10, availableBox, buttonBox, enrolledBox);
+        listsBox.setAlignment(Pos.CENTER);
+
+        HBox bottomBox = new HBox(20, capacityLabel, closeBtn);
+        bottomBox.setAlignment(Pos.CENTER);
+
+        VBox root = new VBox(15,
+                new Label("Manage students for: " + course.getCourseCode() + " - " + course.getCourseName()),
+                listsBox,
+                bottomBox);
+        root.setPadding(new Insets(20));
+        root.setAlignment(Pos.TOP_CENTER);
+
+        Scene scene = new Scene(root, 550, 450);
+        ThemeManager.getInstance().registerScene(scene);
+        dialog.setScene(scene);
+        dialog.showAndWait();
     }
 
     private void deleteExam(ExamEntry e) {
