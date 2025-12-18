@@ -3782,11 +3782,14 @@ public class ExamSchedulerApp extends Application {
         }
     }
 
-    private void handleSave(Stage owner) {
+    private boolean handleSave(Stage owner) {
         if (dataManager.getSchedule() == null || exams.isEmpty()) {
             showWarning("No Schedule", "Nothing to save. Please generate a schedule first.");
-            return;
+            return false;
         }
+
+        // Track if save was completed
+        final boolean[] saveCompleted = { false };
 
         Stage saveDialog = new Stage();
         saveDialog.initOwner(owner);
@@ -3831,6 +3834,7 @@ public class ExamSchedulerApp extends Application {
         saveButton.setOnAction(e -> {
             String format = formatCombo.getValue();
             String fileName = fileNameField.getText().trim();
+            saveCompleted[0] = true;
             saveDialog.close();
 
             try {
@@ -3871,6 +3875,8 @@ public class ExamSchedulerApp extends Application {
         ThemeManager.getInstance().registerScene(scene);
         saveDialog.setScene(scene);
         saveDialog.showAndWait();
+
+        return saveCompleted[0];
     }
 
     private String getSaveFormatDescription(String format) {
@@ -6143,12 +6149,15 @@ public class ExamSchedulerApp extends Application {
 
             if (result.isPresent()) {
                 if (result.get() == saveAndReturn) {
-                    // Save first, then return
-                    handleSave(stage);
-                    // Clear data and show welcome
-                    clearCurrentSession();
-                    showWelcomeScreen(stage);
-                    messages.add("✓ Returned to welcome screen (data saved)");
+                    // Save first, then return only if save was completed
+                    boolean saved = handleSave(stage);
+                    if (saved) {
+                        // Clear data and show welcome
+                        clearCurrentSession();
+                        showWelcomeScreen(stage);
+                        messages.add("✓ Returned to welcome screen (data saved)");
+                    }
+                    // If save was cancelled, do nothing
                 } else if (result.get() == returnWithoutSave) {
                     // Just return without saving
                     clearCurrentSession();
@@ -6195,12 +6204,15 @@ public class ExamSchedulerApp extends Application {
 
             if (result.isPresent()) {
                 if (result.get() == saveAndReset) {
-                    // Save first, then reset
-                    handleSave(stage);
-                    // Clear data but stay on main screen
-                    clearCurrentSession();
-                    messages.add("✓ The system is reset.");
-                    messages.add("✓ System is ready. Click 'Load Data' to import CSV files.");
+                    // Save first, then reset only if save was completed
+                    boolean saved = handleSave(stage);
+                    if (saved) {
+                        // Clear data but stay on main screen
+                        clearCurrentSession();
+                        messages.add("✓ The system is reset.");
+                        messages.add("✓ System is ready. Click 'Load Data' to import CSV files.");
+                    }
+                    // If save was cancelled, do nothing
                 } else if (result.get() == resetWithoutSave) {
                     // Just reset without saving
                     clearCurrentSession();
