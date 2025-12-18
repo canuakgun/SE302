@@ -44,6 +44,8 @@ import javafx.beans.property.SimpleIntegerProperty;
 import javafx.beans.property.SimpleStringProperty;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
+import javafx.collections.transformation.FilteredList;
+import javafx.collections.transformation.SortedList;
 import javafx.concurrent.Task;
 import javafx.geometry.Insets;
 import javafx.geometry.Pos;
@@ -96,6 +98,7 @@ public class ExamSchedulerApp extends Application {
     private final DataManager dataManager = DataManager.getInstance();
     private final ObservableList<ExamEntry> exams = FXCollections.observableArrayList();
     private final ObservableList<String> messages = FXCollections.observableArrayList();
+    private FilteredList<ExamEntry> filteredExams;
 
     private TableView<ExamEntry> table;
     private TextArea statsArea;
@@ -320,7 +323,51 @@ public class ExamSchedulerApp extends Application {
         Label scheduleTitle = new Label("📋 Exam Schedule");
         scheduleTitle.setStyle(titleStyle);
 
-        VBox centerPane = new VBox(10, scheduleTitle, table);
+        // Search filter TextField
+        TextField searchField = new TextField();
+        searchField.setPromptText("🔍 Search by course code or classroom...");
+        searchField.setStyle(
+                "-fx-font-size: 13px; -fx-padding: 8px 12px; -fx-background-radius: 5; -fx-border-radius: 5; -fx-border-color: #D0D0D0;");
+        searchField.setPrefWidth(350);
+
+        // Initialize filtered list
+        filteredExams = new FilteredList<>(exams, p -> true);
+
+        // Bind filter to search field text
+        searchField.textProperty().addListener((observable, oldValue, newValue) -> {
+            filteredExams.setPredicate(examEntry -> {
+                // If filter text is empty, display all exams
+                if (newValue == null || newValue.isEmpty()) {
+                    return true;
+                }
+
+                String lowerCaseFilter = newValue.toLowerCase();
+
+                // Filter by course code
+                if (examEntry.getCourseId() != null
+                        && examEntry.getCourseId().toLowerCase().contains(lowerCaseFilter)) {
+                    return true;
+                }
+                // Filter by classroom ID
+                if (examEntry.getRoomId() != null && examEntry.getRoomId().toLowerCase().contains(lowerCaseFilter)) {
+                    return true;
+                }
+                return false; // Does not match
+            });
+        });
+
+        // Wrap filtered list in sorted list for table column sorting
+        SortedList<ExamEntry> sortedExams = new SortedList<>(filteredExams);
+        sortedExams.comparatorProperty().bind(table.comparatorProperty());
+        table.setItems(sortedExams);
+
+        HBox searchBox = new HBox(10);
+        searchBox.setAlignment(Pos.CENTER_LEFT);
+        Label searchLabel = new Label("🔍 Filter:");
+        searchLabel.setStyle("-fx-font-weight: bold; -fx-text-fill: " + primaryColor + ";");
+        searchBox.getChildren().addAll(searchLabel, searchField);
+
+        VBox centerPane = new VBox(10, scheduleTitle, searchBox, table);
         centerPane.setPadding(new Insets(15));
         VBox.setVgrow(table, Priority.ALWAYS);
 
@@ -2251,7 +2298,7 @@ public class ExamSchedulerApp extends Application {
     }
 
     private void loadFilesWithPaths(Stage owner, String studentsPath, String coursesPath,
-                                    String classroomsPath, String attendancePath) {
+            String classroomsPath, String attendancePath) {
         messages.add("📄 Loading individual files...");
 
         try {
@@ -3141,8 +3188,8 @@ public class ExamSchedulerApp extends Application {
 
                         String suffix = (forcedSlot != null || examsToPlace.stream()
                                 .filter(e -> e.getCourse().getCourseCode().equals(courseCode)).count() > 1)
-                                ? " [Part]"
-                                : "";
+                                        ? " [Part]"
+                                        : "";
 
                         messages.add("  ✓ " + courseCode + suffix +
                                 " → Day " + day + ", Slot " + slotNum +
@@ -5313,8 +5360,8 @@ public class ExamSchedulerApp extends Application {
         boolean checkTimeDistribution;
 
         ValidationOptions(boolean studentConflicts, boolean consecutive, boolean roomConflicts,
-                          boolean capacity, boolean studentLoad,
-                          boolean roomUtilization, boolean timeDistribution) {
+                boolean capacity, boolean studentLoad,
+                boolean roomUtilization, boolean timeDistribution) {
             this.checkStudentConflicts = studentConflicts;
             this.checkConsecutive = consecutive;
             this.checkRoomConflicts = roomConflicts;
