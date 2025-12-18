@@ -2251,7 +2251,7 @@ public class ExamSchedulerApp extends Application {
     }
 
     private void loadFilesWithPaths(Stage owner, String studentsPath, String coursesPath,
-            String classroomsPath, String attendancePath) {
+                                    String classroomsPath, String attendancePath) {
         messages.add("📄 Loading individual files...");
 
         try {
@@ -3141,8 +3141,8 @@ public class ExamSchedulerApp extends Application {
 
                         String suffix = (forcedSlot != null || examsToPlace.stream()
                                 .filter(e -> e.getCourse().getCourseCode().equals(courseCode)).count() > 1)
-                                        ? " [Part]"
-                                        : "";
+                                ? " [Part]"
+                                : "";
 
                         messages.add("  ✓ " + courseCode + suffix +
                                 " → Day " + day + ", Slot " + slotNum +
@@ -4186,6 +4186,7 @@ public class ExamSchedulerApp extends Application {
                 pw.println("ExamID,Course,Day,Slot,Room,Students");
 
                 List<String> timeSlots = getTimeSlotsFromUI.get();
+                int count = 0;
 
                 for (Exam exam : dataManager.getSchedule().getExams()) {
                     if (exam.isScheduled()) {
@@ -4203,15 +4204,28 @@ public class ExamSchedulerApp extends Application {
                                 timeSlot,
                                 exam.getClassroom().getClassroomID(),
                                 exam.getStudentCount());
+                        count++;
                     }
+                }
+
+                if (count == 0) {
+                    showWarning("Empty Schedule",
+                            "The saved file contains no exams because no exams have been scheduled yet.");
                 }
 
                 showInfo("Save Success",
                         "Schedule saved successfully!\n\n" +
                                 "File: " + file.getName() + "\n" +
                                 "Format: Standard CSV (Re-importable)\n" +
-                                "Exams: " + dataManager.getSchedule().getExams().size());
+                                "Exams: " + count);
                 messages.add("✓ Schedule saved: " + file.getName());
+
+                // Open the folder
+                try {
+                    java.awt.Desktop.getDesktop().open(file.getParentFile());
+                } catch (Exception e) {
+                    // Ignore if we can't open the folder
+                }
 
             } catch (Exception e) {
                 showError("Save Failed", e.getMessage());
@@ -4488,7 +4502,7 @@ public class ExamSchedulerApp extends Application {
                 "📅 iCalendar Format (.ics)",
                 "📄 PDF Report (Print-Ready)",
                 "📋 Full Schedule (CSV)",
-                "👥 Student-wise Schedules (Folder)",
+                "👥 Student-wise Schedules (PDF)",
                 "🏫 Room-wise Schedules (CSV)",
                 "📈 Statistical Report (TXT)"));
         formatCombo.setValue("📊 Excel-Compatible CSV (Detailed)");
@@ -4527,7 +4541,7 @@ public class ExamSchedulerApp extends Application {
                 } else if (format.contains("PDF Report")) {
                     exportPDFReport(owner);
                 } else if (format.contains("Full Schedule")) {
-                    handleSave(owner);
+                    saveStandardCSV(owner, "exam_schedule_" + LocalDate.now());
                 } else if (format.contains("Student-wise")) {
                     exportStudentWise(owner);
                 } else if (format.contains("Room-wise")) {
@@ -4589,11 +4603,11 @@ public class ExamSchedulerApp extends Application {
                     "• Simple format for quick reference\n" +
                     "• Easy to import back into the system";
         } else if (format.contains("Student-wise")) {
-            return "Creates individual schedule files for each student:\n" +
-                    "• One text file per student\n" +
-                    "• Contains only their exam schedule\n" +
-                    "• Ready for email distribution\n" +
-                    "• Maintains student privacy";
+            return "Creates a PDF with all student schedules:\n" +
+                    "• Professional PDF format\n" +
+                    "• All schedules in one document\n" +
+                    "• Easy to search and review\n" +
+                    "• Ready for printing or distribution";
         } else if (format.contains("Room-wise")) {
             return "Exports schedule organized by classroom:\n" +
                     "• Shows which exams are in each room\n" +
@@ -4623,7 +4637,7 @@ public class ExamSchedulerApp extends Application {
                 pw.write('\ufeff'); // BOM for Excel
 
                 pw.println(
-                        "Exam ID,Course Code,Course Name,Day,Date,Time Slot,Room ID,Room Capacity,Enrolled Students,Capacity Utilization %");
+                        "Exam ID,Course Code,Day,Date,Time Slot,Room ID,Room Capacity,Enrolled Students");
 
                 LocalDate startDate = examStartDatePicker != null && examStartDatePicker.getValue() != null
                         ? examStartDatePicker.getValue()
@@ -4643,19 +4657,16 @@ public class ExamSchedulerApp extends Application {
 
                         int enrolled = exam.getStudentCount();
                         int capacity = exam.getClassroom().getCapacity();
-                        double utilization = (enrolled * 100.0) / capacity;
 
-                        pw.printf("%s,%s,%s,%d,%s,%s,%s,%d,%d,%.1f%%%n",
+                        pw.printf("%s,%s,%d,%s,%s,%s,%d,%d%n",
                                 "EX" + String.format("%03d", exam.hashCode() % 1000),
                                 exam.getCourse().getCourseCode(),
-                                "\"" + exam.getCourse().getCourseName() + "\"",
                                 exam.getTimeSlot().getDay(),
                                 examDate.toString(),
                                 "\"" + timeSlot + "\"",
                                 exam.getClassroom().getClassroomID(),
                                 capacity,
-                                enrolled,
-                                utilization);
+                                enrolled);
                     }
                 }
                 showInfo("Export Success", "Detailed CSV exported to:\n" + file.getName());
@@ -4731,6 +4742,13 @@ public class ExamSchedulerApp extends Application {
                                 "\n\nYou can now import this file to:\n" +
                                 "• Google Calendar\n• Outlook\n• Apple Calendar\n• Any calendar app");
                 messages.add("✓ iCalendar exported successfully");
+
+                // Open the folder
+                try {
+                    java.awt.Desktop.getDesktop().open(file.getParentFile());
+                } catch (Exception e) {
+                    // Ignore
+                }
             } catch (Exception e) {
                 showError("Export Failed", e.getMessage());
             }
@@ -4738,57 +4756,94 @@ public class ExamSchedulerApp extends Application {
     }
 
     private void exportStudentWise(Stage owner) {
-        DirectoryChooser chooser = new DirectoryChooser();
-        chooser.setTitle("Select Folder for Student Schedules");
-        File dir = chooser.showDialog(owner);
+        FileChooser chooser = new FileChooser();
+        chooser.setTitle("Export All Student Schedules");
+        chooser.setInitialFileName("all_student_schedules.pdf");
+        chooser.getExtensionFilters().add(new FileChooser.ExtensionFilter("PDF Files", "*.pdf"));
+        File file = chooser.showSaveDialog(owner);
 
-        if (dir != null) {
+        if (file != null) {
+            Document document = new Document();
             int exportCount = 0;
             try {
+                PdfWriter.getInstance(document, new FileOutputStream(file));
+                document.open();
+
+                Font titleFont = FontFactory.getFont(FontFactory.HELVETICA_BOLD, 20, BaseColor.DARK_GRAY);
+                Font studentFont = FontFactory.getFont(FontFactory.HELVETICA_BOLD, 14, BaseColor.BLACK);
+                Font headerFont = FontFactory.getFont(FontFactory.HELVETICA_BOLD, 10, BaseColor.WHITE);
+                Font normalFont = FontFactory.getFont(FontFactory.HELVETICA, 10);
+
+                Paragraph title = new Paragraph("ALL STUDENT SCHEDULES", titleFont);
+                title.setAlignment(Element.ALIGN_CENTER);
+                title.setSpacingAfter(10);
+                document.add(title);
+
+                Paragraph genDate = new Paragraph("Generated: " + LocalDate.now(), normalFont);
+                genDate.setAlignment(Element.ALIGN_CENTER);
+                genDate.setSpacingAfter(20);
+                document.add(genDate);
+
+                List<String> timeSlots = getTimeSlotsFromUI.get();
+                LocalDate startDate = examStartDatePicker != null && examStartDatePicker.getValue() != null
+                        ? examStartDatePicker.getValue()
+                        : LocalDate.now();
+
                 for (Student student : dataManager.getStudents()) {
                     List<Exam> studentExams = getStudentExams(student);
                     if (!studentExams.isEmpty()) {
-                        File studentFile = new File(dir, "schedule_" + student.getStudentID() + ".txt");
-                        try (PrintWriter pw = new PrintWriter(studentFile)) {
-                            pw.println("==============================================");
-                            pw.println("     EXAM SCHEDULE - " + student.getStudentID());
-                            pw.println("==============================================\n");
+                        Paragraph studentHeader = new Paragraph("Student: " + student.getStudentID(), studentFont);
+                        studentHeader.setSpacingBefore(15);
+                        studentHeader.setSpacingAfter(10);
+                        document.add(studentHeader);
 
-                            List<String> timeSlots = getTimeSlotsFromUI.get();
-                            LocalDate startDate = examStartDatePicker != null && examStartDatePicker.getValue() != null
-                                    ? examStartDatePicker.getValue()
-                                    : LocalDate.now();
+                        PdfPTable table = new PdfPTable(4);
+                        table.setWidthPercentage(100);
+                        table.setWidths(new float[] { 2, 2, 2, 1.5f });
 
-                            studentExams.stream()
-                                    .sorted(Comparator.comparing((Exam e) -> e.getTimeSlot().getDay())
-                                            .thenComparing(e -> e.getTimeSlot().getSlotNumber()))
-                                    .forEach(exam -> {
-                                        LocalDate examDate = startDate.plusDays(exam.getTimeSlot().getDay() - 1);
-                                        String timeSlot = "";
-                                        try {
-                                            timeSlot = timeSlots.get(exam.getTimeSlot().getSlotNumber() - 1);
-                                        } catch (Exception e) {
-                                            timeSlot = "Slot " + exam.getTimeSlot().getSlotNumber();
-                                        }
-
-                                        pw.println("📅 " + examDate);
-                                        pw.println("⏰ " + timeSlot);
-                                        pw.println("📚 " + exam.getCourse().getCourseCode() + " - "
-                                                + exam.getCourse().getCourseName());
-
-                                        pw.println("📍 Room " + exam.getClassroom().getClassroomID());
-                                        pw.println("----------------------------------------------\n");
-                                    });
-
-                            pw.println("Total Exams: " + studentExams.size());
+                        String[] headers = { "Date", "Time", "Course Code", "Room" };
+                        for (String header : headers) {
+                            PdfPCell cell = new PdfPCell(new Phrase(header, headerFont));
+                            cell.setHorizontalAlignment(Element.ALIGN_CENTER);
+                            cell.setBackgroundColor(new BaseColor(70, 130, 180));
+                            cell.setPadding(5);
+                            table.addCell(cell);
                         }
+
+                        studentExams.stream()
+                                .sorted(Comparator.comparing((Exam e) -> e.getTimeSlot().getDay())
+                                        .thenComparing(e -> e.getTimeSlot().getSlotNumber()))
+                                .forEach(exam -> {
+                                    LocalDate examDate = startDate.plusDays(exam.getTimeSlot().getDay() - 1);
+                                    String timeSlot = "";
+                                    try {
+                                        timeSlot = timeSlots.get(exam.getTimeSlot().getSlotNumber() - 1);
+                                    } catch (Exception e) {
+                                        timeSlot = "Slot " + exam.getTimeSlot().getSlotNumber();
+                                    }
+
+                                    table.addCell(new Phrase(examDate.toString(), normalFont));
+                                    table.addCell(new Phrase(timeSlot, normalFont));
+                                    table.addCell(new Phrase(exam.getCourse().getCourseCode(), normalFont));
+                                    table.addCell(new Phrase(exam.getClassroom().getClassroomID(), normalFont));
+                                });
+
+                        document.add(table);
                         exportCount++;
                     }
                 }
 
+                document.close();
                 showInfo("Export Success",
-                        "Exported " + exportCount + " student schedules to:\n" + dir.getName());
-                messages.add("✓ Exported " + exportCount + " student schedules");
+                        "Exported schedules for " + exportCount + " students to:\n" + file.getName());
+                messages.add("✓ Exported student schedules as PDF");
+
+                // Open the file
+                try {
+                    java.awt.Desktop.getDesktop().open(file);
+                } catch (Exception e) {
+                    // Ignore
+                }
             } catch (Exception e) {
                 showError("Export Failed", e.getMessage());
             }
@@ -4805,7 +4860,7 @@ public class ExamSchedulerApp extends Application {
         if (file != null) {
             try (PrintWriter pw = new PrintWriter(file, "UTF-8")) {
                 pw.write('\ufeff');
-                pw.println("Room ID,Room Capacity,Day,Date,Time Slot,Course Code,Course Name,Students,Utilization %");
+                pw.println("Room ID,Room Capacity,Day,Date,Time Slot,Course Code,Students");
 
                 LocalDate startDate = examStartDatePicker != null && examStartDatePicker.getValue() != null
                         ? examStartDatePicker.getValue()
@@ -4829,18 +4884,15 @@ public class ExamSchedulerApp extends Application {
 
                             int enrolled = exam.getStudentCount();
                             int capacity = exam.getClassroom().getCapacity();
-                            double utilization = (enrolled * 100.0) / capacity;
 
-                            pw.printf("%s,%d,%d,%s,\"%s\",%s,\"%s\",%d,%.1f%%%n",
+                            pw.printf("%s,%d,%d,%s,\"%s\",%s,%d%n",
                                     exam.getClassroom().getClassroomID(),
                                     capacity,
                                     exam.getTimeSlot().getDay(),
                                     examDate.toString(),
                                     timeSlot,
                                     exam.getCourse().getCourseCode(),
-                                    exam.getCourse().getCourseName(),
-                                    enrolled,
-                                    utilization);
+                                    enrolled);
                         });
 
                 showInfo("Export Success", "Room-wise schedule exported to:\n" + file.getName());
@@ -4924,17 +4976,40 @@ public class ExamSchedulerApp extends Application {
     private void exportPDFReport(Stage owner) {
         FileChooser chooser = new FileChooser();
         chooser.setTitle("Export Print-Ready Report");
-        chooser.setInitialFileName("exam_schedule_report_" + LocalDate.now() + ".txt");
+        chooser.setInitialFileName("exam_schedule_report_" + LocalDate.now() + ".pdf");
+        chooser.getExtensionFilters().add(new FileChooser.ExtensionFilter("PDF Files", "*.pdf"));
         File file = chooser.showSaveDialog(owner);
 
         if (file != null) {
-            try (PrintWriter pw = new PrintWriter(file)) {
-                pw.println("╔════════════════════════════════════════════════════════════╗");
-                pw.println("║              EXAM SCHEDULE - OFFICIAL REPORT               ║");
-                pw.println("╚════════════════════════════════════════════════════════════╝");
-                pw.println("\nAcademic Period: " + LocalDate.now().getYear());
-                pw.println("Generated: " + LocalDate.now());
-                pw.println("\n" + "=".repeat(60));
+            Document document = new Document();
+            try {
+                PdfWriter.getInstance(document, new FileOutputStream(file));
+                document.open();
+
+                Font titleFont = FontFactory.getFont(FontFactory.HELVETICA_BOLD, 18);
+                Font headerFont = FontFactory.getFont(FontFactory.HELVETICA_BOLD, 12);
+                Font normalFont = FontFactory.getFont(FontFactory.HELVETICA, 10);
+
+                Paragraph title = new Paragraph("EXAM SCHEDULER - OFFICIAL REPORT", titleFont);
+                title.setAlignment(Element.ALIGN_CENTER);
+                document.add(title);
+
+                document.add(new Paragraph("Generated: " + LocalDate.now(), normalFont));
+                document.add(new Paragraph(" ", normalFont)); // Spacer
+
+                PdfPTable table = new PdfPTable(4); // 4 columns
+                table.setWidthPercentage(100);
+                table.setWidths(new float[] { 2, 2, 2, 1.5f });
+
+                // Headers
+                String[] headers = { "Date", "Time", "Course Code", "Room" };
+                for (String header : headers) {
+                    PdfPCell cell = new PdfPCell(new Phrase(header, headerFont));
+                    cell.setHorizontalAlignment(Element.ALIGN_CENTER);
+                    cell.setBackgroundColor(BaseColor.LIGHT_GRAY);
+                    cell.setPadding(5);
+                    table.addCell(cell);
+                }
 
                 LocalDate startDate = examStartDatePicker != null && examStartDatePicker.getValue() != null
                         ? examStartDatePicker.getValue()
@@ -4942,21 +5017,14 @@ public class ExamSchedulerApp extends Application {
 
                 List<String> timeSlots = getTimeSlotsFromUI.get();
 
-                int currentDay = -1;
-                for (Exam exam : dataManager.getSchedule().getExams().stream()
+                List<Exam> sortedExams = dataManager.getSchedule().getExams().stream()
                         .filter(Exam::isScheduled)
                         .sorted(Comparator.comparing((Exam e) -> e.getTimeSlot().getDay())
                                 .thenComparing(e -> e.getTimeSlot().getSlotNumber()))
-                        .collect(Collectors.toList())) {
+                        .collect(Collectors.toList());
 
-                    if (currentDay != exam.getTimeSlot().getDay()) {
-                        currentDay = exam.getTimeSlot().getDay();
-                        LocalDate examDate = startDate.plusDays(currentDay - 1);
-                        pw.println("\n" + "=".repeat(60));
-                        pw.println("DAY " + currentDay + " - " + examDate + " (" + examDate.getDayOfWeek() + ")");
-                        pw.println("=".repeat(60));
-                    }
-
+                for (Exam exam : sortedExams) {
+                    LocalDate examDate = startDate.plusDays(exam.getTimeSlot().getDay() - 1);
                     String timeSlot = "";
                     try {
                         timeSlot = timeSlots.get(exam.getTimeSlot().getSlotNumber() - 1);
@@ -4964,27 +5032,136 @@ public class ExamSchedulerApp extends Application {
                         timeSlot = "Slot " + exam.getTimeSlot().getSlotNumber();
                     }
 
-                    pw.println("\n" + timeSlot);
-                    pw.println("-".repeat(60));
-                    pw.printf("%-12s | %-30s | Room %-8s | %3d students\n",
-                            exam.getCourse().getCourseCode(),
-                            exam.getCourse().getCourseName(),
-                            exam.getClassroom().getClassroomID(),
-                            exam.getStudentCount());
-
+                    table.addCell(new Phrase(examDate.toString(), normalFont));
+                    table.addCell(new Phrase(timeSlot, normalFont));
+                    table.addCell(new Phrase(exam.getCourse().getCourseCode(), normalFont));
+                    table.addCell(new Phrase(exam.getClassroom().getClassroomID(), normalFont));
                 }
 
-                pw.println("\n" + "=".repeat(60));
-                pw.println("\nEND OF REPORT");
+                document.add(table);
 
-                showInfo("Export Success",
-                        "Print-ready report exported to:\n" + file.getName() +
-                                "\n\nThis file is formatted for printing.");
-                messages.add("✓ Print-ready report exported");
+                // Add Summary Statistics Section
+                document.add(new Paragraph("\n"));
+
+                Paragraph statsTitle = new Paragraph("SUMMARY STATISTICS", headerFont);
+                statsTitle.setAlignment(Element.ALIGN_CENTER);
+                statsTitle.setSpacingBefore(20);
+                statsTitle.setSpacingAfter(10);
+                document.add(statsTitle);
+
+                // Basic Statistics
+                int totalExams = sortedExams.size();
+                int totalCourses = dataManager.getCourses().size();
+                int totalStudents = dataManager.getStudents().size();
+                int totalRooms = dataManager.getClassrooms().size();
+
+                PdfPTable statsTable = new PdfPTable(2);
+                statsTable.setWidthPercentage(60);
+                statsTable.setHorizontalAlignment(Element.ALIGN_CENTER);
+
+                addStatRow(statsTable, "Total Scheduled Exams:", String.valueOf(totalExams), normalFont, headerFont);
+                addStatRow(statsTable, "Total Courses:", String.valueOf(totalCourses), normalFont, headerFont);
+                addStatRow(statsTable, "Total Students:", String.valueOf(totalStudents), normalFont, headerFont);
+                addStatRow(statsTable, "Total Classrooms:", String.valueOf(totalRooms), normalFont, headerFont);
+
+                document.add(statsTable);
+
+                // Room Utilization
+                document.add(new Paragraph("\nRoom Utilization Analysis", headerFont));
+                document.add(new Paragraph(" ", normalFont));
+
+                Map<String, List<Exam>> roomExams = sortedExams.stream()
+                        .collect(Collectors.groupingBy(e -> e.getClassroom().getClassroomID()));
+
+                PdfPTable roomTable = new PdfPTable(3);
+                roomTable.setWidthPercentage(80);
+
+                PdfPCell roomHeader1 = new PdfPCell(new Phrase("Room", headerFont));
+                PdfPCell roomHeader2 = new PdfPCell(new Phrase("Exams", headerFont));
+                PdfPCell roomHeader3 = new PdfPCell(new Phrase("Avg Utilization", headerFont));
+                roomHeader1.setBackgroundColor(BaseColor.LIGHT_GRAY);
+                roomHeader2.setBackgroundColor(BaseColor.LIGHT_GRAY);
+                roomHeader3.setBackgroundColor(BaseColor.LIGHT_GRAY);
+                roomHeader1.setHorizontalAlignment(Element.ALIGN_CENTER);
+                roomHeader2.setHorizontalAlignment(Element.ALIGN_CENTER);
+                roomHeader3.setHorizontalAlignment(Element.ALIGN_CENTER);
+                roomTable.addCell(roomHeader1);
+                roomTable.addCell(roomHeader2);
+                roomTable.addCell(roomHeader3);
+
+                roomExams.forEach((room, exams) -> {
+                    double avgUtil = exams.stream()
+                            .mapToDouble(e -> (e.getStudentCount() * 100.0) / e.getClassroom().getCapacity())
+                            .average().orElse(0);
+                    roomTable.addCell(new Phrase(room, normalFont));
+                    roomTable.addCell(new Phrase(String.valueOf(exams.size()), normalFont));
+                    roomTable.addCell(new Phrase(String.format("%.1f%%", avgUtil), normalFont));
+                });
+
+                document.add(roomTable);
+
+                // Time Slot Distribution
+                document.add(new Paragraph("\nTime Slot Distribution", headerFont));
+                document.add(new Paragraph(" ", normalFont));
+
+                Map<Integer, Long> slotDist = sortedExams.stream()
+                        .collect(Collectors.groupingBy(e -> e.getTimeSlot().getSlotNumber(), Collectors.counting()));
+
+                PdfPTable slotTable = new PdfPTable(2);
+                slotTable.setWidthPercentage(50);
+
+                PdfPCell slotHeader1 = new PdfPCell(new Phrase("Time Slot", headerFont));
+                PdfPCell slotHeader2 = new PdfPCell(new Phrase("Exams", headerFont));
+                slotHeader1.setBackgroundColor(BaseColor.LIGHT_GRAY);
+                slotHeader2.setBackgroundColor(BaseColor.LIGHT_GRAY);
+                slotHeader1.setHorizontalAlignment(Element.ALIGN_CENTER);
+                slotHeader2.setHorizontalAlignment(Element.ALIGN_CENTER);
+                slotTable.addCell(slotHeader1);
+                slotTable.addCell(slotHeader2);
+
+                slotDist.entrySet().stream()
+                        .sorted(Map.Entry.comparingByKey())
+                        .forEach(entry -> {
+                            try {
+                                String slotName = timeSlots.get(entry.getKey() - 1);
+                                slotTable.addCell(new Phrase(slotName, normalFont));
+                                slotTable.addCell(new Phrase(String.valueOf(entry.getValue()), normalFont));
+                            } catch (Exception e) {
+                                slotTable.addCell(new Phrase("Slot " + entry.getKey(), normalFont));
+                                slotTable.addCell(new Phrase(String.valueOf(entry.getValue()), normalFont));
+                            }
+                        });
+
+                document.add(slotTable);
+
+                document.close();
+
+                showInfo("Export Success", "PDF report exported to:\n" + file.getName());
+                messages.add("✓ PDF report exported");
+
+                // Open the file
+                try {
+                    java.awt.Desktop.getDesktop().open(file);
+                } catch (Exception e) {
+                    // Ignore
+                }
+
             } catch (Exception e) {
-                showError("Export Failed", e.getMessage());
+                showError("Export Failed", "Error creating PDF: " + e.getMessage());
             }
         }
+    }
+
+    private void addStatRow(PdfPTable table, String label, String value, Font normalFont, Font headerFont) {
+        PdfPCell labelCell = new PdfPCell(new Phrase(label, headerFont));
+        labelCell.setBorder(PdfPCell.NO_BORDER);
+        labelCell.setPadding(5);
+        table.addCell(labelCell);
+
+        PdfPCell valueCell = new PdfPCell(new Phrase(value, normalFont));
+        valueCell.setBorder(PdfPCell.NO_BORDER);
+        valueCell.setPadding(5);
+        table.addCell(valueCell);
     }
 
     private void handleValidate() {
@@ -5136,8 +5313,8 @@ public class ExamSchedulerApp extends Application {
         boolean checkTimeDistribution;
 
         ValidationOptions(boolean studentConflicts, boolean consecutive, boolean roomConflicts,
-                boolean capacity, boolean studentLoad,
-                boolean roomUtilization, boolean timeDistribution) {
+                          boolean capacity, boolean studentLoad,
+                          boolean roomUtilization, boolean timeDistribution) {
             this.checkStudentConflicts = studentConflicts;
             this.checkConsecutive = consecutive;
             this.checkRoomConflicts = roomConflicts;

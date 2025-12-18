@@ -4,4 +4,5 @@ module com.examscheduler {
     exports com.examscheduler.model;
     exports com.examscheduler.logic;
     exports com.examscheduler.ui;
+    requires java.desktop;
 }
