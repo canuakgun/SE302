@@ -2335,7 +2335,7 @@ public class ExamSchedulerApp extends Application {
     }
 
     private void loadFilesWithPaths(Stage owner, String studentsPath, String coursesPath,
-                                    String classroomsPath, String attendancePath) {
+            String classroomsPath, String attendancePath) {
         messages.add("📄 Loading individual files...");
 
         try {
@@ -3130,6 +3130,12 @@ public class ExamSchedulerApp extends Application {
         Map<Student, Set<TimeSlot>> studentScheduledSlots = new HashMap<>();
         Map<TimeSlot, Set<String>> roomOccupancy = new HashMap<>();
 
+        // PERFORMANS OPTİMİZASYONU: Günlük sınav sayısını O(1)'de takip et
+        // Eski: busySlots.stream().filter(ts -> ts.getDay() == currentDay).count() -
+        // O(n)
+        // Yeni: studentDailyExamCount.get(student).getOrDefault(day, 0) - O(1)
+        Map<Student, Map<Integer, Integer>> studentDailyExamCount = new HashMap<>();
+
         // DERS İÇİN KİLİTLENMİŞ ZAMAN (Aynı dersin parçaları aynı saate gelsin diye)
         Map<String, TimeSlot> courseLockedSlots = new HashMap<>();
 
@@ -3174,9 +3180,10 @@ public class ExamSchedulerApp extends Application {
                             break;
                         }
 
-                        // Günlük limit kontrolü (BURASI DÜZELTİLDİ: 'day' yerine 'currentDay'
-                        // kullanıldı)
-                        long examsOnDay = busySlots.stream().filter(ts -> ts.getDay() == currentDay).count();
+                        // Günlük limit kontrolü - OPTİMİZE EDİLDİ: O(n) -> O(1)
+                        int examsOnDay = studentDailyExamCount
+                                .getOrDefault(student, Collections.emptyMap())
+                                .getOrDefault(currentDay, 0);
                         if (examsOnDay >= 2) {
                             studentConflict = true;
                             break;
@@ -3213,6 +3220,11 @@ public class ExamSchedulerApp extends Application {
 
                         for (Student student : studentsOfCourse) {
                             studentScheduledSlots.computeIfAbsent(student, k -> new HashSet<>()).add(currentSlot);
+
+                            // Günlük sınav sayısını güncelle - O(1)
+                            studentDailyExamCount
+                                    .computeIfAbsent(student, k -> new HashMap<>())
+                                    .merge(currentDay, 1, Integer::sum);
                         }
 
                         // BU DERSİN SAATİNİ KİLİTLE
@@ -3225,8 +3237,8 @@ public class ExamSchedulerApp extends Application {
 
                         String suffix = (forcedSlot != null || examsToPlace.stream()
                                 .filter(e -> e.getCourse().getCourseCode().equals(courseCode)).count() > 1)
-                                ? " [Part]"
-                                : "";
+                                        ? " [Part]"
+                                        : "";
 
                         messages.add("  ✓ " + courseCode + suffix +
                                 " → Day " + day + ", Slot " + slotNum +
@@ -5399,8 +5411,8 @@ public class ExamSchedulerApp extends Application {
         boolean checkTimeDistribution;
 
         ValidationOptions(boolean studentConflicts, boolean consecutive, boolean roomConflicts,
-                          boolean capacity, boolean studentLoad,
-                          boolean roomUtilization, boolean timeDistribution) {
+                boolean capacity, boolean studentLoad,
+                boolean roomUtilization, boolean timeDistribution) {
             this.checkStudentConflicts = studentConflicts;
             this.checkConsecutive = consecutive;
             this.checkRoomConflicts = roomConflicts;

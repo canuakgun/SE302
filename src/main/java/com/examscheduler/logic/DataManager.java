@@ -7,7 +7,9 @@ import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 import com.examscheduler.model.Classroom;
 import com.examscheduler.model.Course;
@@ -21,12 +23,17 @@ import com.examscheduler.model.Student;
  */
 public class DataManager {
     private static DataManager instance;
-    
+
     // Hafızadaki Veri Listeleri
     private List<Student> students;
     private List<Course> courses;
     private List<Classroom> classrooms;
-    
+
+    // O(1) arama için HashMap indeksleri (PERFORMANS OPTİMİZASYONU)
+    private Map<String, Student> studentIndex;
+    private Map<String, Course> courseIndex;
+    private Map<String, Classroom> classroomIndex;
+
     // Oluşturulan Sınav Takvimi
     private Schedule schedule;
 
@@ -35,17 +42,20 @@ public class DataManager {
     private File courseFile;
     private File classroomFile;
     private File attendanceFile;
-    
+
     // Versiyon kontrolü
     private static final int DATA_VERSION = 1;
-    
+
     private DataManager() {
         this.students = new ArrayList<>();
         this.courses = new ArrayList<>();
         this.classrooms = new ArrayList<>();
+        this.studentIndex = new HashMap<>();
+        this.courseIndex = new HashMap<>();
+        this.classroomIndex = new HashMap<>();
         this.schedule = null;
     }
-    
+
     public static DataManager getInstance() {
         if (instance == null) {
             synchronized (DataManager.class) {
@@ -56,7 +66,7 @@ public class DataManager {
         }
         return instance;
     }
-    
+
     /**
      * Yükleme işlemi sırasında (handleLoad) kaynak dosyaların yollarını kaydeder.
      * Bu sayede ekleme/silme işlemlerinde doğru dosyaya yazılabilir.
@@ -68,22 +78,28 @@ public class DataManager {
         this.attendanceFile = att;
     }
 
-    // ==================== ÖĞRENCİ YÖNETİMİ (OTOMATİK CSV KAYDI) ====================
-    
+    // ==================== ÖĞRENCİ YÖNETİMİ (OTOMATİK CSV KAYDI)
+    // ====================
+
     public void addStudent(Student s) {
-        if (!students.contains(s)) {
+        if (s != null && !studentIndex.containsKey(s.getStudentID())) {
             students.add(s);
+            studentIndex.put(s.getStudentID(), s); // O(1) indeks güncelleme
             // Listeyi güncelledikten sonra dosyaya yansıt
-            if (studentFile != null) CSVParser.updateStudentFile(studentFile, students);
+            if (studentFile != null)
+                CSVParser.updateStudentFile(studentFile, students);
         }
     }
-    
+
     public void removeStudent(Student s) {
-        if (students.remove(s)) {
+        if (s != null && students.remove(s)) {
+            studentIndex.remove(s.getStudentID()); // O(1) indeks güncelleme
             // Listeden sildikten sonra dosyaya yansıt
-            if (studentFile != null) CSVParser.updateStudentFile(studentFile, students);
-            
-            // Öğrenci silindiğinde, derslerden de kaydını silmemiz gerekir (Opsiyonel ama iyi olur)
+            if (studentFile != null)
+                CSVParser.updateStudentFile(studentFile, students);
+
+            // Öğrenci silindiğinde, derslerden de kaydını silmemiz gerekir (Opsiyonel ama
+            // iyi olur)
             for (Course c : courses) {
                 c.getEnrolledStudents().remove(s);
             }
@@ -91,18 +107,22 @@ public class DataManager {
     }
 
     // ==================== DERS YÖNETİMİ (OTOMATİK CSV KAYDI) ====================
-    
+
     public void addCourse(Course c) {
-        if (!courses.contains(c)) {
+        if (c != null && !courseIndex.containsKey(c.getCourseCode())) {
             courses.add(c);
-            if (courseFile != null) CSVParser.updateCourseFile(courseFile, courses);
+            courseIndex.put(c.getCourseCode(), c); // O(1) indeks güncelleme
+            if (courseFile != null)
+                CSVParser.updateCourseFile(courseFile, courses);
         }
     }
-    
+
     public void removeCourse(Course c) {
-        if (courses.remove(c)) {
-            if (courseFile != null) CSVParser.updateCourseFile(courseFile, courses);
-            
+        if (c != null && courses.remove(c)) {
+            courseIndex.remove(c.getCourseCode()); // O(1) indeks güncelleme
+            if (courseFile != null)
+                CSVParser.updateCourseFile(courseFile, courses);
+
             // Ders silindiğinde öğrencilerin listesinden de sil
             for (Student s : students) {
                 s.getCourses().remove(c);
@@ -111,24 +131,29 @@ public class DataManager {
     }
 
     // ==================== SINIF YÖNETİMİ (OTOMATİK CSV KAYDI) ====================
-    
+
     public void addClassroom(Classroom c) {
-        if (!classrooms.contains(c)) {
+        if (c != null && !classroomIndex.containsKey(c.getClassroomID())) {
             classrooms.add(c);
-            if (classroomFile != null) CSVParser.updateClassroomFile(classroomFile, classrooms);
+            classroomIndex.put(c.getClassroomID(), c); // O(1) indeks güncelleme
+            if (classroomFile != null)
+                CSVParser.updateClassroomFile(classroomFile, classrooms);
         }
     }
 
     public void removeClassroom(Classroom c) {
-        if (classrooms.remove(c)) {
-            if (classroomFile != null) CSVParser.updateClassroomFile(classroomFile, classrooms);
+        if (c != null && classrooms.remove(c)) {
+            classroomIndex.remove(c.getClassroomID()); // O(1) indeks güncelleme
+            if (classroomFile != null)
+                CSVParser.updateClassroomFile(classroomFile, classrooms);
         }
     }
 
     // ==================== ATTENDANCE YÖNETİMİ ====================
 
     public void enrollStudentToCourse(Course course, Student student) {
-        if (course == null || student == null) return;
+        if (course == null || student == null)
+            return;
 
         // 1. Course sınıfına eklemeyi dene (Başarılı olursa true döner)
         boolean addedToCourse = course.addStudent(student);
@@ -150,7 +175,8 @@ public class DataManager {
     }
 
     public void unenrollStudentFromCourse(Course course, Student student) {
-        if (course == null || student == null) return;
+        if (course == null || student == null)
+            return;
 
         // 1. Course sınıfından silmeyi dene (Başarılı olursa true döner)
         boolean removedFromCourse = course.removeStudent(student);
@@ -165,53 +191,127 @@ public class DataManager {
             CSVParser.updateAttendanceFile(attendanceFile, courses);
         }
     }
-    
+
     // ==================== GETTER / SETTER METOTLARI ====================
-    
-    public void setStudents(List<Student> students) { this.students = students != null ? students : new ArrayList<>(); }
-    public void setCourses(List<Course> courses) { this.courses = courses != null ? courses : new ArrayList<>(); }
-    public void setClassrooms(List<Classroom> classrooms) { this.classrooms = classrooms != null ? classrooms : new ArrayList<>(); }
-    public void setSchedule(Schedule schedule) { this.schedule = schedule; }
-    
-    public List<Student> getStudents() { return students; }
-    public List<Course> getCourses() { return courses; }
-    public List<Classroom> getClassrooms() { return classrooms; }
-    public Schedule getSchedule() { return schedule; }
-    
+
+    public void setStudents(List<Student> students) {
+        this.students = students != null ? students : new ArrayList<>();
+        rebuildStudentIndex(); // İndeksi yeniden oluştur
+    }
+
+    public void setCourses(List<Course> courses) {
+        this.courses = courses != null ? courses : new ArrayList<>();
+        rebuildCourseIndex(); // İndeksi yeniden oluştur
+    }
+
+    public void setClassrooms(List<Classroom> classrooms) {
+        this.classrooms = classrooms != null ? classrooms : new ArrayList<>();
+        rebuildClassroomIndex(); // İndeksi yeniden oluştur
+    }
+
+    public void setSchedule(Schedule schedule) {
+        this.schedule = schedule;
+    }
+
+    public List<Student> getStudents() {
+        return students;
+    }
+
+    public List<Course> getCourses() {
+        return courses;
+    }
+
+    public List<Classroom> getClassrooms() {
+        return classrooms;
+    }
+
+    public Schedule getSchedule() {
+        return schedule;
+    }
+
+    // İndeks yeniden oluşturma metotları (toplu yükleme sonrası çağrılır)
+    private void rebuildStudentIndex() {
+        studentIndex.clear();
+        for (Student s : students) {
+            if (s != null && s.getStudentID() != null) {
+                studentIndex.put(s.getStudentID(), s);
+            }
+        }
+    }
+
+    private void rebuildCourseIndex() {
+        courseIndex.clear();
+        for (Course c : courses) {
+            if (c != null && c.getCourseCode() != null) {
+                courseIndex.put(c.getCourseCode(), c);
+            }
+        }
+    }
+
+    private void rebuildClassroomIndex() {
+        classroomIndex.clear();
+        for (Classroom c : classrooms) {
+            if (c != null && c.getClassroomID() != null) {
+                classroomIndex.put(c.getClassroomID(), c);
+            }
+        }
+    }
+
     // ==================== YARDIMCI METOTLAR ====================
 
     public boolean isDataLoaded() {
         return students != null && !students.isEmpty() &&
-               courses != null && !courses.isEmpty() &&
-               classrooms != null && !classrooms.isEmpty();
+                courses != null && !courses.isEmpty() &&
+                classrooms != null && !classrooms.isEmpty();
     }
-    
+
     public void clearAllData() {
-        if (students != null) students.clear();
-        if (courses != null) courses.clear();
-        if (classrooms != null) classrooms.clear();
+        if (students != null)
+            students.clear();
+        if (courses != null)
+            courses.clear();
+        if (classrooms != null)
+            classrooms.clear();
+        // İndeksleri de temizle
+        studentIndex.clear();
+        courseIndex.clear();
+        classroomIndex.clear();
         this.schedule = null;
-        // Dosya referanslarını sıfırlama, belki kullanıcı aynı klasöre tekrar yükleme yapar
+        // Dosya referanslarını sıfırlama, belki kullanıcı aynı klasöre tekrar yükleme
+        // yapar
     }
-    
+
+    /**
+     * O(1) sınıf araması (HashMap tabanlı)
+     */
     public Classroom getClassroomByID(String id) {
-        if (classrooms == null) return null;
-        return classrooms.stream().filter(c -> c.getClassroomID().equals(id)).findFirst().orElse(null);
+        if (id == null || classroomIndex == null)
+            return null;
+        return classroomIndex.get(id);
     }
-    
+
+    /**
+     * O(1) öğrenci araması (HashMap tabanlı) - ESKİ: O(n)
+     */
     public Student getStudentByID(String id) {
-        if (students == null) return null;
-        return students.stream().filter(s -> s.getStudentID().equals(id)).findFirst().orElse(null);
+        if (id == null || studentIndex == null)
+            return null;
+        return studentIndex.get(id);
     }
-    
+
+    /**
+     * O(1) ders araması (HashMap tabanlı) - ESKİ: O(n)
+     */
     public Course getCourseByCode(String code) {
-        if (courses == null) return null;
-        return courses.stream().filter(c -> c.getCourseCode().equals(code)).findFirst().orElse(null);
+        if (code == null || courseIndex == null)
+            return null;
+        return courseIndex.get(code);
     }
-    
-    // ==================== PERSISTENCE (Tüm Durumu Kaydetme - Opsiyonel) ====================
+
+    // ==================== PERSISTENCE (Tüm Durumu Kaydetme - Opsiyonel)
+    // ====================
     // Bu metotlar, CSV dışındaki "proje dosyası" (.dat) mantığı içindir.
-    
+
     public void saveToFile(File file) throws IOException {
         try (ObjectOutputStream oos = new ObjectOutputStream(new FileOutputStream(file))) {
             oos.writeInt(DATA_VERSION);
@@ -221,12 +321,13 @@ public class DataManager {
             oos.writeObject(schedule);
         }
     }
-    
+
     public void loadFromFile(File file) throws IOException, ClassNotFoundException {
         try (ObjectInputStream ois = new ObjectInputStream(new FileInputStream(file))) {
             int version = ois.readInt();
-            if (version != DATA_VERSION) throw new IOException("Incompatible data version");
-            
+            if (version != DATA_VERSION)
+                throw new IOException("Incompatible data version");
+
             this.students = (List<Student>) ois.readObject();
             this.courses = (List<Course>) ois.readObject();
             this.classrooms = (List<Classroom>) ois.readObject();
