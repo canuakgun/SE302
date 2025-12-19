@@ -5,6 +5,8 @@
 ![Java](https://img.shields.io/badge/Java-11-orange?style=for-the-badge&logo=java)
 ![JavaFX](https://img.shields.io/badge/JavaFX-21.0.1-blue?style=for-the-badge&logo=java)
 ![Maven](https://img.shields.io/badge/Maven-3.8-red?style=for-the-badge&logo=apachemaven)
+![iText](https://img.shields.io/badge/iText-5.5.13-green?style=for-the-badge)
+![License](https://img.shields.io/badge/License-MIT-yellow?style=for-the-badge)
 
 
 
@@ -221,6 +223,7 @@ When you first launch the application, you'll see a modern welcome screen with o
 - 📁 **Load Existing Project**: Continue from a saved state
 - ⚙️ **Settings**: Configure application preferences
 
+![Welcome Screen](screenshots/welcome.png)
 ![Welcome Screen](screenshots/welcome-screen.png)
 *The welcome screen provides quick access to all main features*
 
@@ -266,6 +269,8 @@ To schedule exams, you need to import data via CSV files:
 3. Review the import summary
 4. Click **"Import"** to load the data
 
+![Import Dialog](screenshots/load.png)
+*Import dialog showing file selection*
 ![Import Dialog](screenshots/import-dialog.png)
 *Import dialog showing file selection and validation*
 
@@ -277,6 +282,11 @@ Before generating the schedule, set the following parameters:
 
 - **📅 Exam Start Date**: First day of the exam period
 - **📆 Exam Day Period**: Total number of days for the examination period
+- **⏰ Time Slots**: Number of exam sessions per day (e.g., 2 = Morning & Afternoon, 3 = Morning, Afternoon & Evening)
+
+These parameters determine the available time slots for scheduling.
+
+![Schedule Configuration](screenshots/detailed%20exam%20view.png)
 - **⏰ Time Slots**: The exam hours.
 
 These parameters determine the available time slots for scheduling.
@@ -301,6 +311,8 @@ The system provides real-time progress updates during generation.
 - ⚠️ **Warnings**: Should be reviewed (e.g., student workload)
 - ℹ️ **Info**: General statistics and analysis
 
+![Schedule Generation](screenshots/generate.png)
+*Generate result-Validation screen will be shown later screenshots.*
 ![Schedule Generation](screenshots/schedule-generation.png)
 *Live progress during schedule generation with validation results*
 
@@ -331,6 +343,7 @@ Students can view their personalized exam schedule:
    - 🗓️ **Calendar**: Visual timeline
    - 📈 **Statistics**: Exam distribution analysis
 
+![Student Portal](screenshots/student%20view.png)
 ![Student Portal](screenshots/student-portal.png)
 *Student portal showing personalized schedule and statistics*
 
@@ -354,6 +367,7 @@ All exports include:
 - Conflict analysis
 - Utilization metrics
 
+![Export Options](screenshots/export.png)
 ![Export Options](screenshots/export-options.png)
 *Export dialog with multiple format options*
 
@@ -495,6 +509,11 @@ Individual student schedules contain:
 <tr>
 <td width="50%">
 
+![Dashboard](screenshots/main%20screen.png)
+*Main dashboard with key statistics*
+
+</td>
+
 ![Dashboard](screenshots/dashboard.png)
 *Main dashboard with key statistics*
 
@@ -514,12 +533,14 @@ Individual student schedules contain:
 <tr>
 <td width="50%">
 
+![Validation](screenshots/validation.png)
 ![Validation](screenshots/validation-results.png)
 *Detailed validation results with conflict detection*
 
 </td>
 <td width="50%">
 
+![Analytics](screenshots/statistics.png)
 ![Analytics](screenshots/analytics.png)
 *Comprehensive analytics and statistics*
 
@@ -527,6 +548,7 @@ Individual student schedules contain:
 </tr>
 </table>
 
+> **Note**: To add screenshots, place your images in a `screenshots/` directory in the project root and ensure the filenames match those referenced in this README.
 
 ---
 
@@ -570,6 +592,10 @@ Before submitting a PR:
 
 ## 📄 License
 
+This project is licensed under the **MIT License** - see the [LICENSE](LICENSE) file for details.
+
+```
+MIT License
 
 ```
 
@@ -599,6 +625,9 @@ SOFTWARE.
 
 ## 🙏 Acknowledgments
 
+- **JavaFX Team**: For the excellent UI framework
+- **iText Team**: For powerful PDF generation capabilities
+- **Contributors**: Everyone who has contributed to this project
 Thanks for all help for all members.Furkan,Ali,Ahmet Emir, Can and Abdulhamid.
 
 ---
@@ -607,12 +636,14 @@ Thanks for all help for all members.Furkan,Ali,Ahmet Emir, Can and Abdulhamid.
 
 - **Issues**: [GitHub Issues](https://github.com/your-repo/issues)
 - **Discussions**: [GitHub Discussions](https://github.com/your-repo/discussions)
+- **Email**: your-email@example.com
 - **Email**: abdulhamidyildirim@hotmail.com
 
 ---
 
 <div align="center">
 
+**Made with ❤️ by the Exam Scheduler Team**
 **Made with by the Exam Scheduler Team**
 
 ⭐ Star this repository if you find it helpful!
