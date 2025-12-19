@@ -78,6 +78,7 @@ import javafx.scene.control.TextField;
 import javafx.scene.control.ToggleButton;
 import javafx.scene.control.ToggleGroup;
 import javafx.scene.control.ToolBar;
+import javafx.scene.control.Tooltip;
 import javafx.scene.control.cell.PropertyValueFactory;
 import javafx.scene.control.cell.TextFieldListCell;
 
@@ -142,29 +143,35 @@ public class ExamSchedulerApp extends Application {
         // Admin/Main Entry Button
         Button startBtn = new Button("Admin Login / Start ➤");
         startBtn.setStyle(primaryBtnStyle);
+        addStyledTooltip(startBtn, "Start the application or login as admin");
         startBtn.setOnAction(e -> showMainApplication(stage));
 
         // Settings Button
         Button settingsBtn = new Button("⚙ Settings");
         settingsBtn.setStyle(secondaryBtnStyle);
+        addStyledTooltip(settingsBtn, "Configure application settings");
         settingsBtn.setOnAction(e -> showSettingsDialog()); // showSettingsDialog çağrıldı
 
         // Help Buttons (New additions)
         Button manualBtn = new Button("📚 User Manual");
         manualBtn.setStyle(helpBtnStyle);
+        addStyledTooltip(manualBtn, "Read the user manual");
         manualBtn.setOnAction(e -> showHelpDialog("📚 User Manual", getUserManualText()));
 
         Button quickStartBtn = new Button("🚀 Quick Start Guide");
         quickStartBtn.setStyle(helpBtnStyle);
+        addStyledTooltip(quickStartBtn, "Quick start instructions");
         quickStartBtn.setOnAction(e -> showHelpDialog("🚀 Quick Start Guide", getQuickStartText()));
 
         Button faqBtn = new Button("❓ FAQ");
         faqBtn.setStyle(helpBtnStyle);
+        addStyledTooltip(faqBtn, "Frequently Asked Questions");
         faqBtn.setOnAction(e -> showHelpDialog("❓ Frequently Asked Questions", getFAQText()));
 
         // Exit Button
         Button exitBtn = new Button("❌ Exit");
         exitBtn.setStyle(exitBtnStyle);
+        addStyledTooltip(exitBtn, "Exit the application");
         exitBtn.setOnAction(e -> stage.close());
 
         // Group the secondary buttons (Settings, Help, Exit)
@@ -302,6 +309,16 @@ public class ExamSchedulerApp extends Application {
         resetBtn.setStyle(
                 "-fx-background-color: #E53935; -fx-text-fill: white; -fx-padding: 8px 16px; -fx-font-weight: bold; -fx-cursor: hand;");
         toolBar.setStyle(toolBarStyle);
+
+        // Add tooltips to buttons
+        addStyledTooltip(loadBtn, "Load CSV data files (courses, classrooms, students, attendance)");
+        addStyledTooltip(generateBtn, "Automatically generate exam schedule based on loaded data");
+        addStyledTooltip(saveBtn, "Save the current exam schedule to a file");
+        addStyledTooltip(validateBtn, "Check the schedule for conflicts and constraint violations");
+        addStyledTooltip(exportBtn, "Export the schedule to PDF or other formats");
+        addStyledTooltip(importScheduleBtn, "Import a previously saved exam schedule");
+        addStyledTooltip(studentPortalBtn, "Open student portal to view individual exam schedules");
+        addStyledTooltip(resetBtn, "Clear all data and reset the application");
 
         Region spacer = new Region();
         HBox.setHgrow(spacer, Priority.ALWAYS);
@@ -519,6 +536,8 @@ public class ExamSchedulerApp extends Application {
 
         // Login butonu - Modern, gradient
         Button loginBtn = new Button("ACCESS SCHEDULE →");
+        addStyledTooltip(loginBtn, "View your personal exam schedule");
+
         loginBtn.setPrefHeight(50);
         loginBtn.setPrefWidth(380);
         loginBtn.setStyle("-fx-background-color: linear-gradient(to right, #667eea, #764ba2); " +
@@ -735,9 +754,9 @@ public class ExamSchedulerApp extends Application {
         // Toggle Grubu (Sadece biri seçili olsun diye)
         ToggleGroup navGroup = new ToggleGroup();
 
-        ToggleButton btnDash = createNavButton("📊 Dashboard", navGroup);
-        ToggleButton btnCal = createNavButton("📅 Calendar", navGroup);
-        ToggleButton btnStats = createNavButton("📈 Analytics", navGroup);
+        ToggleButton btnDash = createNavButton("📊 Dashboard", navGroup, "View dashboard overview");
+        ToggleButton btnCal = createNavButton("📅 Calendar", navGroup, "View exam calendar");
+        ToggleButton btnStats = createNavButton("📈 Analytics", navGroup, "View performance analytics");
 
         // Aksiyonlar
         btnDash.setOnAction(e -> contentArea.getChildren().setAll(dashboardView));
@@ -772,13 +791,14 @@ public class ExamSchedulerApp extends Application {
         Label exportLabel = new Label("Export Options:");
         exportLabel.setStyle("-fx-font-size: 14px; -fx-font-weight: bold; -fx-text-fill: #2d3436;");
 
-        Button textBtn = createModernExportButton("📄", "Text File", "#3498db");
+        Button textBtn = createModernExportButton("📄", "Text File", "#3498db", "Export schedule to text file");
         textBtn.setOnAction(e -> exportStudentSchedule(scheduleStage, student, studentExams));
 
-        Button icalBtn = createModernExportButton("📅", "Calendar", "#2ecc71");
+        Button icalBtn = createModernExportButton("📅", "Calendar", "#2ecc71", "Export schedule to iCal format");
         icalBtn.setOnAction(e -> exportAsICalendar(scheduleStage, student, studentExams));
 
-        Button printBtn = createModernExportButton("🖨", "Print (PDF)", "#9e0d0d");
+        Button printBtn = createModernExportButton("🖨", "Print (PDF)", "#9e0d0d",
+                "Export schedule to PDF for printing");
         printBtn.setOnAction(e -> exportAsPDF(scheduleStage, student, studentExams));
 
         Region bottomSpacer = new Region();
@@ -799,9 +819,19 @@ public class ExamSchedulerApp extends Application {
         scheduleStage.show();
     }
 
+    // --- TOOLTIP HELPER ---
+    private void addStyledTooltip(javafx.scene.control.Control node, String text) {
+        Tooltip tooltip = new Tooltip(text);
+        tooltip.setShowDelay(javafx.util.Duration.millis(100)); // Show almost instantly
+        tooltip.setStyle(
+                "-fx-font-size: 14px; -fx-background-color: #333; -fx-text-fill: white; -fx-padding: 8px; -fx-background-radius: 5;");
+        node.setTooltip(tooltip);
+    }
+
     // --- YENİ YARDIMCI METOT (Navigasyon Butonları İçin) ---
-    private ToggleButton createNavButton(String text, ToggleGroup group) {
+    private ToggleButton createNavButton(String text, ToggleGroup group, String tooltipText) {
         ToggleButton btn = new ToggleButton(text);
+        addStyledTooltip(btn, tooltipText);
         btn.setToggleGroup(group);
         btn.setPrefWidth(140);
         btn.setPrefHeight(35);
@@ -1006,8 +1036,9 @@ public class ExamSchedulerApp extends Application {
     // Detay item oluşturucu
 
     // Modern export butonu
-    private Button createModernExportButton(String icon, String text, String color) {
+    private Button createModernExportButton(String icon, String text, String color, String tooltipText) {
         Button btn = new Button(icon + " " + text);
+        addStyledTooltip(btn, tooltipText);
         btn.setStyle("-fx-background-color: " + color + "; " +
                 "-fx-text-fill: white; " +
                 "-fx-font-weight: 600; " +
@@ -1697,7 +1728,9 @@ public class ExamSchedulerApp extends Application {
         tsView.setPrefHeight(120);
 
         Button addTs = new Button("+");
+        addStyledTooltip(addTs, "Add a new time slot");
         Button remTs = new Button("-");
+        addStyledTooltip(remTs, "Remove selected time slot");
         HBox tsButtons = new HBox(5, addTs, remTs);
         tsButtons.setAlignment(Pos.CENTER_RIGHT);
 
@@ -1717,6 +1750,7 @@ public class ExamSchedulerApp extends Application {
         crView.setPrefHeight(140);
 
         Button manageClassroomsBtn = new Button("Manage Classrooms");
+        addStyledTooltip(manageClassroomsBtn, "Manage classrooms list");
         manageClassroomsBtn.setStyle(buttonStyle + "-fx-font-size: 11px;");
         manageClassroomsBtn.setOnAction(e -> showManageClassrooms((Stage) crView.getScene().getWindow()));
 
@@ -1799,6 +1833,9 @@ public class ExamSchedulerApp extends Application {
 
                 editBtn.setStyle(editStyle);
                 deleteBtn.setStyle(deleteStyle);
+
+                addStyledTooltip(editBtn, "Edit this exam details");
+                addStyledTooltip(deleteBtn, "Delete this exam from schedule");
 
                 editBtn.setOnAction(ev -> {
                     ExamEntry e = getTableView().getItems().get(getIndex());
@@ -2298,7 +2335,7 @@ public class ExamSchedulerApp extends Application {
     }
 
     private void loadFilesWithPaths(Stage owner, String studentsPath, String coursesPath,
-            String classroomsPath, String attendancePath) {
+                                    String classroomsPath, String attendancePath) {
         messages.add("📄 Loading individual files...");
 
         try {
@@ -3188,8 +3225,8 @@ public class ExamSchedulerApp extends Application {
 
                         String suffix = (forcedSlot != null || examsToPlace.stream()
                                 .filter(e -> e.getCourse().getCourseCode().equals(courseCode)).count() > 1)
-                                        ? " [Part]"
-                                        : "";
+                                ? " [Part]"
+                                : "";
 
                         messages.add("  ✓ " + courseCode + suffix +
                                 " → Day " + day + ", Slot " + slotNum +
@@ -3655,6 +3692,7 @@ public class ExamSchedulerApp extends Application {
         enrolledLabel.setStyle("-fx-font-weight: bold; -fx-font-size: 14px;");
 
         Button save = new Button("💾 Save");
+        addStyledTooltip(save, "Save changes to this exam");
         save.setOnAction(ev -> {
             int newDay = day.getValue();
             int newSlotIdx = slot.getSelectionModel().getSelectedIndex() + 1;
@@ -3809,6 +3847,7 @@ public class ExamSchedulerApp extends Application {
         // Manage Students button
         Button manageStudentsBtn = new Button("👥 Manage Students");
         manageStudentsBtn.setStyle("-fx-background-color: #2196F3; -fx-text-fill: white;");
+        addStyledTooltip(manageStudentsBtn, "Manage students enrolled in this exam");
         manageStudentsBtn.setOnAction(ev -> {
             showManageExamStudents(d, e, enrolledLabel);
         });
@@ -5360,8 +5399,8 @@ public class ExamSchedulerApp extends Application {
         boolean checkTimeDistribution;
 
         ValidationOptions(boolean studentConflicts, boolean consecutive, boolean roomConflicts,
-                boolean capacity, boolean studentLoad,
-                boolean roomUtilization, boolean timeDistribution) {
+                          boolean capacity, boolean studentLoad,
+                          boolean roomUtilization, boolean timeDistribution) {
             this.checkStudentConflicts = studentConflicts;
             this.checkConsecutive = consecutive;
             this.checkRoomConflicts = roomConflicts;
