@@ -154,6 +154,7 @@ SE302/
 │                   └── ThemeManager.java       # Theme management
 ├── pom.xml                                     # Maven configuration
 └── README.md                                   # This file
+└──screenshots
 ```
 
 ### Architecture Highlights
@@ -503,7 +504,7 @@ Individual student schedules contain:
 <tr>
 <td width="50%">
 
-![Main Screen](screenshots/main_screen.png)  
+![Main Screen](screenshots/main-screen.png)  
 *Main dashboard with key statistics*
 
 </td>
