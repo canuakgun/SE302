@@ -616,8 +616,8 @@ Thanks for all help for all members.Furkan,Ali,Ahmet Emir, Can and Abdulhamid.
 
 <div align="center">
 
-**Made with ❤️ by the Exam Scheduler Team**
-**Made with by the Exam Scheduler Team**
+**Made by Team 11**
+
 
 ⭐ Star this repository if you find it helpful!
 
