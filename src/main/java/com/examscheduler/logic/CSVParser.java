@@ -95,14 +95,45 @@ public class CSVParser {
     }
 
     /**
+     * Result object for attendance parsing validation
+     */
+    public static class AttendanceValidationResult {
+        private final List<String> missingStudents = new ArrayList<>();
+        private final List<String> missingCourses = new ArrayList<>();
+        private int totalEnrollments = 0;
+
+        public List<String> getMissingStudents() {
+            return missingStudents;
+        }
+
+        public List<String> getMissingCourses() {
+            return missingCourses;
+        }
+
+        public int getTotalEnrollments() {
+            return totalEnrollments;
+        }
+
+        public boolean hasWarnings() {
+            return !missingStudents.isEmpty() || !missingCourses.isEmpty();
+        }
+    }
+
+    /**
      * DÜZELTİLMİŞ METOT: Çok satırlı formatı destekler.
      * Satır 1: CourseCode
      * Satır 2: [Std1, Std2, ...]
      * 
      * OPTİMİZASYON: HashMap tabanlı O(1) aramalar (önceki: O(n×m))
+     * 
+     * @return AttendanceValidationResult containing any warnings about missing
+     *         students/courses
      */
-    public static void parseAttendanceLists(String filePath, List<Student> students, List<Course> courses)
+    public static AttendanceValidationResult parseAttendanceLists(String filePath, List<Student> students,
+            List<Course> courses)
             throws CSVParseException {
+
+        AttendanceValidationResult validationResult = new AttendanceValidationResult();
 
         // PERFORMANS: HashMap'ler oluştur (O(n) bir kez, sonra O(1) aramalar)
         Map<String, Student> studentMap = new HashMap<>();
@@ -166,9 +197,20 @@ public class CSVParser {
                                 if (!targetCourse.getEnrolledStudents().contains(found)) {
                                     targetCourse.addStudent(found);
                                     found.addCourse(targetCourse);
+                                    validationResult.totalEnrollments++;
+                                }
+                            } else {
+                                // Student not found in students.csv
+                                if (!validationResult.missingStudents.contains(id)) {
+                                    validationResult.missingStudents.add(id);
                                 }
                             }
                         }
+                    }
+                } else {
+                    // Course not found in courses.csv
+                    if (!validationResult.missingCourses.contains(courseCode)) {
+                        validationResult.missingCourses.add(courseCode);
                     }
                 }
 
@@ -178,6 +220,8 @@ public class CSVParser {
         } catch (IOException e) {
             throw new CSVParseException("Error parsing attendance", e);
         }
+
+        return validationResult;
     }
 
     // ==================== SCHEDULE PARSING (EXPORT EDİLMİŞ OLAN CSV DOSYASI)

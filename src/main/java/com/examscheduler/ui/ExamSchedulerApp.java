@@ -432,8 +432,10 @@ public class ExamSchedulerApp extends Application {
         brandLabel.setStyle("-fx-font-size: 48px;");
 
         Label titleLabel = new Label("STUDENT PORTAL");
-        titleLabel.setStyle("-fx-font-size: 32px; -fx-font-weight: bold; -fx-text-fill: linear-gradient(135deg, #667eea 0%, #764ba2 100%); " +
-                "-fx-effect: dropshadow(gaussian, rgba(0,0,0,0.3), 8, 0, 0, 2);");
+        titleLabel.setStyle(
+                "-fx-font-size: 32px; -fx-font-weight: bold; -fx-text-fill: linear-gradient(135deg, #667eea 0%, #764ba2 100%); "
+                        +
+                        "-fx-effect: dropshadow(gaussian, rgba(0,0,0,0.3), 8, 0, 0, 2);");
 
         Label subtitleLabel = new Label("Secure Access to Your Exam Schedule");
         subtitleLabel.setStyle("-fx-font-size: 14px; -fx-text-fill:linear-gradient(135deg, #667eea 0%, #764ba2 100%);");
@@ -2081,7 +2083,8 @@ public class ExamSchedulerApp extends Application {
                     updateMessage("Loading attendance lists...");
                     updateProgress(85, 100);
                     log.append("Loading attendance lists...\n");
-                    CSVParser.parseAttendanceLists(attendancePath, dataManager.getStudents(),
+                    CSVParser.AttendanceValidationResult attendanceResult = CSVParser.parseAttendanceLists(
+                            attendancePath, dataManager.getStudents(),
                             dataManager.getCourses());
 
                     int totalEnrollments = dataManager.getCourses().stream()
@@ -2090,6 +2093,24 @@ public class ExamSchedulerApp extends Application {
                     log.append("✓ Loaded attendance data (").append(totalEnrollments)
                             .append(" total enrollments)\n\n");
                     result.attendanceCount = totalEnrollments;
+
+                    // Add consistency warnings
+                    if (attendanceResult.hasWarnings()) {
+                        log.append("⚠ DATA CONSISTENCY WARNINGS:\n");
+                        for (String missingCourse : attendanceResult.getMissingCourses()) {
+                            String warning = "Course '" + missingCourse
+                                    + "' in attendance.csv not found in courses.csv";
+                            result.warnings.add(warning);
+                            log.append("  • ").append(warning).append("\n");
+                        }
+                        for (String missingStudent : attendanceResult.getMissingStudents()) {
+                            String warning = "Student '" + missingStudent
+                                    + "' in attendance.csv not found in students.csv";
+                            result.warnings.add(warning);
+                            log.append("  • ").append(warning).append("\n");
+                        }
+                        log.append("\n");
+                    }
 
                     dataManager.setSourceFiles(
                             new File(studentsPath),
@@ -2151,23 +2172,49 @@ public class ExamSchedulerApp extends Application {
             progressStage.close();
 
             if (result.success) {
-                updateClassroomsView();
+                // Block loading if there are data consistency issues
+                if (!result.warnings.isEmpty()) {
+                    StringBuilder errorMsg = new StringBuilder();
+                    errorMsg.append("Cannot load data due to consistency errors:\n\n");
+                    errorMsg.append("❌ DATA CONSISTENCY ERRORS:\n\n");
 
-                messages.add("✓ Data loaded successfully:");
-                messages.add("  • Students: " + result.studentsCount);
-                messages.add("  • Courses: " + result.coursesCount);
-                messages.add("  • Classrooms: " + result.classroomsCount);
-                if (result.attendanceCount > 0) {
-                    messages.add("  • Enrollments: " + result.attendanceCount);
+                    int maxWarningsToShow = 10;
+                    for (int i = 0; i < Math.min(result.warnings.size(), maxWarningsToShow); i++) {
+                        errorMsg.append("• ").append(result.warnings.get(i)).append("\n");
+                    }
+                    if (result.warnings.size() > maxWarningsToShow) {
+                        errorMsg.append("\n... and ").append(result.warnings.size() - maxWarningsToShow)
+                                .append(" more errors.\n");
+                    }
+                    errorMsg.append("\nPlease fix the CSV files and try again.");
+
+                    messages.add("❌ Load blocked: " + result.warnings.size() + " data consistency errors found");
+                    // Add detailed error messages to the log
+                    for (String warning : result.warnings) {
+                        messages.add("  ⚠ " + warning);
+                    }
+                    messages.add("⚠ Load cancelled.");
+                    showError("Data Consistency Error", errorMsg.toString());
+                    dataManager.clearAllData();
+                } else {
+                    updateClassroomsView();
+
+                    messages.add("✓ Data loaded successfully:");
+                    messages.add("  • Students: " + result.studentsCount);
+                    messages.add("  • Courses: " + result.coursesCount);
+                    messages.add("  • Classrooms: " + result.classroomsCount);
+                    if (result.attendanceCount > 0) {
+                        messages.add("  • Enrollments: " + result.attendanceCount);
+                    }
+                    messages.add("🚀 Ready to generate schedule.");
+
+                    showInfo("Load Success",
+                            "Data loaded successfully!\n\n" +
+                                    "Students: " + result.studentsCount + "\n" +
+                                    "Courses: " + result.coursesCount + "\n" +
+                                    "Classrooms: " + result.classroomsCount + "\n" +
+                                    (result.attendanceCount > 0 ? "Enrollments: " + result.attendanceCount : ""));
                 }
-                messages.add("🚀 Ready to generate schedule.");
-
-                showInfo("Load Success",
-                        "Data loaded successfully!\n\n" +
-                                "Students: " + result.studentsCount + "\n" +
-                                "Courses: " + result.coursesCount + "\n" +
-                                "Classrooms: " + result.classroomsCount + "\n" +
-                                (result.attendanceCount > 0 ? "Enrollments: " + result.attendanceCount : ""));
             } else {
                 messages.add("❌ Load failed: " + result.error);
                 showError("Load Failed", result.error + "\n\nCheck the log for details.");
@@ -2349,7 +2396,8 @@ public class ExamSchedulerApp extends Application {
             dataManager.setCourses(courses);
             dataManager.setClassrooms(classrooms);
 
-            CSVParser.parseAttendanceLists(attendancePath, students, courses);
+            CSVParser.AttendanceValidationResult attendanceResult = CSVParser.parseAttendanceLists(attendancePath,
+                    students, courses);
             messages.add("✓ Attendance lists loaded");
 
             dataManager.setSourceFiles(
@@ -2365,11 +2413,45 @@ public class ExamSchedulerApp extends Application {
             messages.add("  • Courses: " + courses.size());
             messages.add("  • Classrooms: " + classrooms.size());
 
-            showInfo("Load Success",
-                    "Files loaded successfully!\n\n" +
-                            "Students: " + students.size() + "\n" +
-                            "Courses: " + courses.size() + "\n" +
-                            "Classrooms: " + classrooms.size());
+            // Block loading if there are data consistency issues
+            if (attendanceResult.hasWarnings()) {
+                StringBuilder errorMsg = new StringBuilder();
+                errorMsg.append("Cannot load data due to consistency errors:\n\n");
+                errorMsg.append("❌ DATA CONSISTENCY ERRORS:\n\n");
+
+                List<String> allErrors = new ArrayList<>();
+                for (String missingCourse : attendanceResult.getMissingCourses()) {
+                    allErrors.add("Course '" + missingCourse + "' in attendance.csv not found in courses.csv");
+                }
+                for (String missingStudent : attendanceResult.getMissingStudents()) {
+                    allErrors.add("Student '" + missingStudent + "' in attendance.csv not found in students.csv");
+                }
+
+                int maxErrorsToShow = 10;
+                for (int i = 0; i < Math.min(allErrors.size(), maxErrorsToShow); i++) {
+                    errorMsg.append("• ").append(allErrors.get(i)).append("\n");
+                }
+                if (allErrors.size() > maxErrorsToShow) {
+                    errorMsg.append("\n... and ").append(allErrors.size() - maxErrorsToShow)
+                            .append(" more errors.\n");
+                }
+                errorMsg.append("\nPlease fix the CSV files and try again.");
+
+                messages.add("❌ Load blocked: " + allErrors.size() + " data consistency errors found");
+                // Add detailed error messages to the log
+                for (String error : allErrors) {
+                    messages.add("  ⚠ " + error);
+                }
+                messages.add("⚠ Load cancelled.");
+                showError("Data Consistency Error", errorMsg.toString());
+                dataManager.clearAllData();
+            } else {
+                showInfo("Load Success",
+                        "Files loaded successfully!\n\n" +
+                                "Students: " + students.size() + "\n" +
+                                "Courses: " + courses.size() + "\n" +
+                                "Classrooms: " + classrooms.size());
+            }
 
         } catch (Exception e) {
             messages.add("❌ Load failed: " + e.getMessage());
@@ -2415,8 +2497,9 @@ public class ExamSchedulerApp extends Application {
             dataManager.setCourses(courses);
             dataManager.setClassrooms(classrooms);
 
+            CSVParser.AttendanceValidationResult attendanceResult = null;
             if (attendanceFile.exists()) {
-                CSVParser.parseAttendanceLists(attendanceFile.getAbsolutePath(), students, courses);
+                attendanceResult = CSVParser.parseAttendanceLists(attendanceFile.getAbsolutePath(), students, courses);
             }
 
             dataManager.setSourceFiles(studentsFile, coursesFile, classroomsFile,
@@ -2461,12 +2544,46 @@ public class ExamSchedulerApp extends Application {
                 messages.add("  • Schedule: Loaded");
             }
 
-            showInfo("Backup Restored",
-                    "Backup restored successfully!\n\n" +
-                            "Students: " + students.size() + "\n" +
-                            "Courses: " + courses.size() + "\n" +
-                            "Classrooms: " + classrooms.size() + "\n" +
-                            (scheduleLoaded ? "Schedule: Loaded" : "Schedule: Not loaded"));
+            // Block loading if there are data consistency issues
+            if (attendanceResult != null && attendanceResult.hasWarnings()) {
+                StringBuilder errorMsg = new StringBuilder();
+                errorMsg.append("Cannot restore backup due to consistency errors:\n\n");
+                errorMsg.append("❌ DATA CONSISTENCY ERRORS:\n\n");
+
+                List<String> allErrors = new ArrayList<>();
+                for (String missingCourse : attendanceResult.getMissingCourses()) {
+                    allErrors.add("Course '" + missingCourse + "' in attendance.csv not found in courses.csv");
+                }
+                for (String missingStudent : attendanceResult.getMissingStudents()) {
+                    allErrors.add("Student '" + missingStudent + "' in attendance.csv not found in students.csv");
+                }
+
+                int maxErrorsToShow = 10;
+                for (int i = 0; i < Math.min(allErrors.size(), maxErrorsToShow); i++) {
+                    errorMsg.append("• ").append(allErrors.get(i)).append("\n");
+                }
+                if (allErrors.size() > maxErrorsToShow) {
+                    errorMsg.append("\n... and ").append(allErrors.size() - maxErrorsToShow)
+                            .append(" more errors.\n");
+                }
+                errorMsg.append("\nPlease fix the backup CSV files and try again.");
+
+                messages.add("❌ Backup blocked: " + allErrors.size() + " data consistency errors found");
+                // Add detailed error messages to the log
+                for (String error : allErrors) {
+                    messages.add("  ⚠ " + error);
+                }
+                messages.add("⚠ Load cancelled.");
+                showError("Data Consistency Error", errorMsg.toString());
+                dataManager.clearAllData();
+            } else {
+                showInfo("Backup Restored",
+                        "Backup restored successfully!\n\n" +
+                                "Students: " + students.size() + "\n" +
+                                "Courses: " + courses.size() + "\n" +
+                                "Classrooms: " + classrooms.size() + "\n" +
+                                (scheduleLoaded ? "Schedule: Loaded" : "Schedule: Not loaded"));
+            }
 
         } catch (Exception e) {
             messages.add("❌ Backup restore failed: " + e.getMessage());
