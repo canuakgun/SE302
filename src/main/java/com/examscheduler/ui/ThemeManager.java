@@ -38,7 +38,6 @@ public class ThemeManager {
             DARK_THEME_CSS = null;
         } else {
             DARK_THEME_CSS = resource.toExternalForm();
-            System.out.println("Successfully loaded dark theme CSS from: " + DARK_THEME_CSS);
         }
     }
 

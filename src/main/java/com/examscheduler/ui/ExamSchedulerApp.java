@@ -432,11 +432,11 @@ public class ExamSchedulerApp extends Application {
         brandLabel.setStyle("-fx-font-size: 48px;");
 
         Label titleLabel = new Label("STUDENT PORTAL");
-        titleLabel.setStyle("-fx-font-size: 32px; -fx-font-weight: bold; -fx-text-fill: white; " +
+        titleLabel.setStyle("-fx-font-size: 32px; -fx-font-weight: bold; -fx-text-fill: linear-gradient(135deg, #667eea 0%, #764ba2 100%); " +
                 "-fx-effect: dropshadow(gaussian, rgba(0,0,0,0.3), 8, 0, 0, 2);");
 
         Label subtitleLabel = new Label("Secure Access to Your Exam Schedule");
-        subtitleLabel.setStyle("-fx-font-size: 14px; -fx-text-fill: rgba(255,255,255,0.9);");
+        subtitleLabel.setStyle("-fx-font-size: 14px; -fx-text-fill:linear-gradient(135deg, #667eea 0%, #764ba2 100%);");
 
         header.getChildren().addAll(brandLabel, titleLabel, subtitleLabel);
         root.setTop(header);
@@ -4285,6 +4285,7 @@ public class ExamSchedulerApp extends Application {
 
                 List<String> timeSlots = getTimeSlotsFromUI.get();
                 int count = 0;
+                int idCounter = 1;
 
                 for (Exam exam : dataManager.getSchedule().getExams()) {
                     if (exam.isScheduled()) {
@@ -4296,7 +4297,7 @@ public class ExamSchedulerApp extends Application {
                         }
 
                         pw.printf("%s,%s,%d,%s,%s,%d%n",
-                                "EX" + String.format("%03d", Math.abs(exam.hashCode() % 1000)),
+                                "EX" + String.format("%03d", idCounter++),
                                 exam.getCourse().getCourseCode(),
                                 exam.getTimeSlot().getDay(),
                                 timeSlot,
@@ -4352,7 +4353,7 @@ public class ExamSchedulerApp extends Application {
                         : LocalDate.now();
 
                 List<String> timeSlots = getTimeSlotsFromUI.get();
-
+                int idCounter = 1;
                 for (Exam exam : dataManager.getSchedule().getExams()) {
                     if (exam.isScheduled()) {
                         LocalDate examDate = startDate.plusDays(exam.getTimeSlot().getDay() - 1);
@@ -4371,7 +4372,7 @@ public class ExamSchedulerApp extends Application {
                         String status = utilization > 100 ? "OVERCAPACITY" : (utilization > 90 ? "FULL" : "OK");
 
                         pw.printf("%s,%s,\"%s\",%d,%s,%s,\"%s\",%s,%d,%d,%.1f%%,%s%n",
-                                "EX" + String.format("%03d", Math.abs(exam.hashCode() % 1000)),
+                                "EX" + String.format("%03d", idCounter++),
                                 exam.getCourse().getCourseCode(),
                                 exam.getCourse().getCourseName(),
                                 exam.getTimeSlot().getDay(),
@@ -4414,7 +4415,7 @@ public class ExamSchedulerApp extends Application {
                 if (!backupDir.exists()) {
                     backupDir.mkdirs();
                 }
-
+                int idCounter = 1;
                 int savedFiles = 0;
                 StringBuilder report = new StringBuilder();
                 report.append("BACKUP REPORT\n");
@@ -4435,7 +4436,7 @@ public class ExamSchedulerApp extends Application {
                             }
 
                             pw.printf("%s,%s,%d,%s,%s,%d%n",
-                                    "EX" + String.format("%03d", Math.abs(exam.hashCode() % 1000)),
+                                    "EX" + String.format("%03d", idCounter++),
                                     exam.getCourse().getCourseCode(),
                                     exam.getTimeSlot().getDay(),
                                     timeSlot,
