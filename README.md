@@ -8,6 +8,8 @@
 ![iText](https://img.shields.io/badge/iText-5.5.13-green?style=for-the-badge)
 ![License](https://img.shields.io/badge/License-MIT-yellow?style=for-the-badge)
 
+
+
 **A sophisticated JavaFX-based examination scheduling system that intelligently assigns exams to classrooms and time slots while respecting multiple constraints.**
 
 [Features](#-features) • [Installation](#-installation) • [Usage](#-usage) • [Algorithm](#-scheduling-algorithm) • [Screenshots](#-screenshots) • [Contributing](#-contributing)
@@ -222,6 +224,7 @@ When you first launch the application, you'll see a modern welcome screen with o
 - ⚙️ **Settings**: Configure application preferences
 
 ![Welcome Screen](screenshots/welcome.png)
+![Welcome Screen](screenshots/welcome-screen.png)
 *The welcome screen provides quick access to all main features*
 
 ---
@@ -268,6 +271,8 @@ To schedule exams, you need to import data via CSV files:
 
 ![Import Dialog](screenshots/load.png)
 *Import dialog showing file selection*
+![Import Dialog](screenshots/import-dialog.png)
+*Import dialog showing file selection and validation*
 
 ---
 
@@ -282,6 +287,11 @@ Before generating the schedule, set the following parameters:
 These parameters determine the available time slots for scheduling.
 
 ![Schedule Configuration](screenshots/detailed%20exam%20view.png)
+- **⏰ Time Slots**: The exam hours.
+
+These parameters determine the available time slots for scheduling.
+
+![Schedule Configuration](screenshots/schedule-config.png)
 *Configure exam period duration and time slots*
 
 ---
@@ -303,6 +313,8 @@ The system provides real-time progress updates during generation.
 
 ![Schedule Generation](screenshots/generate.png)
 *Generate result-Validation screen will be shown later screenshots.*
+![Schedule Generation](screenshots/schedule-generation.png)
+*Live progress during schedule generation with validation results*
 
 ---
 
@@ -332,6 +344,7 @@ Students can view their personalized exam schedule:
    - 📈 **Statistics**: Exam distribution analysis
 
 ![Student Portal](screenshots/student%20view.png)
+![Student Portal](screenshots/student-portal.png)
 *Student portal showing personalized schedule and statistics*
 
 ---
@@ -355,6 +368,7 @@ All exports include:
 - Utilization metrics
 
 ![Export Options](screenshots/export.png)
+![Export Options](screenshots/export-options.png)
 *Export dialog with multiple format options*
 
 ---
@@ -500,6 +514,10 @@ Individual student schedules contain:
 
 </td>
 
+![Dashboard](screenshots/dashboard.png)
+*Main dashboard with key statistics*
+
+</td>
 </tr>
 </table>
 
@@ -516,12 +534,14 @@ Individual student schedules contain:
 <td width="50%">
 
 ![Validation](screenshots/validation.png)
+![Validation](screenshots/validation-results.png)
 *Detailed validation results with conflict detection*
 
 </td>
 <td width="50%">
 
 ![Analytics](screenshots/statistics.png)
+![Analytics](screenshots/analytics.png)
 *Comprehensive analytics and statistics*
 
 </td>
@@ -577,6 +597,9 @@ This project is licensed under the **MIT License** - see the [LICENSE](LICENSE) 
 ```
 MIT License
 
+```
+
+
 Copyright (c) 2025 Exam Scheduler Team
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
@@ -605,6 +628,7 @@ SOFTWARE.
 - **JavaFX Team**: For the excellent UI framework
 - **iText Team**: For powerful PDF generation capabilities
 - **Contributors**: Everyone who has contributed to this project
+Thanks for all help for all members.Furkan,Ali,Ahmet Emir, Can and Abdulhamid.
 
 ---
 
@@ -613,12 +637,14 @@ SOFTWARE.
 - **Issues**: [GitHub Issues](https://github.com/your-repo/issues)
 - **Discussions**: [GitHub Discussions](https://github.com/your-repo/discussions)
 - **Email**: your-email@example.com
+- **Email**: abdulhamidyildirim@hotmail.com
 
 ---
 
 <div align="center">
 
 **Made with ❤️ by the Exam Scheduler Team**
+**Made with by the Exam Scheduler Team**
 
 ⭐ Star this repository if you find it helpful!
 
