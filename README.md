@@ -1,10 +1,6 @@
 # 📅 Exam Scheduler System
 
 <div align="center">
-
-![Java](https://cdn-icons-png.flaticon.com/512/226/226777.png)
-![JavaFX](https://upload.wikimedia.org/wikipedia/en/c/cc/JavaFX_Logo.png)
-![Maven](https://www.svgrepo.com/show/376335/maven.svg)
 **A sophisticated JavaFX-based examination scheduling system that intelligently assigns exams to classrooms and time slots while respecting multiple constraints.**
 
 [Features](#-features) • [Installation](#-installation) • [Usage](#-usage) • [Algorithm](#-scheduling-algorithm) • [Screenshots](#-screenshots) • [Contributing](#-contributing)
@@ -286,7 +282,7 @@ These parameters determine the available time slots for scheduling.
 
 These parameters determine the available time slots for scheduling.
 
-![Schedule Configuration](screenshots/schedule-config.png)
+![Schedule Configuration](screenshots/configiration.png)
 *Configure exam period duration and time slots*
 
 ---
