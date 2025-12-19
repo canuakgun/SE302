@@ -598,9 +598,8 @@ The authors are not responsible for any damages, losses, or claims that may aris
 
 ## 🙏 Acknowledgments
 
-- **JavaFX Team**: For the excellent UI framework
-- **iText Team**: For powerful PDF generation capabilities
-- **Contributors**: Everyone who has contributed to this project
+- **JavaFX Team**: For the excellent UI framework.
+- **Contributors**: Everyone who has contributed to this project.
 Thanks for all help for all members.Furkan,Ali,Ahmet Emir, Can and Abdulhamid.
 
 ---
