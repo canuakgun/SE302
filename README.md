@@ -90,7 +90,6 @@ Our system solves these problems with intelligent algorithms and real-time valid
 | **Language** | Java | 11+ |
 | **UI Framework** | JavaFX | 21.0.1 |
 | **Build Tool** | Maven | 3.8+ |
-| **PDF Generation** | iText | 5.5.13.3 |
 | **Data Format** | CSV | - |
 
 ### Dependencies
