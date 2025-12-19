@@ -7,7 +7,9 @@ import java.io.FileReader;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 import com.examscheduler.model.Classroom;
 import com.examscheduler.model.Course;
@@ -96,22 +98,34 @@ public class CSVParser {
      * DÜZELTİLMİŞ METOT: Çok satırlı formatı destekler.
      * Satır 1: CourseCode
      * Satır 2: [Std1, Std2, ...]
+     * 
+     * OPTİMİZASYON: HashMap tabanlı O(1) aramalar (önceki: O(n×m))
      */
     public static void parseAttendanceLists(String filePath, List<Student> students, List<Course> courses)
             throws CSVParseException {
+
+        // PERFORMANS: HashMap'ler oluştur (O(n) bir kez, sonra O(1) aramalar)
+        Map<String, Student> studentMap = new HashMap<>();
+        for (Student s : students) {
+            if (s != null && s.getStudentID() != null) {
+                studentMap.put(s.getStudentID().toLowerCase(), s);
+            }
+        }
+
+        Map<String, Course> courseMap = new HashMap<>();
+        for (Course c : courses) {
+            if (c != null && c.getCourseCode() != null) {
+                courseMap.put(c.getCourseCode().toLowerCase(), c);
+            }
+        }
+
         try (BufferedReader reader = new BufferedReader(new FileReader(filePath))) {
             String line = reader.readLine();
 
             // Check if first line is a valid Course Code or Header
             if (line != null) {
-                boolean isHeader = true;
-                String trimmed = line.trim();
-                for (Course c : courses) {
-                    if (c.getCourseCode().equalsIgnoreCase(trimmed)) {
-                        isHeader = false;
-                        break;
-                    }
-                }
+                String trimmed = line.trim().toLowerCase();
+                boolean isHeader = !courseMap.containsKey(trimmed);
 
                 if (isHeader) {
                     // It's a header, skip it and read next line
@@ -126,15 +140,9 @@ public class CSVParser {
                     continue;
                 }
 
-                // 1. Satır: Ders Kodu
+                // 1. Satır: Ders Kodu - O(1) arama
                 String courseCode = line;
-                Course targetCourse = null;
-                for (Course c : courses) {
-                    if (c.getCourseCode().equalsIgnoreCase(courseCode)) {
-                        targetCourse = c;
-                        break;
-                    }
-                }
+                Course targetCourse = courseMap.get(courseCode.toLowerCase());
 
                 // 2. Satır: Öğrenci Listesi
                 String studentListLine = reader.readLine();
@@ -152,14 +160,12 @@ public class CSVParser {
                             if (id.isEmpty())
                                 continue;
 
-                            // Öğrenciyi bul ve derse ekle
-                            for (Student s : students) {
-                                if (s.getStudentID().equalsIgnoreCase(id)) {
-                                    if (!targetCourse.getEnrolledStudents().contains(s)) {
-                                        targetCourse.addStudent(s);
-                                        s.addCourse(targetCourse);
-                                    }
-                                    break;
+                            // Öğrenciyi bul ve derse ekle - O(1) arama
+                            Student found = studentMap.get(id.toLowerCase());
+                            if (found != null) {
+                                if (!targetCourse.getEnrolledStudents().contains(found)) {
+                                    targetCourse.addStudent(found);
+                                    found.addCourse(targetCourse);
                                 }
                             }
                         }
