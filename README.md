@@ -2,14 +2,9 @@
 
 <div align="center">
 
-![Java](https://img.shields.io/badge/Java-11-orange?style=for-the-badge&logo=java)
-![JavaFX](https://img.shields.io/badge/JavaFX-21.0.1-blue?style=for-the-badge&logo=java)
-![Maven](https://img.shields.io/badge/Maven-3.8-red?style=for-the-badge&logo=apachemaven)
-![iText](https://img.shields.io/badge/iText-5.5.13-green?style=for-the-badge)
-![License](https://img.shields.io/badge/License-MIT-yellow?style=for-the-badge)
-
-
-
+![Java](https://cdn-icons-png.flaticon.com/512/226/226777.png)
+![JavaFX](https://upload.wikimedia.org/wikipedia/en/c/cc/JavaFX_Logo.png)
+![Maven](https://www.svgrepo.com/show/376335/maven.svg)
 **A sophisticated JavaFX-based examination scheduling system that intelligently assigns exams to classrooms and time slots while respecting multiple constraints.**
 
 [Features](#-features) • [Installation](#-installation) • [Usage](#-usage) • [Algorithm](#-scheduling-algorithm) • [Screenshots](#-screenshots) • [Contributing](#-contributing)
@@ -369,7 +364,7 @@ All exports include:
 
 ## 🧮 Scheduling Algorithm
 
-The Exam Scheduler uses a **Constraint Satisfaction Problem (CSP)** approach with intelligent heuristics to generate optimal schedules.
+The Exam Scheduler uses a **Greedy Algorithm** with intelligent heuristics and constraint prioritization to generate optimal schedules efficiently.
 
 ### Algorithm Overview
 
@@ -377,19 +372,34 @@ The Exam Scheduler uses a **Constraint Satisfaction Problem (CSP)** approach wit
 graph TD
     A[Start] --> B[Load Data]
     B --> C[Initialize Time Slots]
-    C --> D[Sort Exams by Constraints]
-    D --> E{For Each Exam}
-    E --> F[Find Valid Time Slots]
-    F --> G{Valid Slot Found?}
-    G -->|Yes| H[Assign to Slot]
-    G -->|No| I[Backtrack]
-    I --> E
-    H --> J{More Exams?}
-    J -->|Yes| E
-    J -->|No| K[Validate Complete Schedule]
-    K --> L[Generate Statistics]
-    L --> M[Done]
+    C --> D[Split Large Exams Into Multiple Rooms]
+    D --> E[Sort Exams by Student Count DESC]
+    E --> F{For Each Exam}
+    F --> G[Try Each Day & Time Slot]
+    G --> H{Check Constraints}
+    H -->|Pass| I[Find Suitable Classroom]
+    I -->|Found| J[Assign Exam]
+    I -->|Not Found| K{More Slots?}
+    H -->|Fail| K
+    K -->|Yes| G
+    K -->|No| L[Mark as Unplaced]
+    J --> M{More Exams?}
+    L --> M
+    M -->|Yes| F
+    M -->|No| N[Validate Complete Schedule]
+    N --> O[Generate Statistics]
+    O --> P[Done]
 ```
+
+### Greedy Strategy
+
+The algorithm follows a **first-fit decreasing** strategy:
+1. **Sort exams** by enrolled student count (largest first)
+2. **Iterate** through each exam once
+3. **Place** in the first valid time slot + classroom combination found
+4. **No backtracking**: Once placed, never reconsidered
+
+This approach is fast and typically produces good results for exam scheduling problems.
 
 ### Constraint Resolution
 
@@ -398,25 +408,27 @@ The algorithm enforces the following hard and soft constraints:
 #### Hard Constraints (Must be satisfied)
 1. **No Student Overlap**: A student cannot have two exams at the same time
 2. **Classroom Capacity**: Number of enrolled students ≤ classroom capacity
-3. **Time Slot Availability**: Each exam-classroom pair must have an available time slot
+3. **Time Slot Availability**: Each classroom can only host one exam per time slot
+4. **No Consecutive Exams**: Students cannot have back-to-back exams
+5. **Daily Exam Limit**: Students can have maximum 2 exams per day
 
-#### Soft Constraints (Optimized when possible)
-1. **Student Workload**: Prefer ≤2 exams per student per day
-2. **Classroom Utilization**: Balance usage across all classrooms
-3. **Exam Distribution**: Spread exams evenly across the schedule period
+#### Soft Constraints (Best effort)
+1. **Classroom Utilization**: Prefers balanced usage across all classrooms via shuffling
+2. **Large Exam Splitting**: Automatically splits large exams across multiple rooms at the same time
 
 ### Optimization Heuristics
 
-1. **Most Constrained First**: Schedule exams with the most students first
-2. **Least Available Options**: Prioritize exams with fewer valid time slots
-3. **Forward Checking**: Eliminate invalid future options early
-4. **Backtracking**: Undo assignments when contradictions are detected
+1. **Most Constrained First**: Schedule exams with the most students first (harder to place later)
+2. **Balanced Splitting**: Large exams are split evenly across multiple rooms
+3. **Course Locking**: Multiple parts of the same course are locked to the same time slot
+4. **Classroom Shuffling**: Randomizes classroom order to distribute load
+5. **O(1) Daily Tracking**: Uses HashMap for constant-time student daily exam count lookup
 
 ### Performance
 
 - **Small Datasets** (< 50 exams): < 1 second
-- **Medium Datasets** (50-200 exams): 1-10 seconds  
-- **Large Datasets** (200+ exams): 10-60 seconds
+- **Medium Datasets** (50-200 exams): 1-5 seconds
+- **Large Datasets** (200+ exams): 5-20 seconds
 
 Performance depends on:
 - Number of constraints
@@ -584,23 +596,11 @@ MIT License
 
 Copyright (c) 2025 Exam Scheduler Team
 
-Permission is hereby granted, free of charge, to any person obtaining a copy
-of this software and associated documentation files (the "Software"), to deal
-in the Software without restriction, including without limitation the rights
-to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
-copies of the Software, and to permit persons to whom the Software is
-furnished to do so, subject to the following conditions:
-
-The above copyright notice and this permission notice shall be included in all
-copies or substantial portions of the Software.
-
-THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
-AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
-LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
-OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
-SOFTWARE.
+Permission is granted, free of charge, to anyone who obtains a copy of this software and its documentation to use it freely.
+This includes the rights to use, copy, modify, merge, publish, distribute, sublicense, and sell copies of the software.
+The only requirement is that this license notice and copyright notice must be included in all copies or significant parts of the software.
+The software is provided “as is”, without any warranties.
+The authors are not responsible for any damages, losses, or claims that may arise from using this software.
 ```
 
 ---
@@ -619,7 +619,7 @@ Thanks for all help for all members.Furkan,Ali,Ahmet Emir, Can and Abdulhamid.
 - **Issues**: [GitHub Issues](https://github.com/your-repo/issues)
 - **Discussions**: [GitHub Discussions](https://github.com/your-repo/discussions)
 - **Email**: your-email@example.com
-- **Email**: abdulhamidyildirim@hotmail.com
+- **Email**: examscheduler@team11.com
 
 ---
 
