@@ -224,7 +224,7 @@ When you first launch the application, you'll see a modern welcome screen with o
 - ⚙️ **Settings**: Configure application preferences
 
 ![Welcome Screen](screenshots/welcome.png)
-![Welcome Screen](screenshots/welcome-screen.png)
+
 *The welcome screen provides quick access to all main features*
 
 ---
@@ -271,8 +271,7 @@ To schedule exams, you need to import data via CSV files:
 
 ![Import Dialog](screenshots/load.png)
 *Import dialog showing file selection*
-![Import Dialog](screenshots/import-dialog.png)
-*Import dialog showing file selection and validation*
+
 
 ---
 
@@ -282,11 +281,11 @@ Before generating the schedule, set the following parameters:
 
 - **📅 Exam Start Date**: First day of the exam period
 - **📆 Exam Day Period**: Total number of days for the examination period
-- **⏰ Time Slots**: Number of exam sessions per day (e.g., 2 = Morning & Afternoon, 3 = Morning, Afternoon & Evening)
+- **⏰ Time Slots**: Time periods.(e.g 15:00-17:00)
 
 These parameters determine the available time slots for scheduling.
 
-![Schedule Configuration](screenshots/detailed%20exam%20view.png)
+![Schedule Configuration](screenshots/detailed-exam-view.png)
 - **⏰ Time Slots**: The exam hours.
 
 These parameters determine the available time slots for scheduling.
@@ -313,9 +312,6 @@ The system provides real-time progress updates during generation.
 
 ![Schedule Generation](screenshots/generate.png)
 *Generate result-Validation screen will be shown later screenshots.*
-![Schedule Generation](screenshots/schedule-generation.png)
-*Live progress during schedule generation with validation results*
-
 ---
 
 #### 5. Review & Edit Schedule
@@ -327,7 +323,7 @@ After generation, you can:
 - **👨‍🎓 View by Student**: See individual student schedules
 - **✏️ Manual Edits**: Drag and drop exams to different slots (with automatic validation)
 
-![Schedule View](screenshots/schedule-view.png)
+![Schedule View](screenshots/detailed-exam-view.png)
 *Main schedule view with filtering and editing capabilities*
 
 ---
@@ -343,8 +339,7 @@ Students can view their personalized exam schedule:
    - 🗓️ **Calendar**: Visual timeline
    - 📈 **Statistics**: Exam distribution analysis
 
-![Student Portal](screenshots/student%20view.png)
-![Student Portal](screenshots/student-portal.png)
+![Student Portal](screenshots/student-view.png)
 *Student portal showing personalized schedule and statistics*
 
 ---
@@ -368,7 +363,6 @@ All exports include:
 - Utilization metrics
 
 ![Export Options](screenshots/export.png)
-![Export Options](screenshots/export-options.png)
 *Export dialog with multiple format options*
 
 ---
@@ -509,23 +503,14 @@ Individual student schedules contain:
 <tr>
 <td width="50%">
 
-![Dashboard](screenshots/main%20screen.png)
-*Main dashboard with key statistics*
-
-</td>
-
-![Dashboard](screenshots/dashboard.png)
+![Main Screen](screenshots/main_screen.png)  
 *Main dashboard with key statistics*
 
 </td>
 </tr>
 </table>
 
-
-
-<table>
-
-</table>
+---
 
 ### Advanced Features
 
@@ -533,22 +518,19 @@ Individual student schedules contain:
 <tr>
 <td width="50%">
 
-![Validation](screenshots/validation.png)
-![Validation](screenshots/validation-results.png)
+![Validation](screenshots/validation.png)  
 *Detailed validation results with conflict detection*
 
 </td>
 <td width="50%">
 
-![Analytics](screenshots/statistics.png)
-![Analytics](screenshots/analytics.png)
+![Analytics](screenshots/statistics.png)  
 *Comprehensive analytics and statistics*
 
 </td>
 </tr>
 </table>
 
-> **Note**: To add screenshots, place your images in a `screenshots/` directory in the project root and ensure the filenames match those referenced in this README.
 
 ---
 
