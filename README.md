@@ -1,7 +1,7 @@
 # 📅 Exam Scheduler System
 
 <div align="center">
-**A sophisticated JavaFX-based examination scheduling system that intelligently assigns exams to classrooms and time slots while respecting multiple constraints.**
+A sophisticated JavaFX-based examination scheduling system that intelligently assigns exams to classrooms and time slots while respecting multiple constraints.
 
 [Features](#-features) • [Installation](#-installation) • [Usage](#-usage) • [Algorithm](#-scheduling-algorithm) • [Screenshots](#-screenshots) • [Contributing](#-contributing)
 
@@ -9,6 +9,12 @@
 
 ---
 ![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)
+
+## Download
+👉 [Download Windows Installer](https://github.com/canuakgun/SE302/releases/latest)
+
+---
+
 ## 📋 Table of Contents
 
 - [Overview](#-overview)
@@ -53,7 +59,7 @@ Our system solves these problems with intelligent algorithms and real-time valid
   - Classroom capacity constraints
   - Time slot availability
 - **Real-time Conflict Detection**: Instant validation with detailed error reporting
-- **Manual Schedule Editing**: Drag-and-drop interface for fine-tuning schedules
+- **Manual Schedule Editing**: Manual editing of exam schedules with validation support.
 
 ### 📊 Data Management
 
@@ -128,23 +134,32 @@ SE302/
 ├── src/
 │   └── main/
 │       └── java/
-│           └── com/examscheduler/
-│               ├── logic/
-│               │   ├── CSVParser.java          # CSV data import/export
-│               │   └── DataManager.java        # Singleton data manager
-│               ├── model/
-│               │   ├── Classroom.java          # Classroom entity
-│               │   ├── Course.java             # Course entity
-│               │   ├── Exam.java               # Exam entity
-│               │   ├── Schedule.java           # Schedule container
-│               │   ├── Student.java            # Student entity
-│               │   └── TimeSlot.java           # Time slot entity
-│               └── ui/
-│                   ├── ExamSchedulerApp.java   # Main application
-│                   └── ThemeManager.java       # Theme management
-├── pom.xml                                     # Maven configuration
-└── README.md                                   # This file
-└──screenshots
+│       │    └── com/examscheduler/
+│       │        ├─── logic/
+│       │        │    ├── CSVParser.java          # CSV data import/export
+│       │        │    └── DataManager.java        # Singleton data manager
+│       │        ├─── model/
+│       │        │    ├── Classroom.java          # Classroom entity
+│       │        │    ├── Course.java             # Course entity
+│       │        │    ├── Exam.java               # Exam entity
+│       │        │    ├── Schedule.java           # Schedule container
+│       │        │    ├── Student.java            # Student entity
+│       │        │    └── TimeSlot.java           # Time slot entity
+│       │        │ 
+│       │        ├─── ui/
+│       │        │    ├── ExamSchedulerApp.java   # Main application
+│       │        │    └── ThemeManager.java       # Theme management
+│       │        │                                # Maven configuration
+│       │        └── Launcher.java                # This file
+│       │                                         
+│       └── resources
+│           └── com 
+│               └── examscheduler               
+├── pom.xml         └── ui                             
+└── README.md           └── dark-theme.css                        
+└── screenshots
+└── LICENSE
+└── dependency-reduced-pom.xml
 ```
 
 ### Architecture Highlights
@@ -201,6 +216,12 @@ Ensure you have the following installed:
 2. Configure the main class: `com.examscheduler.App`
 3. Run the application
 
+### Alternative: Run from ExamScheduler.exe
+
+1. Download the ExamScheduler_Setup.exe from Github(Release) page
+2. Run the setup file and complete the setup
+3. Double-click and run the ExamScheduler.exe file created on your desktop.
+   
 ---
 
 ## 📖 Usage
@@ -210,10 +231,13 @@ Ensure you have the following installed:
 #### 1. Welcome Screen
 
 When you first launch the application, you'll see a modern welcome screen with options to:
-- 📂 **Start New Project**: Begin with a fresh project
-- 📁 **Load Existing Project**: Continue from a saved state
+- 📂 **Admin Login/Start**: Start the application
+- 📁 **User Manual**: Manual for users
+- 📁 **Quick Start Guide**: Guide for creating an exam schedule
+- 📁 **FAQ**: Frequently asked questions and answers
 - ⚙️ **Settings**: Configure application preferences
-
+- ⚙️ **Exit**: Close the application
+  
 ![Welcome Screen](screenshots/welcome.png)
 
 *The welcome screen provides quick access to all main features*
@@ -227,16 +251,19 @@ To schedule exams, you need to import data via CSV files:
 **Required CSV Files:**
 - `students.csv` - Student information
   ```csv
-  StudentID,Name
-  S001,John Doe
-  S002,Jane Smith
+  StudentID
+  S001
+  S002
+  S003
+  S004
+  S005
   ```
 
 - `courses.csv` - Course information
   ```csv
-  CourseCode,CourseName,EnrolledCount
-  CS101,Introduction to Computer Science,50
-  MATH201,Calculus II,35
+  CourseCode
+  CS101
+  MATH201
   ```
 
 - `classrooms.csv` - Classroom information
@@ -248,10 +275,12 @@ To schedule exams, you need to import data via CSV files:
 
 - `attendance.csv` - Student-course enrollments
   ```csv
-  StudentID,CourseCode
-  S001,CS101
-  S001,MATH201
-  S002,CS101
+  CourseCode1
+  [S001,S002,S003]
+  
+  CourseCode2
+  [S005,S008,S012]
+  
   ```
 
 **Import Process:**
@@ -282,6 +311,7 @@ These parameters determine the available time slots for scheduling.
 These parameters determine the available time slots for scheduling.
 
 ![Schedule Configuration](screenshots/configiration.png)
+
 *Configure exam period duration and time slots*
 
 ---
@@ -302,7 +332,9 @@ The system provides real-time progress updates during generation.
 - ℹ️ **Info**: General statistics and analysis
 
 ![Schedule Generation](screenshots/generate.png)
+
 *Generate result-Validation screen will be shown later screenshots.*
+
 ---
 
 #### 5. Review & Edit Schedule
@@ -582,37 +614,9 @@ Before submitting a PR:
 
 ## 📄 License
 
-```
 
+This project is licensed under the MIT License. See the [LICENSE](./LICENSE) file for details.
 
-MIT License
-
-Copyright (c) 2025 
-Furkan Pala
-Ahmet Emir Doğan
-Can Ulaş Akgün
-Abdulhamid Yıldırım
-Ali Yalçın Uğur
-
-Permission is hereby granted, free of charge, to any person obtaining a copy
-of this software and associated documentation files (the "Software"), to deal
-in the Software without restriction, including without limitation the rights
-to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
-copies of the Software, and to permit persons to whom the Software is
-furnished to do so, subject to the following conditions:
-
-The above copyright notice and this permission notice shall be included in all
-copies or substantial portions of the Software.
-
-THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
-AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
-LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
-OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
-SOFTWARE.
-
-```
 
 ---
 
