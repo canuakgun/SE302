@@ -32,13 +32,13 @@ public class CSVParser {
         }
     }
 
-    // ==================== OKUMA METOTLARI ====================
+    // READING METHODS
 
     public static List<Student> parseStudents(String filePath) throws CSVParseException {
         List<Student> students = new ArrayList<>();
         try (BufferedReader reader = new BufferedReader(new FileReader(filePath))) {
             String line;
-            reader.readLine(); // Header atla
+            reader.readLine();
             while ((line = reader.readLine()) != null) {
                 if (!line.trim().isEmpty())
                     students.add(new Student(line.trim()));
@@ -53,7 +53,7 @@ public class CSVParser {
         List<Course> courses = new ArrayList<>();
         try (BufferedReader reader = new BufferedReader(new FileReader(filePath))) {
             String line;
-            reader.readLine(); // Header atla
+            reader.readLine();
             while ((line = reader.readLine()) != null) {
                 line = line.trim();
                 if (line.isEmpty())
@@ -75,7 +75,7 @@ public class CSVParser {
         List<Classroom> classrooms = new ArrayList<>();
         try (BufferedReader reader = new BufferedReader(new FileReader(filePath))) {
             String line;
-            reader.readLine(); // Header atla
+            reader.readLine();
             while ((line = reader.readLine()) != null) {
                 line = line.trim();
                 if (line.isEmpty())
@@ -119,23 +119,12 @@ public class CSVParser {
         }
     }
 
-    /**
-     * DÜZELTİLMİŞ METOT: Çok satırlı formatı destekler.
-     * Satır 1: CourseCode
-     * Satır 2: [Std1, Std2, ...]
-     * 
-     * OPTİMİZASYON: HashMap tabanlı O(1) aramalar (önceki: O(n×m))
-     * 
-     * @return AttendanceValidationResult containing any warnings about missing
-     *         students/courses
-     */
     public static AttendanceValidationResult parseAttendanceLists(String filePath, List<Student> students,
             List<Course> courses)
             throws CSVParseException {
 
         AttendanceValidationResult validationResult = new AttendanceValidationResult();
 
-        // PERFORMANS: HashMap'ler oluştur (O(n) bir kez, sonra O(1) aramalar)
         Map<String, Student> studentMap = new HashMap<>();
         for (Student s : students) {
             if (s != null && s.getStudentID() != null) {
@@ -171,17 +160,14 @@ public class CSVParser {
                     continue;
                 }
 
-                // 1. Satır: Ders Kodu - O(1) arama
                 String courseCode = line;
                 Course targetCourse = courseMap.get(courseCode.toLowerCase());
 
-                // 2. Satır: Öğrenci Listesi
                 String studentListLine = reader.readLine();
                 if (studentListLine == null)
-                    break; // Dosya sonu hatası önlemi
+                    break;
 
                 if (targetCourse != null) {
-                    // Köşeli parantezleri temizle: [Std1, Std2] -> Std1, Std2
                     String cleanLine = studentListLine.trim().replace("[", "").replace("]", "").replace("'", "");
                     if (!cleanLine.isEmpty()) {
                         String[] studentIDs = cleanLine.split(",");
@@ -191,7 +177,6 @@ public class CSVParser {
                             if (id.isEmpty())
                                 continue;
 
-                            // Öğrenciyi bul ve derse ekle - O(1) arama
                             Student found = studentMap.get(id.toLowerCase());
                             if (found != null) {
                                 if (!targetCourse.getEnrolledStudents().contains(found)) {
@@ -200,7 +185,6 @@ public class CSVParser {
                                     validationResult.totalEnrollments++;
                                 }
                             } else {
-                                // Student not found in students.csv
                                 if (!validationResult.missingStudents.contains(id)) {
                                     validationResult.missingStudents.add(id);
                                 }
@@ -224,25 +208,22 @@ public class CSVParser {
         return validationResult;
     }
 
-    // ==================== SCHEDULE PARSING (EXPORT EDİLMİŞ OLAN CSV DOSYASI)
-    // ====================
+    // SCHEDULE PARSING (EXPORTED CSV FILE)
     public static List<Exam> parseSchedule(File file, DataManager dm, List<String> timeSlotLabels) throws IOException {
         List<Exam> loadedExams = new ArrayList<>();
 
         try (BufferedReader reader = new BufferedReader(new FileReader(file))) {
             String line;
-            // Header kontrolü (İlk satırda başlık varsa atla)
             reader.mark(1000);
             String firstLine = reader.readLine();
             if (firstLine != null && !firstLine.toLowerCase().startsWith("examid")) {
-                reader.reset(); // Başlık yoksa başa dön
+                reader.reset();
             }
 
             while ((line = reader.readLine()) != null) {
                 if (line.trim().isEmpty())
                     continue;
 
-                // Format: ExamID, CourseCode, Day, SlotString, RoomID, Students
                 String[] parts = line.split(",");
                 if (parts.length < 5)
                     continue;
@@ -253,22 +234,18 @@ public class CSVParser {
                     String timeSlotStr = parts[3].trim();
                     String roomId = parts[4].trim();
 
-                    // DÜZELTME: Öğrenci sayısını oku (Varsa)
                     int importedStudentCount = -1;
                     if (parts.length >= 6) {
                         try {
                             importedStudentCount = Integer.parseInt(parts[5].trim());
                         } catch (NumberFormatException e) {
-                            // Sayı bozuksa yoksay, varsayılanı kullanır
                         }
                     }
 
-                    // Nesneleri DataManager'dan bul
                     Course course = dm.getCourseByCode(courseCode);
                     Classroom room = dm.getClassroomByID(roomId);
 
                     if (course != null && room != null) {
-                        // ... (TimeSlot bulma kodu AYNI kalsın) ...
                         int slotIndex = 1;
                         for (int i = 0; i < timeSlotLabels.size(); i++) {
                             if (timeSlotLabels.get(i).equalsIgnoreCase(timeSlotStr)) {
@@ -282,14 +259,9 @@ public class CSVParser {
                             } catch (Exception ignored) {
                             }
                         }
-                        // ... (TimeSlot bulma kodu sonu) ...
-
-                        // Exam nesnesini oluştur
                         Exam exam = new Exam(course);
                         exam.setTimeSlot(new com.examscheduler.model.TimeSlot(day, slotIndex));
                         exam.setClassroom(room);
-
-                        // DÜZELTME: Okunan sayıyı Exam nesnesine ata
                         if (importedStudentCount != -1) {
                             exam.setStudentCount(importedStudentCount);
                         }
@@ -304,7 +276,7 @@ public class CSVParser {
         return loadedExams;
     }
 
-    // ==================== YAZMA / GÜNCELLEME METOTLARI ====================
+    // WRITING / UPDATING METHODS
 
     public static void updateStudentFile(File file, List<Student> students) {
         if (file == null)
@@ -363,12 +335,11 @@ public class CSVParser {
 
                 List<String> studentIds = new ArrayList<>();
                 for (Student s : course.getEnrolledStudents()) {
-                    studentIds.add("'" + s.getStudentID() + "'"); // Tek tırnak ekle
+                    studentIds.add("'" + s.getStudentID() + "'");
                 }
 
                 writer.write("[" + String.join(", ", studentIds) + "]");
                 writer.newLine();
-                // Bloklar arası boşluk (Okunabilirlik için)
                 writer.newLine();
             }
         } catch (IOException e) {

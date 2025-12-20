@@ -36,16 +36,13 @@ public class Exam implements Serializable {
     }
 
     public List<Student> getEnrolledStudents() {
-        // Eğer özel bir alt küme atandıysa onu döndür (Bölünmüş sınav)
         if (assignedStudents != null) {
             return assignedStudents;
         }
-        // Yoksa dersin ana listesini döndür (Normal sınav)
         return course.getEnrolledStudents();
     }
 
     public int getStudentCount() {
-        // Özel sayı varsa onu, yoksa liste boyutunu döndür
         if (customStudentCount != null) return customStudentCount;
         if (assignedStudents != null) return assignedStudents.size();
         return course.getStudentCount();
@@ -61,7 +58,7 @@ public class Exam implements Serializable {
 
     public void setAssignedStudents(List<Student> students) {
         this.assignedStudents = new ArrayList<>(students);
-        this.customStudentCount = students.size(); // Sayıyı da sabitle
+        this.customStudentCount = students.size();
     }
 
     @Override

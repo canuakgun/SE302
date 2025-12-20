@@ -36,7 +36,7 @@ public class Course implements Serializable {
     }
 
     public List<Student> getEnrolledStudents() {
-        return new ArrayList<>(enrolledStudents); // Defensive copy
+        return new ArrayList<>(enrolledStudents);
     }
 
     public int getStudentCount() {
@@ -45,17 +45,15 @@ public class Course implements Serializable {
 
     public boolean addStudent(Student student) {
         if (student != null && !enrolledStudents.contains(student)) {
-            enrolledStudents.add(student); // Doğrudan gerçek listeye ekler
-            return true; // Eklendi
+            enrolledStudents.add(student);
+            return true;
         }
-        return false; // Zaten vardı veya null
+        return false;
     }
 
     public boolean removeStudent(Student student) {
         if (student == null)
             return false;
-
-        // Doğrudan ID eşleşmesi yaparak sil
         return enrolledStudents.removeIf(s -> s.getStudentID().equals(student.getStudentID()));
     }
 

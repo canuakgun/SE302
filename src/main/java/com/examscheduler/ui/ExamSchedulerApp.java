@@ -214,7 +214,6 @@ public class ExamSchedulerApp extends Application {
         stage.show();
     }
 
-    // Örnek bir Ayarlar Diyaloğu Metodu
     private void showSettingsDialog() {
         Stage settingsStage = new Stage();
         settingsStage.initModality(Modality.APPLICATION_MODAL);
@@ -419,11 +418,9 @@ public class ExamSchedulerApp extends Application {
         loginStage.initModality(Modality.APPLICATION_MODAL);
         loginStage.setTitle("🎓 Student Portal");
 
-        // Modern, gradient arka plan
         BorderPane root = new BorderPane();
         root.setStyle("-fx-background-color: linear-gradient(135deg, #667eea 0%, #764ba2 100%);");
 
-        // Üst banner
         VBox header = new VBox(5);
         header.setAlignment(Pos.CENTER);
         header.setPadding(new Insets(30, 20, 20, 20));
@@ -443,7 +440,7 @@ public class ExamSchedulerApp extends Application {
         header.getChildren().addAll(brandLabel, titleLabel, subtitleLabel);
         root.setTop(header);
 
-        // Ana login kartı
+        // Main login card
         VBox centerBox = new VBox(25);
         centerBox.setAlignment(Pos.CENTER);
         centerBox.setPadding(new Insets(0, 40, 40, 40));
@@ -455,8 +452,6 @@ public class ExamSchedulerApp extends Application {
         loginCard.setStyle("-fx-background-color: white; " +
                 "-fx-background-radius: 15; " +
                 "-fx-effect: dropshadow(gaussian, rgba(0,0,0,0.25), 20, 0, 0, 5);");
-
-        // Hoş geldiniz mesajı
         Label welcomeLabel = new Label("Welcome Back");
         welcomeLabel.setStyle("-fx-font-size: 24px; -fx-font-weight: bold; -fx-text-fill: #2d3436;");
 
@@ -468,7 +463,7 @@ public class ExamSchedulerApp extends Application {
         VBox welcomeBox = new VBox(8, welcomeLabel, instructionLabel);
         welcomeBox.setAlignment(Pos.CENTER);
 
-        // Arama kutusu - Modern tasarım
+        // Search box
         VBox searchBox = new VBox(10);
         searchBox.setAlignment(Pos.CENTER_LEFT);
         searchBox.setPrefWidth(380);
@@ -486,7 +481,6 @@ public class ExamSchedulerApp extends Application {
                 "-fx-border-width: 2; " +
                 "-fx-padding: 0 15 0 15;");
 
-        // Focus efekti
         searchField.focusedProperty().addListener((obs, oldVal, newVal) -> {
             if (newVal) {
                 searchField.setStyle("-fx-font-size: 14px; " +
@@ -505,7 +499,6 @@ public class ExamSchedulerApp extends Application {
             }
         });
 
-        // ComboBox - Dropdown listesi
         ComboBox<String> studentCombo = new ComboBox<>();
         studentCombo.setPromptText("Select your student ID");
         studentCombo.setPrefHeight(45);
@@ -518,7 +511,6 @@ public class ExamSchedulerApp extends Application {
                 .collect(Collectors.toList());
         studentCombo.getItems().addAll(sortedStudentIDs);
 
-        // Arama fonksiyonu
         searchField.textProperty().addListener((observable, oldValue, newValue) -> {
             if (newValue.isEmpty()) {
                 studentCombo.getItems().setAll(sortedStudentIDs);
@@ -536,7 +528,6 @@ public class ExamSchedulerApp extends Application {
 
         searchBox.getChildren().addAll(searchLabel, searchField, studentCombo);
 
-        // Login butonu - Modern, gradient
         Button loginBtn = new Button("ACCESS SCHEDULE →");
         addStyledTooltip(loginBtn, "View your personal exam schedule");
 
@@ -550,7 +541,6 @@ public class ExamSchedulerApp extends Application {
                 "-fx-cursor: hand; " +
                 "-fx-effect: dropshadow(gaussian, rgba(102,126,234,0.4), 8, 0, 0, 3);");
 
-        // Hover efekti
         loginBtn.setOnMouseEntered(
                 e -> loginBtn.setStyle("-fx-background-color: linear-gradient(to right, #5a67d8, #6b3fa0); " +
                         "-fx-text-fill: white; " +
@@ -580,7 +570,6 @@ public class ExamSchedulerApp extends Application {
                     showStudentSchedule(owner, student);
                 }
             } else {
-                // Hata animasyonu
                 loginCard.setStyle("-fx-background-color: white; " +
                         "-fx-background-radius: 15; " +
                         "-fx-effect: dropshadow(gaussian, rgba(231,76,60,0.3), 20, 0, 0, 5);");
@@ -596,11 +585,9 @@ public class ExamSchedulerApp extends Application {
             }
         });
 
-        // Enter tuşu desteği
         searchField.setOnAction(e -> loginBtn.fire());
         studentCombo.setOnAction(e -> searchField.requestFocus());
 
-        // İstatistik kartları
         HBox statsBox = new HBox(15);
         statsBox.setAlignment(Pos.CENTER);
         statsBox.setPadding(new Insets(10, 0, 0, 0));
@@ -616,7 +603,6 @@ public class ExamSchedulerApp extends Application {
         centerBox.getChildren().add(loginCard);
         root.setCenter(centerBox);
 
-        // Alt bilgi
         Label footerLabel = new Label("Secure Access • Data Protected • Privacy First");
         footerLabel.setStyle("-fx-text-fill: rgba(255,255,255,0.8); -fx-font-size: 11px;");
 
@@ -630,8 +616,7 @@ public class ExamSchedulerApp extends Application {
         loginStage.setScene(scene);
         loginStage.show();
     }
-
-    // Yardımcı metod: Bilgi kartları oluşturur
+    
     private VBox createInfoCard(String icon, String value, String label) {
         VBox card = new VBox(5);
         card.setAlignment(Pos.CENTER);
@@ -670,11 +655,6 @@ public class ExamSchedulerApp extends Application {
         header.setStyle("-fx-background-color: linear-gradient(to right, #667eea, #764ba2); " +
                 "-fx-effect: dropshadow(gaussian, rgba(0,0,0,0.15), 10, 0, 0, 5);");
 
-        // ... (Header içindeki Avatar, İsim, İstatistik Kartları kodları AYNEN kalsın)
-        // ...
-        // (Buraya senin yazdığın Header kodlarını tekrar yapıştırabilirsin, veya
-        // aşağıda özet geçeyim mi?)
-        // --- SENİN KODLARININ AYNISI BAŞLANGIÇ ---
         HBox profileBox = new HBox(20);
         profileBox.setAlignment(Pos.CENTER_LEFT);
 
@@ -700,7 +680,6 @@ public class ExamSchedulerApp extends Application {
         dateLabel.setStyle("-fx-font-size: 13px; -fx-text-fill: rgba(255,255,255,0.9);");
         studentInfo.getChildren().addAll(studentNameLabel, dateLabel);
 
-        // İstatistikleri hesapla
         List<Exam> studentExams = getStudentExams(student);
         int totalExams = studentExams.size();
         long busyDays = studentExams.stream().map(e -> e.getTimeSlot().getDay()).distinct().count();
@@ -708,7 +687,6 @@ public class ExamSchedulerApp extends Application {
 
         HBox statsBox = new HBox(15);
         statsBox.setAlignment(Pos.CENTER_RIGHT);
-        // Kart renklerini biraz şeffaflaştırdım ki background üzerinde sırııtmasın
         statsBox.getChildren().addAll(
                 createModernStatCard("📝", String.valueOf(totalExams), "Total Exams", "rgba(255,255,255,0.2)"),
                 createModernStatCard("📅", String.valueOf(busyDays), "Busy Days", "rgba(255,255,255,0.2)"),
@@ -718,19 +696,12 @@ public class ExamSchedulerApp extends Application {
         HBox.setHgrow(spacer, Priority.ALWAYS);
         profileBox.getChildren().addAll(avatarBox, studentInfo, spacer, statsBox);
         header.getChildren().add(profileBox);
-
-        // --- Header'ı Root'a ekle ---
-        // Ancak navigasyonu header'ın içine değil, hemen altına bindireceğiz (Overlay
-        // etkisi)
         root.setTop(header);
 
-        // --- 2. MODERN NAVİGASYON (TAB YERİNE) ---
+        // --- 2. MODERN NAVİGATION (INSTEAD OF TAB) ---
 
-        // İçerik Alanı (Değişken Kısım)
         StackPane contentArea = new StackPane();
         contentArea.setPadding(new Insets(30, 20, 20, 20));
-
-        // Görünümleri Hazırla
         VBox dashboardView = createDashboardView(studentExams);
         ThemeManager.getInstance().styleNode(dashboardView);
 
@@ -739,43 +710,32 @@ public class ExamSchedulerApp extends Application {
         calendarScroll.setStyle("-fx-background: transparent; -fx-background-color: transparent;");
         ThemeManager.getInstance().styleNode(calendarScroll);
 
-        // Buradaki scrollPane mantığına dikkat (Önceki sorudaki düzeltme)
         Node analyticsView = createStatisticsView(student, studentExams); // VBox değil Node dönüyor artık
         ThemeManager.getInstance().styleNode(analyticsView);
 
-        // Navigasyon Butonları
+        // Navigation buttons
         HBox navBar = new HBox(15);
         navBar.setAlignment(Pos.CENTER);
         navBar.setPadding(new Insets(10, 20, 10, 20));
-        // Yüzen Menü Stili (Floating Pill Design)
         navBar.setStyle("-fx-background-color: white; " +
                 "-fx-background-radius: 30; " +
                 "-fx-effect: dropshadow(gaussian, rgba(0,0,0,0.1), 10, 0, 0, 4); " +
-                "-fx-max-width: 500;"); // Genişliği sınırla
+                "-fx-max-width: 500;");
 
-        // Toggle Grubu (Sadece biri seçili olsun diye)
         ToggleGroup navGroup = new ToggleGroup();
 
         ToggleButton btnDash = createNavButton("📊 Dashboard", navGroup, "View dashboard overview");
         ToggleButton btnCal = createNavButton("📅 Calendar", navGroup, "View exam calendar");
         ToggleButton btnStats = createNavButton("📈 Analytics", navGroup, "View performance analytics");
 
-        // Aksiyonlar
         btnDash.setOnAction(e -> contentArea.getChildren().setAll(dashboardView));
         btnCal.setOnAction(e -> contentArea.getChildren().setAll(calendarScroll));
         btnStats.setOnAction(e -> contentArea.getChildren().setAll(analyticsView));
 
-        // Varsayılan Seçim
         btnDash.setSelected(true);
         contentArea.getChildren().setAll(dashboardView);
 
         navBar.getChildren().addAll(btnDash, btnCal, btnStats);
-
-        // Header ile İçeriği Birleştiren Layout
-        // Navigasyon çubuğunu header'ın bittiği yere "yarı yarıya" bindirmek için
-        // StackPane kullanabiliriz
-        // Ama şimdilik basit olması için Header'ın altına VBox ile ekleyelim, fakat
-        // negatif margin verelim.
 
         VBox mainContent = new VBox();
         mainContent.getChildren().addAll(navBar, contentArea);
@@ -830,7 +790,6 @@ public class ExamSchedulerApp extends Application {
         node.setTooltip(tooltip);
     }
 
-    // --- YENİ YARDIMCI METOT (Navigasyon Butonları İçin) ---
     private ToggleButton createNavButton(String text, ToggleGroup group, String tooltipText) {
         ToggleButton btn = new ToggleButton(text);
         addStyledTooltip(btn, tooltipText);
@@ -839,9 +798,9 @@ public class ExamSchedulerApp extends Application {
         btn.setPrefHeight(35);
         btn.setCursor(javafx.scene.Cursor.HAND);
 
-        // CSS STİLİ (Normal ve Seçili Hali)
-        // Seçili değilken: Beyaz arka plan, Gri yazı, Kenarlık yok
-        // Seçiliyken: Mor/Mavi arka plan, Beyaz yazı, Yuvarlak köşe
+        // CSS STYLE (Normal and Selected States)
+        // When not selected: White background, Gray text, No border
+        // When selected: Purple/Blue background, White text, Rounded corners
         String baseStyle = "-fx-background-radius: 20; -fx-font-weight: bold; -fx-font-size: 13px; -fx-background-insets: 0;";
 
         btn.styleProperty().bind(javafx.beans.binding.Bindings.when(btn.selectedProperty())
@@ -850,7 +809,6 @@ public class ExamSchedulerApp extends Application {
                         + "-fx-background-color: transparent; -fx-text-fill: #7f8c8d; -fx-border-color: transparent;") // Normal
         );
 
-        // Hover Efekti (Opsiyonel)
         btn.setOnMouseEntered(e -> {
             if (!btn.isSelected())
                 btn.setStyle(baseStyle + "-fx-background-color: #f0f2f5; -fx-text-fill: #2d3436;");
@@ -863,7 +821,6 @@ public class ExamSchedulerApp extends Application {
         return btn;
     }
 
-    // --- HEADER İÇİN KART METODU (Yazılar Beyaz) ---
     private VBox createModernStatCard(String icon, String value, String label, String bgColor) {
         VBox card = new VBox(5);
         card.setPadding(new Insets(10, 15, 10, 15));
@@ -885,12 +842,11 @@ public class ExamSchedulerApp extends Application {
         return card;
     }
 
-    // Dashboard görünümü oluşturucu
     private VBox createDashboardView(List<Exam> studentExams) {
         VBox dashboard = new VBox(20);
         dashboard.setPadding(new Insets(20));
 
-        // Yaklaşan sınavlar bölümü
+        // Upcoming exams section
         VBox upcomingSection = new VBox(15);
         Label upcomingTitle = new Label("📌 Upcoming Exams");
         upcomingTitle.setStyle("-fx-font-size: 20px; -fx-font-weight: bold; -fx-text-fill: #2d3436;");
@@ -915,7 +871,6 @@ public class ExamSchedulerApp extends Application {
 
         upcomingSection.getChildren().addAll(upcomingTitle, upcomingExams);
 
-        // Hızlı istatistikler bölümü
         VBox quickStatsSection = new VBox(15);
         Label statsTitle = new Label("📊 Quick Statistics");
         statsTitle.setStyle("-fx-font-size: 20px; -fx-font-weight: bold; -fx-text-fill: #2d3436;");
@@ -932,7 +887,6 @@ public class ExamSchedulerApp extends Application {
         return new VBox(scrollPane);
     }
 
-    // Yaklaşan sınav kartı
     private HBox createUpcomingExamCard(Exam exam, LocalDate startDate) {
         HBox card = new HBox(20);
         card.setAlignment(Pos.CENTER_LEFT);
@@ -946,7 +900,6 @@ public class ExamSchedulerApp extends Application {
 
         LocalDate examDate = startDate.plusDays(exam.getTimeSlot().getDay() - 1);
 
-        // Tarih kutusu
         VBox dateBox = new VBox(2);
         dateBox.setAlignment(Pos.CENTER);
         dateBox.setPrefWidth(70);
@@ -962,7 +915,6 @@ public class ExamSchedulerApp extends Application {
 
         dateBox.getChildren().addAll(monthLabel, dayLabel);
 
-        // Sınav detayları
         VBox detailsBox = new VBox(5);
         VBox.setVgrow(detailsBox, Priority.ALWAYS);
 
@@ -990,7 +942,6 @@ public class ExamSchedulerApp extends Application {
         return card;
     }
 
-    // Hızlı istatistikler grid'i
     private GridPane createQuickStatsGrid(List<Exam> studentExams) {
         GridPane grid = new GridPane();
         grid.setHgap(15);
@@ -1013,7 +964,6 @@ public class ExamSchedulerApp extends Application {
         return grid;
     }
 
-    // Hızlı stat item
     private VBox createQuickStatItem(String icon, String label, String value) {
         VBox item = new VBox(8);
         item.setPadding(new Insets(15));
@@ -1035,9 +985,6 @@ public class ExamSchedulerApp extends Application {
         return item;
     }
 
-    // Detay item oluşturucu
-
-    // Modern export butonu
     private Button createModernExportButton(String icon, String text, String color, String tooltipText) {
         Button btn = new Button(icon + " " + text);
         addStyledTooltip(btn, tooltipText);
@@ -1092,7 +1039,6 @@ public class ExamSchedulerApp extends Application {
                 ? examStartDatePicker.getValue()
                 : LocalDate.now();
 
-        // Başlık satırı
         Label cornerLabel = new Label("TIME SLOT");
         cornerLabel.setStyle("-fx-font-weight: bold; -fx-padding: 15px; " +
                 "-fx-background-color: #2c3e50; -fx-text-fill: white; " +
@@ -1113,7 +1059,6 @@ public class ExamSchedulerApp extends Application {
             calendar.add(dayLabelNode, day, 0);
         }
 
-        // Zaman slotları için satırlar
         for (int slot = 0; slot < timeSlots.size(); slot++) {
             Label slotLabel = new Label(timeSlots.get(slot));
             slotLabel.setStyle("-fx-font-weight: bold; -fx-padding: 15px; " +
@@ -1131,7 +1076,6 @@ public class ExamSchedulerApp extends Application {
                 cell.setStyle("-fx-border-color: #ecf0f1; -fx-border-width: 1; " +
                         "-fx-background-color: #f8f9fa;");
 
-                // Bu gün ve slot için sınavı bul
                 final int currentDay = day;
                 final int currentSlot = slot + 1;
                 Optional<Exam> examOpt = studentExams.stream()
@@ -1142,7 +1086,6 @@ public class ExamSchedulerApp extends Application {
                 if (examOpt.isPresent()) {
                     Exam exam = examOpt.get();
 
-                    // Renk kodu: öğrenci sayısına göre
                     String bgColor = exam.getStudentCount() > 50 ? "#fff3cd"
                             : exam.getStudentCount() > 30 ? "#d4edda" : "#d1ecf1";
 
@@ -1185,19 +1128,16 @@ public class ExamSchedulerApp extends Application {
     }
 
     private VBox createStatisticsView(Student student, List<Exam> studentExams) {
-        // 1. ANA KAPLAYICI (Return edilecek olan)
         VBox mainLayout = new VBox();
         mainLayout.setPadding(new Insets(20));
         mainLayout.setStyle("-fx-background-color: white; -fx-border-radius: 10; -fx-background-radius: 10;");
 
-        // 2. İÇERİK KUTUSU (Scroll edilecek olan tüm istatistikler burada)
         VBox contentBox = new VBox(20);
-        contentBox.setPadding(new Insets(5)); // Scrollbar ile içerik arasına mesafe
+        contentBox.setPadding(new Insets(5)); 
 
         Label title = new Label("📊 Schedule Statistics");
         title.setStyle("-fx-font-size: 20px; -fx-font-weight: bold; -fx-text-fill: #2c3e50;");
 
-        // --- İSTATİSTİK KARTLARI ---
         GridPane statsGrid = new GridPane();
         statsGrid.setHgap(15);
         statsGrid.setVgap(15);
@@ -1217,7 +1157,6 @@ public class ExamSchedulerApp extends Application {
         statsGrid.add(createStatCard("Active Days", String.valueOf(busyDayCount), "#2ecc71"), 1, 0);
         statsGrid.add(createStatCard("Heaviest Day", "Day " + busiestDay, "#e74c3c"), 2, 0);
 
-        // --- GÜNLÜK DAĞILIM ---
         VBox distributionBox = new VBox(10);
         distributionBox.setPadding(new Insets(20));
         distributionBox.setStyle("-fx-background-color: #f8f9fa; -fx-border-radius: 8; -fx-background-radius: 8;");
@@ -1250,7 +1189,6 @@ public class ExamSchedulerApp extends Application {
                     distributionBox.getChildren().add(dayBar);
                 });
 
-        // --- ÖNERİLER ---
         VBox recommendationsBox = new VBox(10);
         recommendationsBox.setPadding(new Insets(20));
         recommendationsBox.setStyle("-fx-background-color: #fff3cd; -fx-border-color: #ffeaa7; " +
@@ -1276,19 +1214,16 @@ public class ExamSchedulerApp extends Application {
         recText.setText(recBuilder.toString());
         recommendationsBox.getChildren().addAll(recTitle, recText);
 
-        // --- TÜM İÇERİĞİ CONTENT BOX'A EKLE ---
         contentBox.getChildren().addAll(title, statsGrid, distributionBox, recommendationsBox);
 
-        // --- 3. SCROLLPANE OLUŞTURMA VE BAĞLAMA ---
-        ScrollPane scrollPane = new ScrollPane(contentBox); // İçeriği ScrollPane'e koy
-        scrollPane.setFitToWidth(true); // Yatayda sığdır
+        ScrollPane scrollPane = new ScrollPane(contentBox); 
+        scrollPane.setFitToWidth(true); 
         scrollPane.setStyle("-fx-background-color: transparent; -fx-background: transparent;");
 
-        // ScrollPane'i ana kutuya ekle ve büyüt
         mainLayout.getChildren().add(scrollPane);
-        VBox.setVgrow(scrollPane, Priority.ALWAYS); // Ana kutu büyürse ScrollPane de büyüsün
+        VBox.setVgrow(scrollPane, Priority.ALWAYS); 
 
-        return mainLayout; // VBox döndürür
+        return mainLayout;
     }
 
     private VBox createStatCard(String title, String value, String color) {
@@ -1321,7 +1256,6 @@ public class ExamSchedulerApp extends Application {
         File file = fileChooser.showSaveDialog(owner);
         if (file != null) {
             try {
-                // PDF oluşturma işlemi
                 createPDF(file, student, studentExams);
                 showInfo("PDF Export", "Schedule exported successfully as PDF:\n" + file.getName());
                 messages.add("📄 PDF exported for " + student.getStudentID());
@@ -1506,12 +1440,10 @@ public class ExamSchedulerApp extends Application {
         PdfWriter.getInstance(document, new FileOutputStream(file));
         document.open();
 
-        // --- TASARIM RENKLERİ ---
         BaseColor HEADER_COLOR = new BaseColor(0, 120, 212); // Kurumsal Mavi (#0078D4)
         BaseColor ROW_COLOR_ODD = new BaseColor(240, 240, 240); // Açık Gri
         BaseColor ROW_COLOR_EVEN = BaseColor.WHITE;
 
-        // --- BAŞLIK KISMI ---
         Font titleFont = FontFactory.getFont(FontFactory.HELVETICA_BOLD, 20, BaseColor.DARK_GRAY);
         Paragraph title = new Paragraph("Student Exam Schedule", titleFont);
         title.setAlignment(Element.ALIGN_CENTER);
@@ -1523,13 +1455,11 @@ public class ExamSchedulerApp extends Application {
         subTitle.setSpacingAfter(20); // Altına boşluk bırak
         document.add(subTitle);
 
-        // --- TABLO OLUŞTURMA (4 Sütun) ---
         PdfPTable table = new PdfPTable(new float[] { 2, 2, 4, 2 }); // Sütun genişlik oranları
         table.setWidthPercentage(100);
         table.setSpacingBefore(10f);
         table.setSpacingAfter(10f);
 
-        // --- TABLO BAŞLIKLARI ---
         String[] headers = { "Day / Date", "Time", "Course Info", "Location" };
         for (String headerTitle : headers) {
             PdfPCell header = new PdfPCell(
@@ -1542,8 +1472,6 @@ public class ExamSchedulerApp extends Application {
             table.addCell(header);
         }
 
-        // --- VERİLERİ DOLDURMA ---
-        // Tarihe göre sırala
         exams.sort(Comparator.comparing((Exam e) -> e.getTimeSlot().getDay())
                 .thenComparing(e -> e.getTimeSlot().getSlotNumber()));
 
@@ -1554,7 +1482,6 @@ public class ExamSchedulerApp extends Application {
         for (Exam exam : exams) {
             BaseColor rowColor = isOdd ? ROW_COLOR_ODD : ROW_COLOR_EVEN;
 
-            // Tarih ve Saat Hesapla
             LocalDate date = startDate.plusDays(exam.getTimeSlot().getDay() - 1);
             String timeSlotStr;
             try {
@@ -1563,28 +1490,23 @@ public class ExamSchedulerApp extends Application {
                 timeSlotStr = "Slot " + exam.getTimeSlot().getSlotNumber();
             }
 
-            // 1. Hücre: Tarih
             addStyledCell(table, "Day " + exam.getTimeSlot().getDay() + "\n" + date.toString(), rowColor, true);
 
-            // 2. Hücre: Saat
             addStyledCell(table, timeSlotStr, rowColor, true);
 
-            // 3. Hücre: Ders Bilgisi (Ders Kodu kalın, adı normal)
             PdfPCell courseCell = new PdfPCell();
 
-            // Ders Kodu Paragrafı
             Paragraph pCode = new Paragraph(exam.getCourse().getCourseCode(),
                     FontFactory.getFont(FontFactory.HELVETICA_BOLD, 11));
-            pCode.setAlignment(Element.ALIGN_CENTER); // <--- İŞTE BU SATIR ORTALIYOR
+            pCode.setAlignment(Element.ALIGN_CENTER);
             courseCell.addElement(pCode);
 
             courseCell.setBackgroundColor(rowColor);
             courseCell.setPadding(8);
-            courseCell.setVerticalAlignment(Element.ALIGN_MIDDLE); // Dikeyde ortala
-            courseCell.setUseAscender(true); // Dikey ortalamayı iyileştirir
+            courseCell.setVerticalAlignment(Element.ALIGN_MIDDLE); 
+            courseCell.setUseAscender(true); 
             table.addCell(courseCell);
 
-            // 4. Hücre: Oda
             PdfPCell roomCell = new PdfPCell(
                     new Phrase(exam.getClassroom().getClassroomID(), FontFactory.getFont(FontFactory.HELVETICA, 12)));
             roomCell.setBackgroundColor(rowColor);
@@ -1593,12 +1515,11 @@ public class ExamSchedulerApp extends Application {
             roomCell.setPadding(8);
             table.addCell(roomCell);
 
-            isOdd = !isOdd; // Sıradaki satır rengini değiştir
+            isOdd = !isOdd;
         }
 
         document.add(table);
 
-        // --- ALT BİLGİ ---
         Paragraph footer = new Paragraph("Generated by Exam Scheduler v2.0",
                 FontFactory.getFont(FontFactory.COURIER, 8, BaseColor.GRAY));
         footer.setAlignment(Element.ALIGN_RIGHT);
@@ -1607,7 +1528,6 @@ public class ExamSchedulerApp extends Application {
         document.close();
     }
 
-    // Yardımcı Metod: Basit hücre ekleme
     private void addStyledCell(PdfPTable table, String text, BaseColor bgColor, boolean center) {
         PdfPCell cell = new PdfPCell(new Phrase(text, FontFactory.getFont(FontFactory.HELVETICA, 10)));
         cell.setBackgroundColor(bgColor);
@@ -1625,8 +1545,6 @@ public class ExamSchedulerApp extends Application {
             String studentId = student.getStudentID();
             for (Exam exam : dataManager.getSchedule().getExams()) {
                 if (exam.isScheduled()) {
-                    // Use studentID comparison instead of object reference
-                    // This ensures newly added students are found
                     boolean isEnrolled = exam.getEnrolledStudents().stream()
                             .anyMatch(s -> s.getStudentID().equals(studentId));
                     if (isEnrolled) {
@@ -3166,14 +3084,12 @@ public class ExamSchedulerApp extends Application {
 
     private void handleGenerateSchedule() {
 
-        // 1. Veri Yüklü mü Kontrolü
         if (!dataManager.isDataLoaded()) {
             showError("Data not loaded", "Please load data from CSV files first.");
             messages.add("❌ ERROR: No data loaded. Click 'Load Data' first.");
             return;
         }
 
-        // 2. Parametreleri Hazırla
         List<Course> coursesToSchedule = dataManager.getCourses();
         List<Classroom> availableClassrooms = new ArrayList<>(dataManager.getClassrooms());
         List<String> timeSlotsRaw = getTimeSlotsFromUI.get();
@@ -3187,13 +3103,12 @@ public class ExamSchedulerApp extends Application {
         messages.add("⚡ Starting schedule generation...");
         messages.add("📊 Parameters: " + days + " days, " + timeSlotsRaw.size() + " slots/day");
 
-        // 3. Ham Sınav Listesini Oluştur
         List<Exam> initialExams = coursesToSchedule.stream()
                 .filter(c -> c.getStudentCount() > 0)
                 .map(Exam::new)
                 .collect(Collectors.toList());
 
-        // --- ADIM 1: BÜYÜK SINAVLARI DENGELİ PARÇALA (BALANCED SPLIT) ---
+        // --- BALANCED SPLIT ---
 
         int maxRoomCapacity = availableClassrooms.stream()
                 .mapToInt(Classroom::getCapacity)
@@ -3209,7 +3124,7 @@ public class ExamSchedulerApp extends Application {
         for (Exam exam : initialExams) {
             int totalStudents = exam.getEnrolledStudents().size();
 
-            // Eğer öğrenci sayısı en büyük sınıftan fazlaysa BÖL
+            // If the number of students exceeds the largest class size, DIVIDE
             if (totalStudents > maxRoomCapacity) {
                 List<Student> allStudents = exam.getEnrolledStudents();
                 int parts = (int) Math.ceil((double) totalStudents / maxRoomCapacity);
@@ -3236,49 +3151,37 @@ public class ExamSchedulerApp extends Application {
             }
         }
 
-        // Sıralama: En kalabalık grupları önce yerleştir
+        // Sorting: Place the largest groups first.
         examsToPlace.sort((a, b) -> Integer.compare(b.getStudentCount(), a.getStudentCount()));
 
         // -----------------------------------------------------------
 
         dataManager.setSchedule(new Schedule(days, timeSlotsRaw.size()));
 
-        // Takip Map'leri
         Map<Student, Set<TimeSlot>> studentScheduledSlots = new HashMap<>();
         Map<TimeSlot, Set<String>> roomOccupancy = new HashMap<>();
-
-        // PERFORMANS OPTİMİZASYONU: Günlük sınav sayısını O(1)'de takip et
-        // Eski: busySlots.stream().filter(ts -> ts.getDay() == currentDay).count() -
-        // O(n)
-        // Yeni: studentDailyExamCount.get(student).getOrDefault(day, 0) - O(1)
         Map<Student, Map<Integer, Integer>> studentDailyExamCount = new HashMap<>();
 
-        // DERS İÇİN KİLİTLENMİŞ ZAMAN (Aynı dersin parçaları aynı saate gelsin diye)
         Map<String, TimeSlot> courseLockedSlots = new HashMap<>();
 
         int placedCount = 0;
         unplacedCourses.clear();
 
-        // --- ADIM 2: YERLEŞTİRME ALGORİTMASI ---
         for (Exam exam : examsToPlace) {
             boolean placed = false;
             List<Student> studentsOfCourse = exam.getEnrolledStudents();
             int enrolledCount = exam.getStudentCount();
             String courseCode = exam.getCourse().getCourseCode();
 
-            // Eğer bu dersin bir parçası daha önce yerleştiyse, ZORUNLU olarak o saati al
             TimeSlot forcedSlot = courseLockedSlots.get(courseCode);
 
-            // Sınıfları karıştır
             Collections.shuffle(availableClassrooms, new Random());
 
-            // DÖNGÜ AYARLARI
             int startDay = (forcedSlot != null) ? forcedSlot.getDay() : 1;
             int endDay = (forcedSlot != null) ? forcedSlot.getDay() : days;
 
             outerLoop: for (int day = startDay; day <= endDay; day++) {
 
-                // DÜZELTME: Lambda içinde kullanmak için 'final' kopya oluşturuyoruz
                 final int currentDay = day;
 
                 int startSlot = (forcedSlot != null) ? forcedSlot.getSlotNumber() : 1;
@@ -3287,7 +3190,7 @@ public class ExamSchedulerApp extends Application {
                 for (int slotNum = startSlot; slotNum <= endSlot; slotNum++) {
                     TimeSlot currentSlot = new TimeSlot(day, slotNum);
 
-                    // 1. ÖĞRENCİ ÇAKIŞMASI KONTROLÜ
+                    // 1. STUDENT CONFLICT CHECK
                     boolean studentConflict = false;
                     for (Student student : studentsOfCourse) {
                         Set<TimeSlot> busySlots = studentScheduledSlots.getOrDefault(student, Collections.emptySet());
@@ -3297,7 +3200,7 @@ public class ExamSchedulerApp extends Application {
                             break;
                         }
 
-                        // Günlük limit kontrolü - OPTİMİZE EDİLDİ: O(n) -> O(1)
+                        // DAILY LIMIT CHECK
                         int examsOnDay = studentDailyExamCount
                                 .getOrDefault(student, Collections.emptyMap())
                                 .getOrDefault(currentDay, 0);
@@ -3306,7 +3209,7 @@ public class ExamSchedulerApp extends Application {
                             break;
                         }
 
-                        // Ardışık sınav kontrolü
+                        // CONSECUTIVE EXAM CHECK
                         if (slotNum > 1) {
                             TimeSlot previousSlot = new TimeSlot(day, slotNum - 1);
                             if (busySlots.contains(previousSlot)) {
@@ -3318,7 +3221,6 @@ public class ExamSchedulerApp extends Application {
                     if (studentConflict)
                         continue;
 
-                    // 3. ODA SEÇİMİ
                     for (Classroom room : availableClassrooms) {
                         if (!room.canAccommodate(enrolledCount))
                             continue;
@@ -3326,25 +3228,18 @@ public class ExamSchedulerApp extends Application {
                         roomOccupancy.putIfAbsent(currentSlot, new HashSet<>());
                         if (roomOccupancy.get(currentSlot).contains(room.getClassroomID()))
                             continue;
-
-                        // --- YERLEŞTİR ---
                         exam.setTimeSlot(currentSlot);
                         exam.setClassroom(room);
                         dataManager.getSchedule().addExam(exam);
-
-                        // Kayıtları güncelle
                         roomOccupancy.get(currentSlot).add(room.getClassroomID());
 
                         for (Student student : studentsOfCourse) {
                             studentScheduledSlots.computeIfAbsent(student, k -> new HashSet<>()).add(currentSlot);
-
-                            // Günlük sınav sayısını güncelle - O(1)
                             studentDailyExamCount
                                     .computeIfAbsent(student, k -> new HashMap<>())
                                     .merge(currentDay, 1, Integer::sum);
                         }
 
-                        // BU DERSİN SAATİNİ KİLİTLE
                         if (!courseLockedSlots.containsKey(courseCode)) {
                             courseLockedSlots.put(courseCode, currentSlot);
                         }
@@ -3375,7 +3270,6 @@ public class ExamSchedulerApp extends Application {
             }
         }
 
-        // 4. Sonuçlar
         updateExamTableView(timeSlotsRaw);
 
         int total = examsToPlace.size();
@@ -3487,16 +3381,12 @@ public class ExamSchedulerApp extends Application {
 
         ListView<String> listView = new ListView<>();
 
-        // --- DÜZELTME 1: LİSTE DOLDURMA ---
-        // Sadece '[' ile başlamayan, geçerli dersleri listeye ekle
         dataManager.getCourses().stream()
                 .filter(c -> {
                     String code = c.getCourseCode();
-                    // Null değilse, boş değilse VE köşeli parantez ile başlamıyorsa ekle
                     return code != null && !code.trim().isEmpty() && !code.trim().startsWith("[");
                 })
                 .forEach(c -> listView.getItems().add(c.getCourseCode()));
-        // ----------------------------------
 
         TextField codeField = new TextField();
         codeField.setPromptText("Course Code");
@@ -3509,7 +3399,6 @@ public class ExamSchedulerApp extends Application {
         addBtn.setOnAction(e -> {
             String code = codeField.getText().trim();
             if (!code.isEmpty()) {
-                // Yeni eklenen derslerde sorun yok, doğrudan ekle
                 Course c = new Course(code, nameField.getText(), 1);
                 dataManager.addCourse(c);
                 listView.getItems().add(code);
@@ -3518,27 +3407,22 @@ public class ExamSchedulerApp extends Application {
                 nameField.clear();
             }
         });
-
-        // --- DÜZELTME 2: SİLME İŞLEMİ (GÜVENLİ) ---
         remBtn.setOnAction(e -> {
-            // İndeks yerine seçilen yazıyı (String) alıyoruz
             String selectedCode = listView.getSelectionModel().getSelectedItem();
 
             if (selectedCode != null) {
-                // DataManager içinden bu koda sahip olan dersi buluyoruz
                 Course toRemove = dataManager.getCourses().stream()
                         .filter(c -> c.getCourseCode().equals(selectedCode))
                         .findFirst()
                         .orElse(null);
 
                 if (toRemove != null) {
-                    dataManager.removeCourse(toRemove); // Hafızadan sil
-                    listView.getItems().remove(selectedCode); // Listeden sil
+                    dataManager.removeCourse(toRemove);
+                    listView.getItems().remove(selectedCode);
                     messages.add("Course removed: " + selectedCode);
                 }
             }
         });
-        // ------------------------------------------
 
         VBox inputs = new VBox(5, codeField, nameField);
         VBox root = new VBox(10, new Label("Courses"), listView, inputs, new HBox(5, addBtn, remBtn));
@@ -3631,7 +3515,6 @@ public class ExamSchedulerApp extends Application {
         courseCombo.setItems(FXCollections.observableArrayList(validCourses));
         courseCombo.setPrefWidth(300);
 
-        // Converter: Dersteki güncel öğrenci sayısını gösterir
         courseCombo.setConverter(new javafx.util.StringConverter<Course>() {
             @Override
             public String toString(Course c) {
@@ -3654,7 +3537,6 @@ public class ExamSchedulerApp extends Application {
         lblAvail.setStyle("-fx-font-weight: bold;");
         lblEnroll.setStyle("-fx-font-weight: bold;");
 
-        // Cell Factory: Sadece ID göster
         availableList.setCellFactory(param -> new javafx.scene.control.ListCell<>() {
             @Override
             protected void updateItem(Student item, boolean empty) {
@@ -3672,15 +3554,12 @@ public class ExamSchedulerApp extends Application {
         VBox btnBox = new VBox(10, btnAdd, btnRemove);
         btnBox.setAlignment(Pos.CENTER);
 
-        // --- MANTIK KISMI ---
-
-        // Ders Seçilince Listeleri Doldur
         courseCombo.setOnAction(e -> {
             Course selectedCourse = courseCombo.getValue();
             if (selectedCourse != null) {
                 List<Student> enrolled = selectedCourse.getEnrolledStudents();
                 List<Student> available = new ArrayList<>(dataManager.getStudents());
-                available.removeAll(enrolled); // Kayıtlıları çıkar
+                available.removeAll(enrolled);
 
                 enrolledList.setItems(FXCollections.observableArrayList(enrolled));
                 availableList.setItems(FXCollections.observableArrayList(available));
@@ -3693,7 +3572,6 @@ public class ExamSchedulerApp extends Application {
             }
         });
 
-        // EKLEME İŞLEMİ
         btnAdd.setOnAction(e -> {
             Student s = availableList.getSelectionModel().getSelectedItem();
             Course c = courseCombo.getValue();
@@ -3705,23 +3583,18 @@ public class ExamSchedulerApp extends Application {
 
             if (c != null) {
                 try {
-                    // Backend'e ekle
                     dataManager.enrollStudentToCourse(c, s);
 
-                    // LİSTELERİ SIFIRDAN YÜKLE (En Garanti Yol)
                     List<Student> freshEnrolled = c.getEnrolledStudents();
                     List<Student> freshAvailable = new ArrayList<>(dataManager.getStudents());
-                    freshAvailable.removeAll(freshEnrolled); // Farkını al
+                    freshAvailable.removeAll(freshEnrolled);
 
-                    // UI Listelerini Güncelle
                     enrolledList.setItems(FXCollections.observableArrayList(freshEnrolled));
                     availableList.setItems(FXCollections.observableArrayList(freshAvailable));
 
-                    // Başlıkları Güncelle
                     lblEnroll.setText("Enrolled Students (" + freshEnrolled.size() + ")");
                     lblAvail.setText("Available Students (" + freshAvailable.size() + ")");
 
-                    // ComboBox yazısını güncelle (Sayı artsın diye)
                     int currentIndex = courseCombo.getSelectionModel().getSelectedIndex();
                     ObservableList<Course> items = courseCombo.getItems();
                     courseCombo.setItems(null);
@@ -3737,7 +3610,6 @@ public class ExamSchedulerApp extends Application {
             }
         });
 
-        // SİLME İŞLEMİ
         btnRemove.setOnAction(e -> {
             Student s = enrolledList.getSelectionModel().getSelectedItem();
             Course c = courseCombo.getValue();
@@ -3755,15 +3627,12 @@ public class ExamSchedulerApp extends Application {
                     List<Student> freshAvailable = new ArrayList<>(dataManager.getStudents());
                     freshAvailable.removeAll(freshEnrolled);
 
-                    // UI Listelerini Güncelle
                     enrolledList.setItems(FXCollections.observableArrayList(freshEnrolled));
                     availableList.setItems(FXCollections.observableArrayList(freshAvailable));
 
-                    // Başlıkları Güncelle
                     lblEnroll.setText("Enrolled Students (" + freshEnrolled.size() + ")");
                     lblAvail.setText("Available Students (" + freshAvailable.size() + ")");
 
-                    // ComboBox yazısını güncelle
                     int currentIndex = courseCombo.getSelectionModel().getSelectedIndex();
                     ObservableList<Course> items = courseCombo.getItems();
                     courseCombo.setItems(null);

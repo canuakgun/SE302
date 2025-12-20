@@ -17,33 +17,30 @@ import com.examscheduler.model.Schedule;
 import com.examscheduler.model.Student;
 
 /**
- * DataManager - Singleton Pattern
- * Veri yönetimi ve otomatik dosya güncelleme merkezi.
- * CSVParser ile senkronize çalışır.
+* DataManager - Singleton Pattern
+* Data management and automated file update center. 
+* Works synchronously with CSVParser.
  */
 public class DataManager {
     private static DataManager instance;
 
-    // Hafızadaki Veri Listeleri
+    // Data Lists in Memory
     private List<Student> students;
     private List<Course> courses;
     private List<Classroom> classrooms;
 
-    // O(1) arama için HashMap indeksleri (PERFORMANS OPTİMİZASYONU)
     private Map<String, Student> studentIndex;
     private Map<String, Course> courseIndex;
     private Map<String, Classroom> classroomIndex;
 
-    // Oluşturulan Sınav Takvimi
     private Schedule schedule;
 
-    // Kaynak Dosya Referansları (Otomatik güncelleme için gereklidir)
+    // Source File References (Required for automatic updates)
     private File studentFile;
     private File courseFile;
     private File classroomFile;
     private File attendanceFile;
 
-    // Versiyon kontrolü
     private static final int DATA_VERSION = 1;
 
     private DataManager() {
@@ -68,9 +65,9 @@ public class DataManager {
     }
 
     /**
-     * Yükleme işlemi sırasında (handleLoad) kaynak dosyaların yollarını kaydeder.
-     * Bu sayede ekleme/silme işlemlerinde doğru dosyaya yazılabilir.
-     */
+        * Saves the paths of the source files during the loading process (handleLoad).
+        * This ensures that the correct file is written to during add/delete operations. 
+    **/
     public void setSourceFiles(File std, File crs, File room, File att) {
         this.studentFile = std;
         this.courseFile = crs;
@@ -78,14 +75,12 @@ public class DataManager {
         this.attendanceFile = att;
     }
 
-    // ==================== ÖĞRENCİ YÖNETİMİ (OTOMATİK CSV KAYDI)
-    // ====================
+    // STUDENT MANAGEMENT (AUTOMATIC CSV RECORDING)
 
     public void addStudent(Student s) {
         if (s != null && !studentIndex.containsKey(s.getStudentID())) {
             students.add(s);
-            studentIndex.put(s.getStudentID(), s); // O(1) indeks güncelleme
-            // Listeyi güncelledikten sonra dosyaya yansıt
+            studentIndex.put(s.getStudentID(), s); 
             if (studentFile != null)
                 CSVParser.updateStudentFile(studentFile, students);
         }
@@ -93,25 +88,21 @@ public class DataManager {
 
     public void removeStudent(Student s) {
         if (s != null && students.remove(s)) {
-            studentIndex.remove(s.getStudentID()); // O(1) indeks güncelleme
-            // Listeden sildikten sonra dosyaya yansıt
+            studentIndex.remove(s.getStudentID());
             if (studentFile != null)
                 CSVParser.updateStudentFile(studentFile, students);
-
-            // Öğrenci silindiğinde, derslerden de kaydını silmemiz gerekir (Opsiyonel ama
-            // iyi olur)
             for (Course c : courses) {
                 c.getEnrolledStudents().remove(s);
             }
         }
     }
 
-    // ==================== DERS YÖNETİMİ (OTOMATİK CSV KAYDI) ====================
+    // COURSE MANAGEMENT (AUTOMATIC CSV SAVE)
 
     public void addCourse(Course c) {
         if (c != null && !courseIndex.containsKey(c.getCourseCode())) {
             courses.add(c);
-            courseIndex.put(c.getCourseCode(), c); // O(1) indeks güncelleme
+            courseIndex.put(c.getCourseCode(), c);
             if (courseFile != null)
                 CSVParser.updateCourseFile(courseFile, courses);
         }
@@ -119,23 +110,21 @@ public class DataManager {
 
     public void removeCourse(Course c) {
         if (c != null && courses.remove(c)) {
-            courseIndex.remove(c.getCourseCode()); // O(1) indeks güncelleme
+            courseIndex.remove(c.getCourseCode());
             if (courseFile != null)
                 CSVParser.updateCourseFile(courseFile, courses);
-
-            // Ders silindiğinde öğrencilerin listesinden de sil
             for (Student s : students) {
                 s.getCourses().remove(c);
             }
         }
     }
 
-    // ==================== SINIF YÖNETİMİ (OTOMATİK CSV KAYDI) ====================
+    // CLASS MANAGEMENT (AUTOMATIC CSV SAVE)
 
     public void addClassroom(Classroom c) {
         if (c != null && !classroomIndex.containsKey(c.getClassroomID())) {
             classrooms.add(c);
-            classroomIndex.put(c.getClassroomID(), c); // O(1) indeks güncelleme
+            classroomIndex.put(c.getClassroomID(), c);
             if (classroomFile != null)
                 CSVParser.updateClassroomFile(classroomFile, classrooms);
         }
@@ -143,31 +132,24 @@ public class DataManager {
 
     public void removeClassroom(Classroom c) {
         if (c != null && classrooms.remove(c)) {
-            classroomIndex.remove(c.getClassroomID()); // O(1) indeks güncelleme
+            classroomIndex.remove(c.getClassroomID());
             if (classroomFile != null)
                 CSVParser.updateClassroomFile(classroomFile, classrooms);
         }
     }
 
-    // ==================== ATTENDANCE YÖNETİMİ ====================
+    // ==================== ATTENDANCE MANAGEMENT ====================
 
     public void enrollStudentToCourse(Course course, Student student) {
         if (course == null || student == null)
             return;
 
-        // 1. Course sınıfına eklemeyi dene (Başarılı olursa true döner)
         boolean addedToCourse = course.addStudent(student);
-
-        // 2. Eğer derse eklendiyse, öğrenci tarafını ve dosyayı güncelle
         if (addedToCourse) {
             student.addCourse(course);
-
-            // Eğer attendance dosyası henüz yoksa oluştur
             if (attendanceFile == null && courseFile != null) {
                 attendanceFile = new File(courseFile.getParent(), "attendance.csv");
             }
-
-            // 3. Dosyayı güncelle
             if (attendanceFile != null) {
                 CSVParser.updateAttendanceFile(attendanceFile, courses);
             }
@@ -177,36 +159,32 @@ public class DataManager {
     public void unenrollStudentFromCourse(Course course, Student student) {
         if (course == null || student == null)
             return;
-
-        // 1. Course sınıfından silmeyi dene (Başarılı olursa true döner)
         boolean removedFromCourse = course.removeStudent(student);
 
-        // 2. Öğrencinin kendi ders listesinden de sil
         if (student.getCourses() != null) {
             student.getCourses().removeIf(c -> c.getCourseCode().equals(course.getCourseCode()));
         }
 
-        // 3. Eğer silme başarılıysa dosyayı güncelle
         if (removedFromCourse && attendanceFile != null) {
             CSVParser.updateAttendanceFile(attendanceFile, courses);
         }
     }
 
-    // ==================== GETTER / SETTER METOTLARI ====================
+    // GETTER / SETTER METHODS
 
     public void setStudents(List<Student> students) {
         this.students = students != null ? students : new ArrayList<>();
-        rebuildStudentIndex(); // İndeksi yeniden oluştur
+        rebuildStudentIndex();
     }
 
     public void setCourses(List<Course> courses) {
         this.courses = courses != null ? courses : new ArrayList<>();
-        rebuildCourseIndex(); // İndeksi yeniden oluştur
+        rebuildCourseIndex();
     }
 
     public void setClassrooms(List<Classroom> classrooms) {
         this.classrooms = classrooms != null ? classrooms : new ArrayList<>();
-        rebuildClassroomIndex(); // İndeksi yeniden oluştur
+        rebuildClassroomIndex();
     }
 
     public void setSchedule(Schedule schedule) {
@@ -229,7 +207,6 @@ public class DataManager {
         return schedule;
     }
 
-    // İndeks yeniden oluşturma metotları (toplu yükleme sonrası çağrılır)
     private void rebuildStudentIndex() {
         studentIndex.clear();
         for (Student s : students) {
@@ -257,7 +234,7 @@ public class DataManager {
         }
     }
 
-    // ==================== YARDIMCI METOTLAR ====================
+    // ==================== HELPER METHODS ====================
 
     public boolean isDataLoaded() {
         return students != null && !students.isEmpty() &&
@@ -272,45 +249,31 @@ public class DataManager {
             courses.clear();
         if (classrooms != null)
             classrooms.clear();
-        // İndeksleri de temizle
         studentIndex.clear();
         courseIndex.clear();
         classroomIndex.clear();
         this.schedule = null;
-        // Dosya referanslarını sıfırlama, belki kullanıcı aynı klasöre tekrar yükleme
-        // yapar
     }
 
-    /**
-     * O(1) sınıf araması (HashMap tabanlı)
-     */
     public Classroom getClassroomByID(String id) {
         if (id == null || classroomIndex == null)
             return null;
         return classroomIndex.get(id);
     }
 
-    /**
-     * O(1) öğrenci araması (HashMap tabanlı) - ESKİ: O(n)
-     */
     public Student getStudentByID(String id) {
         if (id == null || studentIndex == null)
             return null;
         return studentIndex.get(id);
     }
 
-    /**
-     * O(1) ders araması (HashMap tabanlı) - ESKİ: O(n)
-     */
     public Course getCourseByCode(String code) {
         if (code == null || courseIndex == null)
             return null;
         return courseIndex.get(code);
     }
 
-    // ==================== PERSISTENCE (Tüm Durumu Kaydetme - Opsiyonel)
-    // ====================
-    // Bu metotlar, CSV dışındaki "proje dosyası" (.dat) mantığı içindir.
+    // PERSISTENCE (Saving All Status - Opsiyonel)
 
     public void saveToFile(File file) throws IOException {
         try (ObjectOutputStream oos = new ObjectOutputStream(new FileOutputStream(file))) {
